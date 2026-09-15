@@ -6,202 +6,193 @@
   <meta name="color-scheme" content="light dark" />
   <title>Workout Logger</title>
   <style>
-    /* ── Reset & base ───────────────────────────────────── */
+    /* ── Reset ───────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── Design tokens — light mode ─────────────────────── */
+    /* ── Design tokens — light ───────────────────────────── */
     :root {
       color-scheme: light dark;
 
-      --bg:              #F2F2F7;
-      --card:            #FFFFFF;
-      --blue:            #007AFF;
-      --green:           #34C759;
-      --red:             #FF3B30;
-      --label:           #1C1C1E;
-      --secondary:       #3C3C43;
-      --tertiary:        #8E8E93;
-      --separator:       rgba(60,60,67,.12);
-      --fill:            #F2F2F7;
-      --fill-focus:      #E5F0FF;
-      --shadow:          0 1px 0 rgba(0,0,0,.04), 0 2px 12px rgba(0,0,0,.06);
+      --bg:           #F2F2F7;
+      --card:         #FFFFFF;
+      --blue:         #007AFF;
+      --green:        #34C759;
+      --red:          #FF3B30;
+      --label:        #1C1C1E;
+      --secondary:    #3C3C43;
+      --tertiary:     #8E8E93;
+      --separator:    rgba(60,60,67,.12);
+      --fill:         #F2F2F7;
+      --fill-focus:   #E5F0FF;
+      --shadow:       0 1px 0 rgba(0,0,0,.04), 0 2px 12px rgba(0,0,0,.06);
+      --glass-nav:    rgba(242,242,247,.92);
+      --glass-tab:    rgba(255,255,255,.94);
+      --dur-bg:       #EAF2FF;
+      --del-hover:    rgba(255,59,48,.08);
 
-      /* frosted glass surfaces */
-      --glass-nav:       rgba(242,242,247,.92);
-      --glass-tab:       rgba(255,255,255,.94);
+      /* Liquid Glass — buttons & nav only */
+      --glass:        rgba(255,255,255,.48);
+      --glass-border: rgba(255,255,255,.30);
+      --glass-shadow: 0 4px 20px rgba(0,0,0,.14), inset 0 1.5px 0 rgba(255,255,255,.70);
+      --glass-blur:   blur(20px) saturate(180%);
 
-      /* workout card accent */
-      --dur-bg:          #EAF2FF;
-
-      /* delete hover bg */
-      --del-hover:       rgba(255,59,48,.08);
+      /* spacing scale — overridden at breakpoints */
+      --gutter:       1rem;       /* 16px  — horizontal card margins / padding */
+      --nav-top:      3.5rem;     /* 56px  — large-title nav top padding       */
+      --radius-card:  1rem;       /* 16px */
+      --radius-btn:   0.875rem;   /* 14px */
     }
 
-    /* ── Design tokens — dark mode ──────────────────────── */
+    /* ── Design tokens — dark ────────────────────────────── */
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg:            #000000;
-        --card:          #1C1C1E;
-        --blue:          #0A84FF;
-        --green:         #30D158;
-        --red:           #FF453A;
-        --label:         #FFFFFF;
-        --secondary:     rgba(235,235,245,.6);
-        --tertiary:      #8E8E93;
-        --separator:     rgba(84,84,88,.65);
-        --fill:          #2C2C2E;
-        --fill-focus:    #0A2A52;
-        --shadow:        0 1px 0 rgba(0,0,0,.3), 0 2px 16px rgba(0,0,0,.4);
+        --bg:          #000000;
+        --card:        #1C1C1E;
+        --blue:        #0A84FF;
+        --green:       #30D158;
+        --red:         #FF453A;
+        --label:       #FFFFFF;
+        --secondary:   rgba(235,235,245,.6);
+        --tertiary:    #8E8E93;
+        --separator:   rgba(84,84,88,.65);
+        --fill:        #2C2C2E;
+        --fill-focus:  #0A2A52;
+        --shadow:      0 1px 0 rgba(0,0,0,.3), 0 2px 16px rgba(0,0,0,.4);
+        --glass-nav:   rgba(28,28,30,.92);
+        --glass-tab:   rgba(28,28,30,.94);
+        --dur-bg:      rgba(10,132,255,.18);
+        --del-hover:   rgba(255,69,58,.14);
 
-        --glass-nav:     rgba(28,28,30,.92);
-        --glass-tab:     rgba(28,28,30,.94);
-        --dur-bg:        rgba(10,132,255,.18);
-        --del-hover:     rgba(255,69,58,.14);
+        /* Liquid Glass — dark, buttons & nav only */
+        --glass:        rgba(255,255,255,.10);
+        --glass-border: rgba(255,255,255,.14);
+        --glass-shadow: 0 4px 20px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.10);
+        --glass-blur:   blur(20px) saturate(180%);
       }
     }
 
-    /* ── Layout shell ───────────────────────────────────── */
-    html, body {
-      height: 100%;          /* pin to viewport — prevents tab-bar scroll */
+    /* ── Layout shell ─────────────────────────────────────── */
+    html, body { height: 100%; }
+    @supports (height: 100dvh) {
+      html, body { height: 100dvh; }
     }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
       background: var(--bg);
       color: var(--label);
       display: flex;
       flex-direction: column;
-      max-width: 430px;
+      width: 100%;
+      max-width: min(430px, 100%);
       margin: 0 auto;
-      overflow: hidden;      /* scroll happens inside .scroll-area only */
+      overflow: hidden;          /* scroll lives inside .scroll-area only   */
+      position: relative;        /* contain absolute overlays within the frame */
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    /* ── Screens ─────────────────────────────────────────── */
+    /* ── Screens ──────────────────────────────────────────── */
     .screen { display: none; flex-direction: column; flex: 1; min-height: 0; }
     .screen.active { display: flex; }
-    .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; }
+    .scroll-area   { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; }
 
-    /* ── Large-title nav bar ─────────────────────────────── */
+    /* ── Large-title nav bar ──────────────────────────────── */
     .nav-bar {
-      background: var(--bg);
-      padding: 56px 20px 0;
+      background: transparent;
+      padding: calc(var(--nav-top) + env(safe-area-inset-top, 0px)) var(--gutter) 0;
+      flex-shrink: 0;
     }
     .nav-bar-title {
-      font-size: 34px;
+      /* 28px at 320 px viewport → 34px at 430 px, then locked */
+      font-size: clamp(1.75rem, 8vw, 2.125rem);
       font-weight: 700;
       letter-spacing: .37px;
       line-height: 1.1;
-      padding-bottom: 8px;
+      padding-bottom: 0.5rem;
     }
 
-    /* ── Compact nav bar (workout screen) ────────────────── */
+    /* ── Compact nav bar (workout screen) ─────────────────── */
     .nav-bar-compact {
       background: var(--glass-nav);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
       border-bottom: 0.5px solid var(--separator);
-      padding: 14px 20px 10px;
+      padding: 0.875rem var(--gutter) 0.625rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
     }
     .nav-bar-compact h1 {
-      font-size: 17px;
+      font-size: 1.0625rem;
       font-weight: 600;
       letter-spacing: -.4px;
     }
 
-    /* ── Section headers ─────────────────────────────────── */
+    /* ── Section headers ──────────────────────────────────── */
     .section-header {
-      font-size: 13px;
+      font-size: 0.8125rem;
       font-weight: 400;
       color: var(--tertiary);
       text-transform: uppercase;
       letter-spacing: .6px;
-      padding: 22px 20px 8px;
+      padding: 1.375rem var(--gutter) 0.5rem;
     }
 
-    /* ── Generic card pieces ─────────────────────────────── */
-    .card-group {
-      margin: 0 16px;
-      background: var(--card);
-      border-radius: 16px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-    .card-row {
-      display: flex;
-      align-items: center;
-      padding: 13px 16px;
-      gap: 12px;
-      position: relative;
-    }
-    .card-row + .card-row::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 16px; right: 0;
-      height: 0.5px;
-      background: var(--separator);
-    }
-    .card-text { flex: 1; min-width: 0; }
-    .card-text-title {
-      font-size: 15px;
-      font-weight: 400;
-      color: var(--label);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .card-text-sub { font-size: 13px; color: var(--tertiary); margin-top: 1px; }
-
-    /* ── Start Workout button ────────────────────────────── */
+    /* ── Start Workout button ─────────────────────────────── */
     .btn-start {
       display: block;
-      margin: 8px 16px 0;
+      margin: 0.5rem var(--gutter) 0;
       background: var(--blue);
       color: #fff;
       border: none;
-      border-radius: 14px;
-      font-size: 17px;
+      border-radius: var(--radius-btn);
+      /* 15 px at 320 px → 17 px at 430 px */
+      font-size: clamp(0.9375rem, 4vw, 1.0625rem);
       font-weight: 600;
       letter-spacing: -.3px;
-      padding: 17px 20px;
-      width: calc(100% - 32px);
+      padding: 1.0625rem 1.25rem;
+      width: calc(100% - 2 * var(--gutter));
       cursor: pointer;
       text-align: center;
-      transition: opacity .12s;
+      box-shadow: 0 4px 18px rgba(0,100,255,.35), inset 0 1.5px 0 rgba(255,255,255,.28);
+      transition: opacity .12s, box-shadow .12s;
     }
-    .btn-start:active { opacity: .78; }
+    .btn-start:active { opacity: .85; box-shadow: 0 2px 8px rgba(0,100,255,.22), inset 0 1px 0 rgba(255,255,255,.15); }
 
-    /* ── Finish button ───────────────────────────────────── */
+    /* ── Finish button ────────────────────────────────────── */
     .btn-finish {
       background: var(--green);
       color: #fff;
       border: none;
-      border-radius: 20px;
-      font-size: 15px;
+      border-radius: 1.25rem;
+      font-size: 0.9375rem;
       font-weight: 600;
-      padding: 7px 18px;
+      padding: 0.4375rem 1.125rem;
       cursor: pointer;
-      transition: opacity .12s;
+      box-shadow: 0 4px 14px rgba(50,200,100,.32), inset 0 1.5px 0 rgba(255,255,255,.28);
+      transition: opacity .12s, box-shadow .12s;
       letter-spacing: -.2px;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
-    .btn-finish:active { opacity: .75; }
+    .btn-finish:active { opacity: .82; box-shadow: 0 2px 6px rgba(50,200,100,.20), inset 0 1px 0 rgba(255,255,255,.15); }
 
-    /* ── Timer ───────────────────────────────────────────── */
+    /* ── Timer ────────────────────────────────────────────── */
     .timer-block {
-      margin: 20px 16px 16px;
+      margin: 1.25rem var(--gutter) 1rem;
       background: var(--card);
-      border-radius: 16px;
+      border-radius: var(--radius-card);
       box-shadow: var(--shadow);
-      padding: 20px;
+      overflow: hidden;
+      padding: 1.25rem;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 1rem;
     }
     .timer-dot {
-      width: 10px; height: 10px;
+      width: 0.625rem; height: 0.625rem;
       border-radius: 50%;
       background: var(--red);
       animation: blink 1.6s ease-in-out infinite;
@@ -213,36 +204,40 @@
       50%      { opacity: .45; transform: scale(.85); }
     }
     .timer-label {
-      font-size: 12px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: .5px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
       color: var(--tertiary);
     }
     #timer {
-      font-size: 44px;
+      /* 32 px at 320 px → 44 px at 430 px */
+      font-size: clamp(2rem, 10vw, 2.75rem);
       font-weight: 200;
       letter-spacing: 1px;
       color: var(--label);
       font-variant-numeric: tabular-nums;
     }
 
-    /* ── Exercise cards (workout screen) ─────────────────── */
+    /* ── Exercise cards (active workout) ──────────────────── */
     .exercise-card {
       background: var(--card);
-      border-radius: 16px;
+      border-radius: var(--radius-card);
       box-shadow: var(--shadow);
-      margin: 0 16px 12px;
+      margin: 0 var(--gutter) 0.75rem;
       overflow: hidden;
     }
     .exercise-head {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 14px 16px 12px;
+      gap: 0.625rem;
+      padding: 0.875rem 1rem 0.75rem;
       border-bottom: 0.5px solid var(--separator);
     }
     .exercise-head input[type="text"] {
       flex: 1;
-      font-size: 16px;
+      min-width: 0;
+      font-size: 1rem;
       font-weight: 600;
       letter-spacing: -.3px;
       border: none;
@@ -250,33 +245,33 @@
       color: var(--label);
       background: transparent;
       font-family: inherit;
-      min-width: 0;
     }
     .exercise-head input[type="text"]::placeholder { color: var(--tertiary); font-weight: 400; }
 
     .btn-delete-ex {
       background: none;
       border: none;
-      padding: 2px;
+      padding: 0;
       cursor: pointer;
       color: var(--tertiary);
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 28px; height: 28px;
+      width: 1.75rem; height: 1.75rem;
       border-radius: 50%;
       transition: background .1s;
       flex-shrink: 0;
     }
     .btn-delete-ex:hover { background: var(--fill); }
 
-    .sets-table { padding: 0 16px 4px; }
+    .sets-table { padding: 0 1rem 0.25rem; }
+
     .sets-col-header {
       display: grid;
-      grid-template-columns: 36px 1fr 1fr 32px;
-      gap: 8px;
-      padding: 10px 0 6px;
-      font-size: 11px;
+      grid-template-columns: 2.25rem 1fr 1fr 3rem 2rem;
+      gap: 0.5rem;
+      padding: 0.625rem 0 0.375rem;
+      font-size: 0.6875rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: .6px;
@@ -284,24 +279,25 @@
     }
     .sets-col-header span:nth-child(2),
     .sets-col-header span:nth-child(3) { text-align: center; }
+    .sets-col-header span:nth-child(4) { text-align: right; }
 
     .set-row {
       display: grid;
-      grid-template-columns: 36px 1fr 1fr 32px;
-      gap: 8px;
+      grid-template-columns: 2.25rem 1fr 1fr 3rem 2rem;
+      gap: 0.5rem;
       align-items: center;
-      padding: 5px 0;
+      padding: 0.3125rem 0;
     }
     .set-row + .set-row { border-top: 0.5px solid var(--separator); }
 
     .set-badge {
-      width: 28px; height: 28px;
+      width: 1.75rem; height: 1.75rem;
       border-radius: 50%;
       background: var(--fill);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
+      font-size: 0.8125rem;
       font-weight: 600;
       color: var(--secondary);
       flex-shrink: 0;
@@ -310,14 +306,15 @@
     .set-input {
       background: var(--fill);
       border: none;
-      border-radius: 9px;
-      padding: 9px 8px;
-      font-size: 15px;
+      border-radius: 0.5625rem;
+      padding: 0.5625rem 0.5rem;
+      font-size: 0.9375rem;
       font-family: inherit;
       text-align: center;
       outline: none;
       color: var(--label);
       width: 100%;
+      min-width: 0;
       transition: background .12s;
     }
     .set-input:focus { background: var(--fill-focus); }
@@ -331,7 +328,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 28px; height: 28px;
+      width: 1.75rem; height: 1.75rem;
       border-radius: 50%;
       margin: 0 auto;
       transition: color .1s, background .1s;
@@ -342,8 +339,8 @@
       width: 100%;
       background: none;
       border: none;
-      padding: 12px 0 14px;
-      font-size: 15px;
+      padding: 0.75rem 0 0.875rem;
+      font-size: 0.9375rem;
       font-family: inherit;
       font-weight: 500;
       color: var(--blue);
@@ -351,39 +348,39 @@
       text-align: left;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 0.375rem;
       transition: opacity .12s;
       border-top: 0.5px solid var(--separator);
-      margin-top: 6px;
+      margin-top: 0.375rem;
     }
     .btn-add-set:active { opacity: .6; }
     .btn-add-set-icon {
-      width: 22px; height: 22px;
+      width: 1.375rem; height: 1.375rem;
       border-radius: 50%;
       background: var(--blue);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 15px;
+      font-size: 0.9375rem;
       font-weight: 500;
       line-height: 1;
       flex-shrink: 0;
     }
 
-    /* ── Add Exercise button ─────────────────────────────── */
+    /* ── Add Exercise button ──────────────────────────────── */
     .btn-add-exercise {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin: 4px 16px 32px;
+      gap: 0.625rem;
+      margin: 0.25rem var(--gutter) 2rem;
       background: var(--card);
       border: none;
-      border-radius: 14px;
+      border-radius: var(--radius-btn);
       box-shadow: var(--shadow);
-      padding: 14px 16px;
-      width: calc(100% - 32px);
-      font-size: 15px;
+      padding: 0.875rem 1rem;
+      width: calc(100% - 2 * var(--gutter));
+      font-size: 0.9375rem;
       font-family: inherit;
       font-weight: 500;
       color: var(--blue);
@@ -392,68 +389,66 @@
     }
     .btn-add-exercise:active { opacity: .7; }
     .btn-add-ex-icon {
-      width: 28px; height: 28px;
+      width: 1.75rem; height: 1.75rem;
       border-radius: 50%;
       background: var(--blue);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 1.125rem;
       line-height: 1;
       flex-shrink: 0;
     }
 
-    /* ── Empty states ────────────────────────────────────── */
+    /* ── Empty states ─────────────────────────────────────── */
     .empty-state {
       text-align: center;
-      padding: 52px 24px 24px;
+      padding: 3.25rem 1.5rem 1.5rem;
       color: var(--tertiary);
-      font-size: 15px;
+      font-size: 0.9375rem;
       line-height: 1.5;
     }
-    .empty-state-emoji { font-size: 48px; display: block; margin-bottom: 14px; }
-    .empty-state-title {
-      font-size: 17px;
-      font-weight: 600;
-      color: var(--label);
-      margin-bottom: 6px;
-    }
+    .empty-state-emoji  { font-size: 3rem; display: block; margin-bottom: 0.875rem; }
+    .empty-state-title  { font-size: 1.0625rem; font-weight: 600; color: var(--label); margin-bottom: 0.375rem; }
 
-    /* ── Workout history cards ───────────────────────────── */
+    /* ── Workout history cards ────────────────────────────── */
     .workout-history-card {
       background: var(--card);
-      border-radius: 16px;
+      border-radius: var(--radius-card);
       box-shadow: var(--shadow);
-      margin: 0 16px 12px;
+      margin: 0 var(--gutter) 0.75rem;
       overflow: hidden;
     }
     .workout-history-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 16px 10px;
+      padding: 0.875rem 1rem 0.625rem;
       border-bottom: 0.5px solid var(--separator);
-      gap: 10px;
+      gap: 0.5rem;
     }
-    .workout-history-date { font-size: 15px; font-weight: 600; letter-spacing: -.2px; }
-    .workout-history-time { font-size: 13px; color: var(--tertiary); margin-top: 1px; }
-    .workout-history-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
+    /* flex:1 + min-width:0 — prevents date text from pushing meta off-screen at 320 px */
+    .workout-history-info { flex: 1; min-width: 0; }
+    .workout-history-date {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      letter-spacing: -.2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+    .workout-history-time { font-size: 0.8125rem; color: var(--tertiary); margin-top: 0.0625rem; }
+    .workout-history-meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
     .workout-history-dur {
-      font-size: 13px;
+      font-size: 0.8125rem;
       font-weight: 600;
       color: var(--blue);
       background: var(--dur-bg);
-      border-radius: 8px;
-      padding: 4px 10px;
+      border-radius: 0.5rem;
+      padding: 0.25rem 0.625rem;
       white-space: nowrap;
     }
-    /* small red trash icon button */
     .btn-delete-workout {
       background: none;
       border: none;
@@ -462,23 +457,23 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 30px; height: 30px;
+      width: 1.875rem; height: 1.875rem;
       border-radius: 50%;
       transition: background .12s, opacity .12s;
       flex-shrink: 0;
       padding: 0;
     }
-    .btn-delete-workout:hover   { background: var(--del-hover); }
-    .btn-delete-workout:active  { opacity: .6; }
+    .btn-delete-workout:hover  { background: var(--del-hover); }
+    .btn-delete-workout:active { opacity: .6; }
 
-    .workout-history-body { padding: 12px 16px 14px; }
+    .workout-history-body { padding: 0.75rem 1rem 0.875rem; }
     .workout-history-ex {
-      font-size: 13px;
+      font-size: 0.8125rem;
       color: var(--tertiary);
       display: flex;
       align-items: center;
-      gap: 6px;
-      margin-bottom: 3px;
+      gap: 0.375rem;
+      margin-bottom: 0.1875rem;
     }
     .workout-history-ex::before {
       content: '';
@@ -490,91 +485,79 @@
     }
     .workout-history-ex-name { color: var(--label); font-weight: 500; }
 
-    /* ── Bottom tab bar — always fixed to bottom ─────────── */
+    /* ── Bottom tab bar — always stuck to bottom of body ──── */
     .tab-bar {
       background: var(--glass-tab);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
       border-top: 0.5px solid var(--separator);
+      box-shadow: 0 -1px 0 var(--separator);
       display: flex;
-      padding: 8px 0 max(12px, env(safe-area-inset-bottom));
-      flex-shrink: 0;          /* never shrinks */
+      padding: 0.5rem 0 max(0.75rem, env(safe-area-inset-bottom));
+      flex-shrink: 0;   /* never compressed by scrolling content */
     }
     .tab-btn {
       flex: 1;
       background: none;
       border: none;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
-      padding: 4px 0;
+      gap: 0.1875rem;
+      padding: 0.25rem 0;
       color: var(--tertiary);
-      font-size: 10px;
+      font-size: 0.625rem;   /* 10px */
       font-weight: 500;
       letter-spacing: .2px;
       transition: color .15s;
       font-family: inherit;
+      /* ensure label never wraps */
+      white-space: nowrap;
     }
+    .tab-btn:focus { outline: none; }
     .tab-btn.active { color: var(--blue); }
-    .tab-btn svg { width: 25px; height: 25px; }
+    .tab-btn svg { width: 25px; height: 25px; flex-shrink: 0; }
 
-    /* ── Progress / Chart cards ──────────────────────────── */
+    /* ── Progress / Chart cards ───────────────────────────── */
     .chart-card {
       background: var(--card);
-      border-radius: 16px;
+      border-radius: var(--radius-card);
       box-shadow: var(--shadow);
-      margin: 0 16px 14px;
+      margin: 0 var(--gutter) 0.875rem;
       overflow: hidden;
     }
     .chart-card-header {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 8px;
-      padding: 16px 16px 0;
+      gap: 0.5rem;
+      padding: 1rem 1rem 0;
+      flex-wrap: wrap;   /* legend wraps on very narrow cards */
     }
-    .chart-card-title {
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: -.2px;
-      color: var(--label);
-    }
-    .chart-card-subtitle { font-size: 12px; color: var(--tertiary); margin-top: 2px; }
-    .chart-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: flex-end;
-      padding-top: 2px;
-    }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      color: var(--tertiary);
-      font-weight: 500;
-      white-space: nowrap;
-    }
-    .legend-swatch { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .chart-wrap { padding: 8px 0 0; }
-    canvas.chart-canvas { display: block; }
+    .chart-card-title    { font-size: 0.9375rem; font-weight: 600; letter-spacing: -.2px; color: var(--label); }
+    .chart-card-subtitle { font-size: 0.75rem; color: var(--tertiary); margin-top: 0.125rem; }
+    .chart-legend        { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; padding-top: 0.125rem; }
+    .legend-item         { display: flex; align-items: center; gap: 0.25rem; font-size: 0.6875rem; color: var(--tertiary); font-weight: 500; white-space: nowrap; }
+    .legend-swatch       { width: 0.5rem; height: 0.5rem; border-radius: 50%; flex-shrink: 0; }
+    .chart-wrap          { padding: 0.5rem 0 0; }
+    canvas.chart-canvas  { display: block; }
 
-    /* ── Toast ───────────────────────────────────────────── */
+    /* ── Toast ────────────────────────────────────────────── */
     .toast {
-      position: fixed;
-      bottom: 96px;
+      position: absolute;
+      bottom: 6rem;
       left: 50%;
-      transform: translateX(-50%) translateY(16px);
+      transform: translateX(-50%) translateY(1rem);
       background: rgba(28,28,30,.88);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       color: #fff;
-      border-radius: 22px;
-      padding: 11px 22px;
-      font-size: 14px;
+      border-radius: 1.375rem;
+      padding: 0.6875rem 1.375rem;
+      font-size: 0.875rem;
       font-weight: 500;
       opacity: 0;
       transition: opacity .22s, transform .22s;
@@ -583,9 +566,952 @@
       z-index: 999;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ══════════════════════════════════════════════════════
+       RESPONSIVE BREAKPOINTS
+    ══════════════════════════════════════════════════════ */
+
+    /* ── Large phone / phablet 430 – 639 px ─────────────── */
+    @media (min-width: 430px) and (max-width: 639px) {
+      body { max-width: 100%; }
+      :root {
+        --gutter:  clamp(1rem, 4vw, 1.25rem);
+        --nav-top: 3.5rem;
+      }
+    }
+
+    /* ── Tablet / large phone ≥ 640 px ───────────────────── */
+    @media (min-width: 640px) {
+      :root {
+        --gutter:      1.25rem;   /* 20px */
+        --nav-top:     3.75rem;   /* 60px */
+        --radius-card: 1.125rem;  /* 18px */
+      }
+
+      body { max-width: 560px; }
+
+      /* lock font sizes once we're past the narrow phone range */
+      .nav-bar-title { font-size: 2.125rem; }
+      #timer         { font-size: 2.75rem;  }
+      .btn-start     { font-size: 1.0625rem; }
+
+      /* slightly roomier set grid */
+      .sets-col-header,
+      .set-row { grid-template-columns: 2.5rem 1fr 1fr 3rem 2.25rem; }
+
+      .tab-btn { font-size: 0.6875rem; }
+    }
+
+    /* ── Desktop ≥ 1024 px — phone-in-browser frame ──────── */
+    @media (min-width: 1024px) {
+      /* outer shell — always dark so the "phone" pops */
+      html {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0A0A0A;
+        overflow: hidden;        /* prevent body overflow from propagating to viewport */
+      }
+
+      body {
+        max-width: 390px;
+        /* override inherited height:100% with phone-screen proportions */
+        height: min(844px, 92vh, 92dvh);
+        border-radius: 2.75rem;   /* 44px — like a real phone corner */
+        box-shadow:
+          0 0 0 0.5px rgba(255,255,255,.12),
+          0 30px 80px rgba(0,0,0,.55),
+          0  8px 24px rgba(0,0,0,.35);
+      }
+
+      :root {
+        --gutter:  1rem;     /* 16px — phone width is narrower again */
+        --nav-top: 2.75rem;  /* 44px — no status-bar offset needed   */
+      }
+
+      /* lock at 34px inside the fixed-width phone frame */
+      .nav-bar-title { font-size: 2.125rem; }
+      #timer         { font-size: 2.75rem;  }
+    }
+
+    /* ── Landscape on small phones (h < 500 px) ──────────── */
+    @media (max-height: 500px) and (orientation: landscape) {
+      :root { --nav-top: 1rem; }
+
+      .nav-bar-title { font-size: 1.625rem; }
+
+      .timer-block  { margin-top: 0.75rem; margin-bottom: 0.75rem; padding: 0.875rem 1rem; }
+      #timer        { font-size: 2rem; }
+
+      .section-header { padding-top: 0.75rem; padding-bottom: 0.375rem; }
+      .empty-state    { padding-top: 2rem; }
+      .empty-state-emoji { font-size: 2.25rem; }
+    }
+
+    /* ── Extra-narrow safety net ≤ 360 px ────────────────── */
+    @media (max-width: 360px) {
+      :root { --gutter: 0.75rem; }   /* 12px */
+
+      .nav-bar-title         { font-size: 1.75rem; }
+      .workout-history-date  { font-size: 0.875rem; }
+      .workout-history-dur   { font-size: 0.75rem; padding: 0.1875rem 0.5rem; }
+
+      /* tighter set grid at 320 px */
+      .sets-col-header,
+      .set-row { grid-template-columns: 1.75rem 1fr 1fr 2.5rem 1.75rem; gap: 0.25rem; }
+      .sets-table { padding-left: 0.75rem; padding-right: 0.75rem; }
+    }
+
+    /* ══════════════════════════════════════════════════════
+       EXERCISE PICKER SHEET
+    ══════════════════════════════════════════════════════ */
+    .ex-picker-overlay {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;          /* clip sheet handle that peeks below bottom edge */
+      background: transparent;
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      pointer-events: none;
+      transition: background .22s;
+    }
+    .ex-picker-overlay.open {
+      background: rgba(0,0,0,.42);
+      pointer-events: all;
+    }
+    .ex-picker-sheet {
+      width: 100%;
+      max-width: 430px;
+      background: var(--card);
+      border-radius: 1.25rem 1.25rem 0 0;
+      max-height: 82vh;
+      max-height: 82dvh;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform .28s cubic-bezier(.32,0,.67,0);
+      box-shadow: 0 -4px 32px rgba(0,0,0,.18);
+      will-change: transform;
+    }
+    .ex-picker-overlay.open .ex-picker-sheet {
+      transform: translateY(0);
+      transition: transform .3s cubic-bezier(.33,1,.68,1);
+    }
+    .ex-picker-handle {
+      width: 2.25rem; height: .25rem;
+      background: var(--separator);
+      border-radius: .125rem;
+      margin: .625rem auto 0;
+      flex-shrink: 0;
+    }
+    .ex-picker-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .75rem 1rem .5rem;
+      flex-shrink: 0;
+    }
+    .ex-picker-title {
+      font-size: 1.0625rem;
+      font-weight: 600;
+      letter-spacing: -.3px;
+    }
+    .ex-picker-cancel {
+      background: none;
+      border: none;
+      color: var(--blue);
+      font-size: .9375rem;
+      font-weight: 400;
+      font-family: inherit;
+      cursor: pointer;
+      padding: .25rem;
+    }
+    .ex-picker-search-wrap {
+      padding: 0 1rem .625rem;
+      flex-shrink: 0;
+    }
+    .ex-picker-search {
+      width: 100%;
+      background: var(--fill);
+      border: none;
+      border-radius: .625rem;
+      padding: .5rem .75rem;
+      font-size: .9375rem;
+      font-family: inherit;
+      color: var(--label);
+      outline: none;
+    }
+    .ex-picker-search::placeholder { color: var(--tertiary); }
+    .ex-picker-list {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: max(.75rem, env(safe-area-inset-bottom));
+    }
+    .ex-cat-label {
+      font-size: .75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--tertiary);
+      padding: .875rem 1rem .25rem;
+    }
+    .ex-item {
+      display: flex;
+      align-items: center;
+      border-top: .5px solid var(--separator);
+      margin: 0 1rem;
+    }
+    .ex-item-btn {
+      flex: 1;
+      min-width: 0;
+      background: none;
+      border: none;
+      text-align: left;
+      font-size: .9375rem;
+      font-family: inherit;
+      color: var(--label);
+      padding: .75rem 0;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ex-item-del {
+      background: none;
+      border: none;
+      color: var(--tertiary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem; height: 1.75rem;
+      border-radius: 50%;
+      transition: color .1s, background .1s;
+      flex-shrink: 0;
+    }
+    .ex-item-del:hover { color: var(--red); background: var(--del-hover); }
+    .ex-add-custom-row {
+      display: flex;
+      align-items: center;
+      border-top: .5px solid var(--separator);
+      margin: 0 1rem;
+    }
+    .ex-add-custom-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      text-align: left;
+      font-size: .9375rem;
+      font-family: inherit;
+      color: var(--blue);
+      padding: .75rem 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: .375rem;
+    }
+    .ex-add-input-row {
+      display: flex;
+      align-items: center;
+      border-top: .5px solid var(--separator);
+      padding: .5rem 0;
+      margin: 0 1rem;
+      gap: .5rem;
+    }
+    .ex-add-input {
+      flex: 1;
+      min-width: 0;
+      background: var(--fill);
+      border: none;
+      border-radius: .5625rem;
+      padding: .5rem .625rem;
+      font-size: .9375rem;
+      font-family: inherit;
+      color: var(--label);
+      outline: none;
+      transition: background .12s;
+    }
+    .ex-add-input:focus { background: var(--fill-focus); }
+    .ex-add-confirm {
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: .5rem;
+      padding: .4375rem .75rem;
+      font-size: .875rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .ex-no-results {
+      text-align: center;
+      padding: 2rem 1.5rem;
+      color: var(--tertiary);
+    }
+    .ex-no-results p { font-size: .9375rem; line-height: 1.4; margin-bottom: .375rem; }
+    .ex-no-results-cats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      justify-content: center;
+      margin-top: .875rem;
+    }
+    .ex-no-results-cat-btn {
+      background: var(--fill);
+      border: none;
+      border-radius: .625rem;
+      padding: .4375rem .875rem;
+      font-size: .875rem;
+      font-weight: 500;
+      font-family: inherit;
+      color: var(--blue);
+      cursor: pointer;
+      transition: opacity .12s;
+    }
+    .ex-no-results-cat-btn:active { opacity: .7; }
+
+    /* ── Library tab segment control ────────────────────────── */
+    .lib-seg-wrap {
+      padding: 0 var(--gutter) 0.875rem;
+      flex-shrink: 0;
+    }
+    .lib-seg {
+      display: flex;
+      background: var(--fill);
+      border-radius: 0.625rem;
+      padding: 0.1875rem;
+    }
+    .lib-seg-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.4375rem 0.5rem;
+      font-size: 0.875rem;
+      font-family: inherit;
+      font-weight: 500;
+      color: var(--tertiary);
+      cursor: pointer;
+      transition: background .15s, color .15s, box-shadow .15s;
+      white-space: nowrap;
+    }
+    .lib-seg-btn.active {
+      background: var(--card);
+      color: var(--label);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+    }
+
+    /* ── Exercises screen ─────────────────────────────────── */
+    .ex-screen-card {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      margin: 0 var(--gutter) 0.75rem;
+      overflow: hidden;
+    }
+    .ex-screen-cat-head {
+      padding: 0.875rem 1rem 0.625rem;
+      border-bottom: 0.5px solid var(--separator);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      letter-spacing: -.2px;
+    }
+    .ex-screen-item {
+      display: flex;
+      align-items: center;
+      padding: 0 1rem;
+      border-top: 0.5px solid var(--separator);
+    }
+    .ex-screen-item-name {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.9375rem;
+      padding: 0.6875rem 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    /* tappable name button (opens detail view) */
+    .ex-screen-item-btn {
+      flex: 1;
+      min-width: 0;
+      background: none;
+      border: none;
+      text-align: left;
+      font-size: 0.9375rem;
+      font-family: inherit;
+      color: var(--label);
+      padding: 0.6875rem 0.5rem 0.6875rem 0;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ex-screen-item-btn:active { opacity: .65; }
+
+    /* ── Exercise detail view ─────────────────────────────── */
+    .detail-back {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: calc(var(--nav-top) + env(safe-area-inset-top, 0px)) var(--gutter) 0;
+      color: var(--blue);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .detail-hero {
+      padding: 0.5rem var(--gutter) 1rem;
+    }
+    .detail-name {
+      font-size: clamp(1.5rem, 7vw, 1.875rem);
+      font-weight: 700;
+      letter-spacing: -.4px;
+      line-height: 1.1;
+      color: var(--label);
+    }
+    .detail-meta {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .detail-cat-tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--tertiary);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .detail-card {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      margin: 0 var(--gutter) 0.875rem;
+      padding: 0 1rem;
+      overflow: hidden;
+    }
+    .detail-card-title {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .65px;
+      color: var(--tertiary);
+      padding: 0.875rem 0 0.5rem;
+      border-bottom: 0.5px solid var(--separator);
+    }
+    .detail-step {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.6875rem 0;
+      border-top: 0.5px solid var(--separator);
+      font-size: 0.9375rem;
+      line-height: 1.45;
+      color: var(--label);
+    }
+    .detail-step-num {
+      flex-shrink: 0;
+      width: 1.375rem;
+      height: 1.375rem;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.175rem;
+    }
+    .detail-cue {
+      display: flex;
+      gap: 0.625rem;
+      padding: 0.6875rem 0;
+      border-top: 0.5px solid var(--separator);
+      font-size: 0.9375rem;
+      line-height: 1.45;
+      color: var(--label);
+    }
+    .detail-cue-dot {
+      flex-shrink: 0;
+      color: var(--green);
+      font-weight: 700;
+      font-size: 1rem;
+      line-height: 1.55;
+    }
+    .ex-screen-add-row {
+      display: flex;
+      align-items: center;
+      padding: 0 1rem;
+      border-top: 0.5px solid var(--separator);
+    }
+    .ex-screen-add-input-row {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      border-top: 0.5px solid var(--separator);
+      gap: 0.5rem;
+    }
+
+    /* ── 4-tab narrow safety net ──────────────────────────── */
+    @media (max-width: 360px) {
+      .tab-btn { font-size: 0.5625rem; }
+      .tab-btn svg { width: 22px; height: 22px; }
+    }
+
+    /* ── Bodyweight card (home screen) ────────────────────── */
+    .bw-card {
+      display: flex;
+      align-items: center;
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin: 0.75rem var(--gutter) 0;
+      padding: 0.75rem 1rem;
+      gap: 0.75rem;
+    }
+    .bw-card-label { flex: 1; font-size: 0.9375rem; font-weight: 500; }
+    .bw-card-right { display: flex; align-items: center; gap: 0.375rem; }
+    .bw-card-unit  { font-size: 0.875rem; color: var(--tertiary); }
+    .bw-card-input {
+      width: 4.5rem;
+      background: var(--fill);
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.3125rem 0.5rem;
+      font-size: 0.9375rem;
+      font-family: inherit;
+      text-align: center;
+      color: var(--label);
+      outline: none;
+      transition: background .12s;
+    }
+    .bw-card-input:focus { background: var(--fill-focus); }
+
+    /* ── Intensity display (exercise card) ────────────────── */
+    .set-intensity-badge {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--blue);
+      text-align: right;
+      white-space: nowrap;
+      opacity: 0.85;
+      line-height: 1;
+    }
+
+    .ex-intensity-total {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--blue);
+      text-align: right;
+      padding: 0.25rem 0.5rem 0;
+      min-height: 1.125rem;
+    }
+
+    /* ── Difficulty badge (exercises screen) ──────────────── */
+    .diff-badge {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: #fff;
+      border-radius: 0.375rem;
+      padding: 0.125rem 0.4375rem;
+      margin-left: 0.5rem;
+      flex-shrink: 0;
+      letter-spacing: .2px;
+    }
+
+    /* ── Chart section divider ────────────────────────────── */
+    .chart-section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--tertiary);
+      padding: 0.375rem 1rem 0.125rem;
+      border-top: 0.5px solid var(--separator);
+      letter-spacing: .3px;
+    }
+
+    /* ════════════════════════════════════════════════════════
+       CUSTOM EXERCISE WIZARD
+    ════════════════════════════════════════════════════════ */
+    .wizard-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      pointer-events: none;
+      transition: background .2s;
+    }
+    .wizard-overlay.open {
+      background: rgba(0,0,0,.52);
+      pointer-events: all;
+    }
+    .wizard-card {
+      background: var(--card);
+      border-radius: 1.25rem;
+      width: 100%;
+      max-width: 340px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 40px rgba(0,0,0,.35);
+      transform: scale(.95) translateY(10px);
+      opacity: 0;
+      visibility: hidden;
+      transition: transform .22s cubic-bezier(.33,1,.68,1), opacity .18s, visibility 0s .22s;
+    }
+    .wizard-overlay.open .wizard-card {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+      visibility: visible;
+      transition: transform .22s cubic-bezier(.33,1,.68,1), opacity .18s, visibility 0s;
+    }
+    .wizard-ex-name {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--blue);
+      margin-bottom: 0.125rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .wizard-step-q {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      letter-spacing: -.3px;
+      margin-bottom: 1rem;
+    }
+    .wizard-step-hint {
+      font-size: 0.75rem;
+      color: var(--tertiary);
+      margin-bottom: 0.875rem;
+      line-height: 1.4;
+    }
+    .wizard-choices { display: flex; flex-direction: column; gap: 0.5rem; }
+    .wizard-choice {
+      background: var(--fill);
+      border: 1.5px solid transparent;
+      border-radius: 0.875rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.9375rem;
+      font-family: inherit;
+      font-weight: 500;
+      color: var(--label);
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .12s, background .12s;
+      line-height: 1.35;
+    }
+    .wizard-choice:hover { border-color: var(--blue); background: var(--fill-focus); }
+    .wizard-choice small { display: block; font-size: 0.75rem; color: var(--tertiary); font-weight: 400; }
+    .wizard-diff-center {
+      text-align: center;
+      padding: 0.5rem 0 0.75rem;
+    }
+    .wizard-diff-num {
+      font-size: 3rem;
+      font-weight: 200;
+      line-height: 1;
+      color: var(--label);
+    }
+    .wizard-diff-num sup { font-size: 1.25rem; color: var(--tertiary); }
+    .wizard-diff-track {
+      height: 0.5rem;
+      background: var(--fill);
+      border-radius: 0.25rem;
+      margin: 0.75rem 0 0.375rem;
+      overflow: hidden;
+    }
+    .wizard-diff-fill { height: 100%; border-radius: 0.25rem; transition: width .3s; }
+    .wizard-diff-tier {
+      font-size: 0.8125rem;
+      color: var(--tertiary);
+    }
+    .wizard-footer {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+    }
+    .wizard-btn-back {
+      flex: 1;
+      background: var(--fill);
+      border: none;
+      border-radius: 0.875rem;
+      padding: 0.75rem;
+      font-size: 0.9375rem;
+      font-family: inherit;
+      font-weight: 500;
+      color: var(--secondary);
+      cursor: pointer;
+    }
+    .wizard-btn-confirm {
+      flex: 2;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 0.875rem;
+      padding: 0.75rem;
+      font-size: 0.9375rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ── Splash screen ────────────────────────────────────── */
+    #splash {
+      position: absolute;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      opacity: 1;
+      transition: opacity .45s ease;
+    }
+    #splash.fade-out { opacity: 0; pointer-events: none; }
+    .splash-content {
+      text-align: center;
+      padding: 2.75rem 3rem;
+      background: var(--glass-tab);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-radius: 1.75rem;
+      border: 0.5px solid rgba(255,255,255,.22);
+      box-shadow: 0 12px 48px rgba(0,0,0,.14), inset 0 1.5px 0 rgba(255,255,255,.5);
+      min-width: 200px;
+    }
+    .splash-icon  { font-size: 3.75rem; line-height: 1; margin-bottom: 0.875rem; }
+    .splash-app-name {
+      font-size: 1.625rem;
+      font-weight: 700;
+      letter-spacing: -.5px;
+      color: var(--label);
+      line-height: 1.1;
+    }
+    .splash-tagline {
+      font-size: 0.875rem;
+      color: var(--tertiary);
+      margin-top: 0.375rem;
+      letter-spacing: .1px;
+    }
+
+    /* ── Plan banner (workout screen) ────────────────────── */
+    .plan-banner {
+      background: var(--dur-bg);
+      color: var(--blue);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      padding: 0.375rem var(--gutter);
+      letter-spacing: -.1px;
+      flex-shrink: 0;
+    }
+
+    /* ── Next Exercise button (workout screen) ────────────── */
+    .btn-next-ex {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 var(--gutter) 0.75rem;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      padding: 0.875rem 1.25rem;
+      width: calc(100% - 2 * var(--gutter));
+      font-size: 0.9375rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .12s;
+      box-shadow: 0 4px 14px rgba(50,200,100,.32), inset 0 1.5px 0 rgba(255,255,255,.28);
+      letter-spacing: -.2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .btn-next-ex:active { opacity: .82; }
+
+    /* ── Plans overlay (sheet, reuses ex-picker styling) ──── */
+    .plan-item {
+      display: flex;
+      align-items: center;
+      border-top: 0.5px solid var(--separator);
+      margin: 0 1rem;
+    }
+    .plan-item-main {
+      flex: 1;
+      min-width: 0;
+      background: none;
+      border: none;
+      text-align: left;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 0.875rem 0;
+    }
+    .plan-item-name {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--label);
+      letter-spacing: -.2px;
+    }
+    .plan-item-subs {
+      font-size: 0.75rem;
+      color: var(--tertiary);
+      margin-top: 0.125rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .plan-item-del {
+      background: none;
+      border: none;
+      color: var(--tertiary);
+      cursor: pointer;
+      padding: 0.375rem;
+      display: flex;
+      align-items: center;
+      border-radius: 0.375rem;
+      transition: color .1s, background .1s;
+      flex-shrink: 0;
+    }
+    .plan-item-del:hover { color: var(--red); background: var(--del-hover); }
+    .btn-plan-create {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      margin: 0 1rem;
+      background: none;
+      border: none;
+      border-top: 0.5px solid var(--separator);
+      font-size: 0.9375rem;
+      font-family: inherit;
+      color: var(--blue);
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0.875rem 0;
+      width: calc(100% - 2rem);
+    }
+    .plan-editor { padding: 0.75rem 1rem 1.5rem; }
+    .plan-editor-name {
+      width: 100%;
+      background: var(--fill);
+      border: none;
+      border-radius: 0.625rem;
+      padding: 0.625rem 0.75rem;
+      font-size: 0.9375rem;
+      font-family: inherit;
+      color: var(--label);
+      outline: none;
+      margin-bottom: 0.75rem;
+      transition: background .12s;
+    }
+    .plan-editor-name:focus { background: var(--fill-focus); }
+    .plan-editor-name::placeholder { color: var(--tertiary); }
+    .plan-ex-list { margin-bottom: 0.25rem; }
+    .plan-ex-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0;
+      border-top: 0.5px solid var(--separator);
+    }
+    .plan-ex-num {
+      width: 1.375rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--tertiary);
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .plan-ex-name-lbl {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.9375rem;
+      color: var(--label);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .plan-ex-del {
+      background: none;
+      border: none;
+      color: var(--tertiary);
+      cursor: pointer;
+      font-size: 1.125rem;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      width: 1.75rem; height: 1.75rem;
+      transition: color .1s, background .1s;
+      flex-shrink: 0;
+    }
+    .plan-ex-del:hover { color: var(--red); background: var(--del-hover); }
+    .btn-plan-add-ex {
+      background: none;
+      border: none;
+      border-top: 0.5px solid var(--separator);
+      font-size: 0.9375rem;
+      font-family: inherit;
+      color: var(--blue);
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0.75rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      width: 100%;
+      margin-top: 0.125rem;
+    }
+    .plan-editor-footer {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    /* ── Summary highlights ───────────────────────────────── */
+    #highlights-section { display: none; }
+    .highlight-card {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      margin: 0 var(--gutter) 0.5rem;
+      padding: 0.875rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+    }
+    .highlight-icon  { font-size: 1.625rem; flex-shrink: 0; line-height: 1; }
+    .highlight-title { font-size: 0.9375rem; font-weight: 600; letter-spacing: -.2px; line-height: 1.2; }
+    .highlight-body  { font-size: 0.8125rem; color: var(--tertiary); margin-top: 0.125rem; line-height: 1.35; }
   </style>
 </head>
 <body>
+
+<!-- ═══════════════ SPLASH SCREEN ═══════════════ -->
+<div id="splash">
+  <div class="splash-content">
+    <div class="splash-icon">🏋️</div>
+    <div class="splash-app-name">Workout Logger</div>
+    <div class="splash-tagline">Track every rep, own every session</div>
+  </div>
+</div>
 
 <!-- ═══════════════ HOME SCREEN ═══════════════ -->
 <div id="home-screen" class="screen active">
@@ -594,6 +1520,19 @@
       <div class="nav-bar-title">Summary</div>
     </div>
     <button class="btn-start" onclick="startWorkout()">Start Workout</button>
+    <div class="bw-card">
+      <span class="bw-card-label">Your bodyweight</span>
+      <div class="bw-card-right">
+        <input type="number" id="bw-input" class="bw-card-input"
+          min="30" max="300" step="0.5" inputmode="decimal" placeholder="75"
+          onchange="setUserBW(this.value)" />
+        <span class="bw-card-unit">kg</span>
+      </div>
+    </div>
+    <div id="highlights-section">
+      <div class="section-header">Highlights</div>
+      <div id="highlights-list"></div>
+    </div>
     <div class="section-header">Recent Activity</div>
     <div id="recent-list">
       <div class="empty-state">
@@ -602,7 +1541,7 @@
         Tap Start Workout to log your first session.
       </div>
     </div>
-    <div style="height:24px"></div>
+    <div style="height:1.5rem"></div>
   </div>
 </div>
 
@@ -612,6 +1551,7 @@
     <h1>Active Workout</h1>
     <button class="btn-finish" onclick="finishWorkout()">Finish</button>
   </div>
+  <div id="plan-banner" class="plan-banner" style="display:none"></div>
   <div class="scroll-area">
     <div class="timer-block">
       <div>
@@ -622,6 +1562,7 @@
     </div>
     <div class="section-header">Exercises</div>
     <div id="exercise-list"></div>
+    <button id="btn-next-ex" class="btn-next-ex" style="display:none" onclick="planNextExercise()"></button>
     <button class="btn-add-exercise" onclick="addExercise()">
       <div class="btn-add-ex-icon">+</div>
       Add Exercise
@@ -643,7 +1584,7 @@
         Completed workouts will appear here.
       </div>
     </div>
-    <div style="height:24px"></div>
+    <div style="height:1.5rem"></div>
   </div>
 </div>
 
@@ -655,7 +1596,34 @@
     </div>
     <div class="section-header">Exercise Trends</div>
     <div id="progress-charts"></div>
-    <div style="height:24px"></div>
+    <div style="height:1.5rem"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ LIBRARY SCREEN ═══════════════ -->
+<div id="exercises-screen" class="screen">
+  <div class="scroll-area">
+    <div class="nav-bar">
+      <div class="nav-bar-title">Library</div>
+    </div>
+    <div class="lib-seg-wrap">
+      <div class="lib-seg">
+        <button class="lib-seg-btn active" id="lib-seg-exercises" onclick="showLibSeg('exercises')">Exercises</button>
+        <button class="lib-seg-btn"        id="lib-seg-plans"     onclick="showLibSeg('plans')">Plans</button>
+      </div>
+    </div>
+    <!-- Exercises sub-view -->
+    <div id="lib-exercises-content">
+      <div class="section-header">Exercise Library</div>
+      <div id="ex-screen-list"></div>
+    </div>
+    <!-- Plans sub-view -->
+    <div id="lib-plans-content" style="display:none">
+      <div id="lib-plans-inner"></div>
+    </div>
+    <!-- Exercise detail view -->
+    <div id="lib-detail-content" style="display:none"></div>
+    <div style="height:1.5rem"></div>
   </div>
 </div>
 
@@ -684,6 +1652,46 @@
     </svg>
     History
   </button>
+  <button class="tab-btn" id="tab-exercises" onclick="showTab('exercises')">
+    <svg viewBox="0 0 25 25" fill="currentColor">
+      <circle cx="4.5" cy="12.5" r="3.5"/>
+      <circle cx="20.5" cy="12.5" r="3.5"/>
+      <rect x="7.5" y="11.25" width="10" height="2.5" rx="1.25"/>
+    </svg>
+    Library
+  </button>
+</div>
+
+<!-- ═══════════════ EXERCISE WIZARD ═══════════════ -->
+<div id="ex-wizard" class="wizard-overlay">
+  <div class="wizard-card">
+    <div id="wizard-content"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ EXERCISE PICKER ═══════════════ -->
+<div id="exercise-picker" class="ex-picker-overlay" onclick="handlePickerBgClick(event)">
+  <div class="ex-picker-sheet">
+    <div class="ex-picker-handle"></div>
+    <div class="ex-picker-top">
+      <span class="ex-picker-title">Add Exercise</span>
+      <button class="ex-picker-cancel" onclick="closeExPicker()">Cancel</button>
+    </div>
+    <div class="ex-picker-search-wrap">
+      <input type="search" id="ex-search" class="ex-picker-search"
+        placeholder="Search exercises…"
+        autocomplete="off" autocorrect="off" spellcheck="false"
+        oninput="renderExList(this.value)" />
+    </div>
+    <div class="ex-picker-list" id="ex-picker-list"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ START CHOICE ═══════════════ -->
+<div id="start-choice" class="wizard-overlay">
+  <div class="wizard-card">
+    <div id="start-choice-content"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -691,9 +1699,321 @@
 <script>
   /* ── State ──────────────────────────────────────────────── */
   let workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
-  let timerInterval = null;
-  let timerSeconds  = 0;
-  let exerciseCount = 0;
+  let plans    = JSON.parse(localStorage.getItem('plans')    || '[]');
+  let activePlanData = null;   /* { planName, exercises[], nextIndex } when plan workout running */
+  let timerInterval  = null;
+  let timerSeconds   = 0;
+  let exerciseCount  = 0;
+
+  /* ── Exercise library ───────────────────────────────────── */
+  const DEFAULT_EX_LIB = {
+    Push: ['Push-ups','Dips','Pike push-ups','Handstand push-ups','Diamond push-ups',
+           'Archer push-ups','Pseudo planche push-ups','One arm push-up',
+           'Frog stand','Tuck planche','Advanced tuck planche','Straddle planche','Full planche',
+           'Wall handstand','Freestanding handstand'],
+    Pull: ['Pull-ups','Chin-ups','Rows','Muscle-ups','Australian rows',
+           'Archer pull-ups','One arm pull-up','Commando pull-ups',
+           'Tuck front lever','Advanced tuck front lever','Straddle front lever','Full front lever',
+           'Tuck back lever','Straddle back lever','Full back lever'],
+    Core: ['Planks','Leg raises','Sit-ups','Hollow holds','Dragon flag',
+           'L-sit','V-sit','Tuck L-sit','Hollow body rock','Dead bug',
+           'Ab wheel rollouts','Hanging knee raises','Toes to bar','Human flag'],
+    Legs: ['Squats','Lunges','Pistol squats','Calf raises','Shrimp squats',
+           'Sissy squats','Nordic curls','Bulgarian split squats',
+           'Step-ups','Box jumps','Glute bridges','Single leg deadlift'],
+    'Weighted/Gym': [
+      'Bench press','Back squat','Deadlift','Overhead press','Barbell row',
+      'Lat pulldown','Leg press','Romanian deadlift','Incline bench press',
+      'Decline bench press','Dumbbell bench press','Dumbbell row',
+      'Push press','Front squat','Goblet squat','Bulgarian split squat',
+      'Hip thrust','Cable row','Chest-supported row','T-bar row',
+      "Farmer's carry",'Sumo deadlift','Hack squat','Pendlay row','Seal row',
+      'Bicep curls','Tricep pushdowns','Lateral raises','Front raises',
+      'Rear delt fly','Face pulls','Skull crushers','Hammer curls','Preacher curls',
+      'Leg extensions','Leg curls','Calf raises (machine)','Cable lateral raise',
+      'Cable bicep curl','Tricep kickbacks','Dumbbell chest fly','Pec deck',
+      'Cable fly','Concentration curls','Overhead tricep extension',
+      'Reverse fly','Upright row','Shrugs','Good mornings','Cable crunch',
+    ],
+  };
+  const EX_CATS = ['Push','Pull','Core','Legs','Weighted/Gym'];
+
+  /* difficulty + type for all built-in exercises */
+  const EXERCISE_META = {
+    /* Push — bodyweight */
+    'Push-ups':{type:'bw',diff:2},'Dips':{type:'bw',diff:4},
+    'Pike push-ups':{type:'bw',diff:3},'Handstand push-ups':{type:'bw',diff:8},
+    'Diamond push-ups':{type:'bw',diff:4},'Archer push-ups':{type:'bw',diff:5},
+    'Pseudo planche push-ups':{type:'bw',diff:5},'One arm push-up':{type:'bw',diff:7},
+    'Frog stand':{type:'bw',diff:3,tb:1},'Tuck planche':{type:'bw',diff:5,tb:1},
+    'Advanced tuck planche':{type:'bw',diff:6,tb:1},'Straddle planche':{type:'bw',diff:8,tb:1},
+    'Full planche':{type:'bw',diff:10,tb:1},'Wall handstand':{type:'bw',diff:4,tb:1},
+    'Freestanding handstand':{type:'bw',diff:7,tb:1},
+    /* Pull — bodyweight */
+    'Pull-ups':{type:'bw',diff:5},'Chin-ups':{type:'bw',diff:4},
+    'Rows':{type:'bw',diff:3},'Muscle-ups':{type:'bw',diff:8},
+    'Australian rows':{type:'bw',diff:2},'Archer pull-ups':{type:'bw',diff:7},
+    'One arm pull-up':{type:'bw',diff:9},'Commando pull-ups':{type:'bw',diff:6},
+    'Tuck front lever':{type:'bw',diff:5,tb:1},'Advanced tuck front lever':{type:'bw',diff:6,tb:1},
+    'Straddle front lever':{type:'bw',diff:8,tb:1},'Full front lever':{type:'bw',diff:9,tb:1},
+    'Tuck back lever':{type:'bw',diff:5,tb:1},'Straddle back lever':{type:'bw',diff:7,tb:1},
+    'Full back lever':{type:'bw',diff:8,tb:1},
+    /* Core — bodyweight */
+    'Planks':{type:'bw',diff:2,tb:1},'Leg raises':{type:'bw',diff:3},
+    'Sit-ups':{type:'bw',diff:2},'Hollow holds':{type:'bw',diff:3,tb:1},
+    'Dragon flag':{type:'bw',diff:7},'L-sit':{type:'bw',diff:5,tb:1},
+    'V-sit':{type:'bw',diff:7,tb:1},'Tuck L-sit':{type:'bw',diff:4,tb:1},
+    'Hollow body rock':{type:'bw',diff:3},'Dead bug':{type:'bw',diff:2},
+    'Ab wheel rollouts':{type:'bw',diff:5},'Hanging knee raises':{type:'bw',diff:3},
+    'Toes to bar':{type:'bw',diff:5},'Human flag':{type:'bw',diff:9,tb:1},
+    /* Legs — bodyweight */
+    'Squats':{type:'bw',diff:2},'Lunges':{type:'bw',diff:2},
+    'Pistol squats':{type:'bw',diff:6},'Calf raises':{type:'bw',diff:1},
+    'Shrimp squats':{type:'bw',diff:7},'Sissy squats':{type:'bw',diff:5},
+    'Nordic curls':{type:'bw',diff:7},'Bulgarian split squats':{type:'bw',diff:4},
+    'Step-ups':{type:'bw',diff:2},'Box jumps':{type:'bw',diff:3},
+    'Glute bridges':{type:'bw',diff:2},'Single leg deadlift':{type:'bw',diff:4},
+    /* Weighted/Gym — compounds */
+    'Bench press':{type:'w',diff:5},'Back squat':{type:'w',diff:6},
+    'Deadlift':{type:'w',diff:6},'Overhead press':{type:'w',diff:5},
+    'Barbell row':{type:'w',diff:5},'Lat pulldown':{type:'w',diff:4},
+    'Leg press':{type:'w',diff:4},'Romanian deadlift':{type:'w',diff:5},
+    'Incline bench press':{type:'w',diff:5},'Decline bench press':{type:'w',diff:4},
+    'Dumbbell bench press':{type:'w',diff:4},'Dumbbell row':{type:'w',diff:4},
+    'Push press':{type:'w',diff:6},'Front squat':{type:'w',diff:7},
+    'Goblet squat':{type:'w',diff:3},'Bulgarian split squat':{type:'w',diff:4},
+    'Hip thrust':{type:'w',diff:3},'Cable row':{type:'w',diff:3},
+    'Chest-supported row':{type:'w',diff:3},'T-bar row':{type:'w',diff:5},
+    "Farmer's carry":{type:'w',diff:4},'Sumo deadlift':{type:'w',diff:5},
+    'Hack squat':{type:'w',diff:4},'Pendlay row':{type:'w',diff:5},
+    'Seal row':{type:'w',diff:4},
+    /* Weighted/Gym — isolations */
+    'Bicep curls':{type:'w',diff:2},'Tricep pushdowns':{type:'w',diff:2},
+    'Lateral raises':{type:'w',diff:2},'Front raises':{type:'w',diff:2},
+    'Rear delt fly':{type:'w',diff:2},'Face pulls':{type:'w',diff:2},
+    'Skull crushers':{type:'w',diff:3},'Hammer curls':{type:'w',diff:2},
+    'Preacher curls':{type:'w',diff:2},'Leg extensions':{type:'w',diff:2},
+    'Leg curls':{type:'w',diff:2},'Calf raises (machine)':{type:'w',diff:1},
+    'Cable lateral raise':{type:'w',diff:2},'Cable bicep curl':{type:'w',diff:2},
+    'Tricep kickbacks':{type:'w',diff:2},'Dumbbell chest fly':{type:'w',diff:2},
+    'Pec deck':{type:'w',diff:2},'Cable fly':{type:'w',diff:2},
+    'Concentration curls':{type:'w',diff:2},'Overhead tricep extension':{type:'w',diff:2},
+    'Reverse fly':{type:'w',diff:2},'Upright row':{type:'w',diff:3},
+    'Shrugs':{type:'w',diff:2},'Good mornings':{type:'w',diff:4},
+    'Cable crunch':{type:'w',diff:2},
+  };
+
+  /* qs() — single-quote a string for safe use inside double-quoted HTML onclick attrs */
+  const qs = s => "'" + String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+
+  function getCustomMeta() { return JSON.parse(localStorage.getItem('customExMeta') || '{}'); }
+  function setCustomMeta(m) { localStorage.setItem('customExMeta', JSON.stringify(m)); }
+  function getExMeta(name) {
+    return EXERCISE_META[name] || getCustomMeta()[name] || { type: 'bw', diff: 3 };
+  }
+  /* ── Exercise detail content ────────────────────────────── */
+  const EXERCISE_DETAIL = {
+    /* ── Push ── */
+    'Push-ups':{how:['Place hands slightly wider than shoulder-width, body in a straight plank.','Lower chest to within an inch of the floor, elbows at roughly 45° from your torso.','Press back to full arm extension, maintaining a rigid body line throughout.'],cues:['Core tight the whole time — hips must not sag or pike up.','Elbows at ~45° from the torso, never flared wide.','Full range: chest near the floor at the bottom, arms fully locked at the top.']},
+    'Dips':{how:['Grip parallel bars with arms straight, body upright or slightly forward-leaning.','Lower by bending elbows until upper arms reach parallel with the floor.','Press back to full lockout, squeezing the triceps at the top.'],cues:['Lean forward to bias the chest; stay more upright to hit triceps harder.','Keep shoulders packed down — don\'t let them shrug up during the movement.','Control the descent; avoid bouncing at the bottom.']},
+    'Pike push-ups':{how:['Start in a downward-dog (inverted V): hips high, arms and legs straight.','Bend elbows to lower the crown of your head toward the floor between your hands.','Press back to full arm extension, keeping hips elevated throughout.'],cues:['Higher hips = more shoulder load. Push hips as high as possible.','Elbows track out to the sides, not forward.','Build toward this as a direct progression for handstand push-ups.']},
+    'Handstand push-ups':{how:['Kick up to a wall handstand, hands 6–8 inches from the wall, shoulder-width apart.','Slowly lower by bending elbows until the crown of your head touches the floor.','Press explosively back to lockout, maintaining full-body tension throughout.'],cues:['Squeeze core and glutes — avoid excessive arch in the lower back.','Spread fingers and distribute weight through all fingertips, not just the heel of the hand.','Wrists, elbows, and shoulders should stack vertically at full lockout.']},
+    'Diamond push-ups':{how:['Form a diamond with thumbs and index fingers, place hands under your sternum.','Lower chest to your hands with elbows tracking tight to your sides.','Press back to full lockout, squeezing the triceps hard at the top.'],cues:['Elbows must stay close to the body — that\'s what makes it tricep-focused.','Keep hips level; narrower hand position makes balance harder.','Don\'t let wrists bend excessively — adjust hand angle if needed.']},
+    'Archer push-ups':{how:['Set up wide with arms straight, one hand\'s fingers pointing outward.','Shift your weight toward one hand while bending that elbow, keeping the opposite arm fully straight.','Press back to center and alternate sides.'],cues:['The straight arm stays fully extended throughout its side — no bend.','Lower as deep as possible: aim for shoulder-height on the active elbow.','A key progression toward the one-arm push-up.']},
+    'Pseudo planche push-ups':{how:['Place hands beside your hips with fingers pointing back, lean torso forward so shoulders are ahead of wrists.','Lower slowly by bending elbows, maintaining the forward lean throughout.','Press back up, keeping the same torso-over-hands angle.'],cues:['More forward lean = harder. Begin with 30–45° and progress from there.','Protract (spread) shoulder blades throughout the movement.','Essential conditioning for wrists and shoulders before planche training.']},
+    'One arm push-up':{how:['Set up in push-up position, move one hand to center under your chest.','Place the other hand behind your back or along your thigh.','Lower your chest toward the floor while resisting rotation, then press back up.'],cues:['Actively brace against hip and shoulder rotation — body stays square.','Keep feet wider than usual for better lateral stability.','Archer push-ups are the direct prerequisite — master those first.']},
+    'Frog stand':{how:['Squat down and place both hands flat on the floor, shoulder-width apart.','Place your knees on the backs of your upper arms near the armpits.','Lean forward slowly, shift weight into hands, and lift feet off the floor. Hold.'],cues:['Spread fingers wide and grip the floor actively for stability.','Start with toes lightly touching the floor, then lift them as balance improves.','The entry-level balance hold and foundation for all planche progressions.']},
+    'Tuck planche':{how:['From a support position on bars or the floor, lean torso forward over your hands.','Protract shoulder blades strongly (push them forward and apart).','Lift hips with knees drawn tightly to your chest until body is parallel to the floor. Hold.'],cues:['Scapular protraction is essential — round the upper back and push through the shoulders.','Hips level with shoulders. If hips drop, you\'ve lost the planche position.','Engage everything simultaneously: core, glutes, quads, and shoulders.']},
+    'Advanced tuck planche':{how:['Start in a tuck planche, then gradually extend knees slightly away from the chest.','Hold with your back flat and horizontal, legs in a less-compressed tuck.','The key difference from tuck: back is fully horizontal, not angled.'],cues:['Maximum scapular protraction must be maintained as you open the tuck.','As you extend the tuck, your hips must rise to stay parallel — fight for this.','Work up to 10+ second holds with good form before progressing further.']},
+    'Straddle planche':{how:['Push into full shoulder protraction and extend legs wide to the sides.','Hold body horizontal with arms straight and legs spread in a straddle position.','Hips stay in line with shoulders — no sagging.'],cues:['Wider straddle shortens the lever and makes this easier — use width as your difficulty dial.','Point toes and squeeze glutes to maintain leg tension throughout.','The critical bridge between advanced tuck and full planche.']},
+    'Full planche':{how:['From a straddle planche, bring legs together into a fully straight body position.','Hold horizontal: arms straight, legs together, body parallel to the floor.','Maintain through maximal full-body isometric tension.'],cues:['Every joint fully extended: elbows, hips, knees, ankles. No sag anywhere.','Maintain a hollow body (posterior pelvic tilt) — not an arched back.','One of the hardest bodyweight skills. Expect years of dedicated training.']},
+    'Wall handstand':{how:['Place hands about 6 inches from the wall, kick or walk feet up.','Adjust until body is close to straight, heels lightly contacting the wall.','Hold the inverted position, bearing weight fully through the hands.'],cues:['Point toes, squeeze glutes, and brace core for full body tension.','The wall is for balance only — your hands carry all the weight.','Progressively reduce wall contact to build toward a freestanding handstand.']},
+    'Freestanding handstand':{how:['Press or kick up into a handstand with only hands on the floor.','Maintain a straight (or slightly hollowed) body from wrists to toes.','Balance using active fingertip pressure — press fingers when falling forward.'],cues:['Fingertip pressure is your balance control: press into the floor to correct a forward fall.','Arms straight, shoulders slightly elevated (active shrug) for the most stable base.','Look at a fixed point between your hands — head position strongly affects balance.']},
+    /* ── Pull ── */
+    'Pull-ups':{how:['Hang from a bar with an overhand grip, hands slightly wider than shoulder-width.','Pull until your chin clears the bar (or chest touches for full range).','Lower with control to a complete dead hang before each rep.'],cues:['Initiate by depressing the scapulae (pull shoulder blades down) before bending elbows.','Drive elbows toward your hips — "elbows to pockets."','Full dead hang between reps maximizes strength development.']},
+    'Chin-ups':{how:['Hang from a bar with an underhand (supinated) grip, hands shoulder-width apart.','Pull until your chin clears the bar, leading with your chest.','Lower fully to a dead hang between every rep.'],cues:['Supinated grip involves more biceps, making this slightly easier than overhand pull-ups.','Keep elbows tracking forward and in during the movement.','Squeeze both the biceps and back hard at the top.']},
+    'Rows':{how:['Hang under a bar or rings at an angle, overhand grip, body straight.','Pull your chest up to the bar, driving elbows back past your torso.','Lower under control to full arm extension.'],cues:['Body angle controls difficulty: more horizontal = harder.','Hold your body rigid as a plank throughout — hips must not sag.','Squeeze shoulder blades together and pause briefly at the top of each rep.']},
+    'Muscle-ups':{how:['Dead hang from a bar with a false grip (wrists hooked over the bar).','Pull explosively, aiming to bring your hips level with the bar.','As elbows pass bar height, transition by leaning forward and pressing into a dip lockout.'],cues:['Practice high-rep strict pull-ups and ring dip transitions separately before combining.','Bar path stays close to the body throughout the entire pull.','A slight forward lean at the top of the pull makes the transition significantly easier.']},
+    'Australian rows':{how:['Set up under a low bar with an overhand grip, body at roughly 45° to the floor.','Keep the body straight and pull chest up to the bar.','Lower under control to full arm extension.'],cues:['Easier than horizontal rows — use to build pulling strength progressively.','Body stays completely rigid like a plank in reverse.','Focus on squeezing shoulder blades together at the top.']},
+    'Archer pull-ups':{how:['Hang from a bar with a wide overhand grip.','Pull toward one hand while extending the opposite arm fully straight.','Alternate sides each rep, or complete a full set on one side.'],cues:['The extended arm stays as straight as possible throughout.','Control body rotation — this is not a side sway, it\'s a pull.','A direct progression toward the one-arm pull-up.']},
+    'One arm pull-up':{how:['Hang from a bar with one hand; place the other hand on your wrist for training, or let it hang free.','Pull your body up with the single working arm until your chin clears the bar.','Lower slowly with the same arm to a full dead hang.'],cues:['Expect years of progressive training — archer pull-ups and slow negatives are the key progressions.','Keep your free hand on your wrist (not gripping the bar) to practice the real pattern.','Core must be braced to minimize rotation throughout the movement.']},
+    'Commando pull-ups':{how:['Hang from a bar with a hammer grip (palms facing each other), hands close together.','Pull up and move your head to one side of the bar.','Lower and alternate sides on the next rep.'],cues:['Neutral grip is joint-friendly — good for shoulder health.','Keep body swing minimal: controlled pull only.','Builds overall pulling strength and prepares you for more advanced movements.']},
+    'Tuck front lever':{how:['Hang from a bar, shoulders packed and depressed.','Lift knees to your chest and pull hips up until your back is parallel to the floor.','Hold with arms completely straight and knees drawn tight to your chest.'],cues:['Depress and retract scapulae strongly throughout — shoulder blades pulled down and together.','Arms stay perfectly straight — any bend defeats the isometric hold.','Build with 3–5 second holds initially before progressing to longer durations.']},
+    'Advanced tuck front lever':{how:['Pull into a tuck front lever, then gradually extend your knees away from your chest.','Hold with thighs roughly horizontal and your back parallel to the floor.','The progression challenge: hips lower as you open the tuck — fight to keep them level.'],cues:['Maintain constant scapular depression and retraction.','The more you open the knees, the harder it is to keep hips from dropping.','This is the hardest beginner step before progressing to a straddle front lever.']},
+    'Straddle front lever':{how:['Pull into a front lever position with legs spread wide to the sides.','Hold body horizontal, arms straight, legs extended in a straddle.','Minimize any vertical distance between your hips and shoulder height.'],cues:['Wider straddle = shorter lever = easier. Use leg width as your difficulty control.','Point toes and engage inner thighs to maintain leg tension.','Back must stay flat and horizontal — not angled downward.']},
+    'Full front lever':{how:['Pull into a front lever with legs together and fully extended.','Hold the body completely horizontal: arms straight, hips in line with shoulders.','Maintain through maximal full-body isometric tension.'],cues:['Total body tension from fingertips to toes — any relaxation collapses the hold.','Squeeze glutes and point toes; mentally try to pull your legs upward against resistance.','Even 2–3 second holds at this level represent significant achievement.']},
+    'Tuck back lever':{how:['From a hang, rotate backward under the bar until you face upward.','Draw knees to your chest and position your back horizontal, face up, arms straight.','Hold the inverted tuck with your back toward the floor.'],cues:['The back lever is face-up (supine), the opposite orientation to the front lever.','Arms straight and push slightly into the bar to maintain height.','Stop if you feel any biceps tendon discomfort — the shoulder is in a vulnerable position.']},
+    'Straddle back lever':{how:['Rotate backward under the bar into a supine hang.','Extend legs wide to the sides while holding the body as horizontal as possible.','Hold with arms straight, hips level with shoulders, legs straddled.'],cues:['Push arms gently into the bar to keep hips from dropping.','Wider straddle makes this easier — use leg spread as a difficulty control.','Shoulder flexibility is a prerequisite — warm up the shoulders and biceps tendon thoroughly.']},
+    'Full back lever':{how:['Rotate backward under the bar into a supine hang.','Extend both legs together fully until the entire body is horizontal, face up.','Hold with arms straight and every muscle under maximum tension.'],cues:['Arms push into the bar to keep hips level with shoulders.','The full back lever requires significant shoulder flexibility — progress through straddle first.','Exit under control — don\'t drop suddenly from the position.']},
+    /* ── Core ── */
+    'Planks':{how:['Place forearms flat on the floor with elbows under shoulders, or arms fully extended.','Hold your body in a straight line from head to heels.','Breathe steadily and sustain the position for the target duration.'],cues:['No hip sag and no piking — maintain a perfectly neutral spine.','Squeeze glutes, quads, and abs simultaneously: every muscle working.','Actively push elbows or hands into the floor — don\'t just passively hang.']},
+    'Leg raises':{how:['Lie flat or hang from a bar with legs straight.','Keep legs straight and raise them from 0° to 90° (vertical).','Lower slowly under control back toward the floor without letting them rest.'],cues:['Flatten your lower back against the floor or bar — prevent excessive arch.','Control the lowering phase — the eccentric builds the majority of the strength.','Slightly bent knees are acceptable when building initial strength.']},
+    'Sit-ups':{how:['Lie on your back with knees bent, feet flat, hands at your temples.','Contract your abs and raise your torso fully upright.','Lower under control back to the starting position.'],cues:['Don\'t pull your neck forward with your hands — keep them lightly at your temples.','Exhale on the way up; inhale on the way down.','Anchor your feet only if needed — free sit-ups are harder and more effective.']},
+    'Hollow holds':{how:['Lie on your back and press your lower back firmly into the floor (posterior pelvic tilt).','Extend arms overhead and lift legs off the floor, creating a curved "banana" shape.','Hold with lower back pressed down the entire time, breathing steadily.'],cues:['Lower back must stay pressed into the floor — if it lifts, raise your legs higher.','The longer the lever (straighter arms and legs), the harder the hold.','This is the fundamental tension pattern for handstands, front levers, and planches.']},
+    'Dragon flag':{how:['Lie on a bench and grip it firmly behind your head for support.','Raise your entire body straight up, then slowly lower it until nearly parallel to the floor.','Pause briefly at the bottom without touching the bench, then raise back up.'],cues:['Slower lowering = more strength gain. Aim for a 3–5 second eccentric.','Your entire body below the shoulder blades must stay rigid like a plank.','Begin with tucked or bent-knee versions before attempting straight-leg.']},
+    'L-sit':{how:['Support your bodyweight on parallel bars or the floor with straight arms.','Lift legs to horizontal with toes pointed and legs straight.','Hold with arms locked, shoulders depressed, and legs parallel to the floor.'],cues:['Push actively through the bars/floor to depress and stabilize your shoulders.','Legs must be horizontal, not drooping — build hip flexor strength if they won\'t reach.','Progression: Tuck L-sit → One-leg L-sit → L-sit → V-sit.']},
+    'V-sit':{how:['From an L-sit, continue raising your legs well above horizontal.','Hold with legs elevated, torso leaning back to counterbalance.','Maintain straight arms, full shoulder depression, and straight legs.'],cues:['Requires strong hip flexors and good hamstring flexibility.','The higher the legs, the more the torso leans back — this is correct and intended.','Point toes and squeeze legs together to maintain the V shape.']},
+    'Tuck L-sit':{how:['Support bodyweight on parallel bars or the floor with straight arms.','Lift both knees toward your chest with feet off the floor.','Hold the compressed tuck position with shoulders depressed.'],cues:['This is the first hold in the L-sit progression ladder.','Push actively into the surface to keep shoulders depressed and stable.','Work on gradually extending your legs from the tuck toward a full L-sit.']},
+    'Hollow body rock':{how:['Get into a hollow hold: lower back pressed into the floor, arms and legs extended.','Gently rock your body forward and backward like a rocking chair.','Your body shape must stay rigid and curved throughout the rocking motion.'],cues:['The rock comes from momentum — your body shape should not change at all.','Lower back must stay pressed down at every point of the rock.','Builds the motor pattern used in handstands and all gymnastic skills.']},
+    'Dead bug':{how:['Lie on your back with arms pointing to the ceiling and knees bent at 90°.','Simultaneously lower one arm overhead and extend the opposite leg toward the floor.','Return to start and alternate sides, lower back pressed flat throughout.'],cues:['Lower back must stay in contact with the floor at all times — that\'s the entire point.','Move slowly and with full control — tempo matters more than range here.','Exhale as you extend to create maximum core stiffness against the movement.']},
+    'Ab wheel rollouts':{how:['Kneel with the ab wheel in front of you, both hands gripping the handles.','Slowly roll forward, extending your body toward the floor while keeping a rigid core.','Pull back by contracting your lats and abs to return to the start.'],cues:['Prevent lower back from arching during the rollout — reduce range if it does.','Think "lat pulldown" on the way back — pull your elbows down toward your hips.','Stand rollouts (from feet, not knees) are the advanced progression.']},
+    'Hanging knee raises':{how:['Hang from a bar with a shoulder-width grip and straight arms.','Lift knees toward your chest, focusing on curling the hips up (posterior pelvic tilt).','Lower under control back to a dead hang.'],cues:['The hip curl at the top is what makes this effective — don\'t just swing knees up.','Minimize body swing — controlled, deliberate movement only.','Progression: Hanging knee raises → Leg raises → Toes to bar.']},
+    'Toes to bar':{how:['Hang from a bar with straight arms and shoulder-width grip.','Raise straight legs until your toes touch the bar.','Lower under control back to a dead hang.'],cues:['Keep the movement strict and controlled — this is not a kip.','Posterior pelvic tilt (tuck the tailbone) at the top for full abdominal contraction.','Requires hamstring flexibility and significant hip flexor and core strength.']},
+    'Human flag':{how:['Grip a vertical pole with one hand above the other, both arms extended.','Push with the lower arm and pull with the upper arm to lift your body horizontal.','Hold the flag position with a completely rigid, straight body.'],cues:['It\'s a simultaneous push (lower hand) and pull (upper hand) — not just hanging sideways.','Begin with a straddle or tuck flag before progressing to straight legs.','Full-body tension is required — core, obliques, and shoulders all fire at once.']},
+    /* ── Legs ── */
+    'Squats':{how:['Stand with feet shoulder-width apart, toes slightly out.','Push hips back and down while keeping chest up and knees tracking over your toes.','Descend until thighs are at least parallel, then drive up through your heels.'],cues:['Chest stays up — don\'t fold your torso forward as you descend.','Knees track in line with your toes — don\'t let them cave inward.','Drive the hips up first out of the bottom, then extend your knees.']},
+    'Lunges':{how:['Step forward with one foot, lowering until the rear knee nearly touches the floor.','Keep your front shin vertical (knee over ankle) and torso upright.','Push through the front foot to return to standing; repeat on the other side.'],cues:['Don\'t let the front knee travel past the toes — maintain the shin angle.','An upright torso focuses load on the quad; forward lean shifts it to the hip.','Step far enough forward that the back knee can drop straight down.']},
+    'Pistol squats':{how:['Stand on one leg with the other extended straight in front.','Sit down on the standing leg until your hip crease passes below the knee.','Drive through the heel of your standing foot to rise back up.'],cues:['The extended leg must stay off the floor — truly unilateral strength.','Build with assisted pistols (holding a suspension trainer) before going unassisted.','Ankle flexibility is often the limiting factor — elevate the heel slightly if needed.']},
+    'Calf raises':{how:['Stand with the balls of your feet on the edge of a step.','Rise as high as possible onto your toes.','Lower all the way down until heels are below the step edge, then repeat.'],cues:['Full range is essential — deep stretch at the bottom, maximum contraction at the top.','Slow controlled tempo: calves respond better to time under tension than fast reps.','Single-leg calf raises are far more effective for strength development.']},
+    'Shrimp squats':{how:['Stand on one leg, bend the other behind you and hold that ankle.','Squat down on the standing leg, lowering the rear knee toward the floor.','Descend until the rear knee taps the floor, then drive back up.'],cues:['More quad-dominant than pistol squats — the knee travels far forward by design.','Elevate the standing foot on a step to allow full depth without the rear foot interfering.','Keep your torso as upright as possible throughout.']},
+    'Sissy squats':{how:['Stand with heels slightly elevated, holding a support for balance initially.','Let knees travel far forward as you lower your body, leaning the torso backward.','Descend until your thighs and torso form a straight line backward, then return.'],cues:['This is an extreme knee-forward movement by design — it isolates the quads.','From knees to shoulders, the body stays as one rigid plank; only hips don\'t bend.','Start with a short range of motion and add depth gradually as tendons adapt.']},
+    'Nordic curls':{how:['Kneel with feet firmly anchored, body upright.','Lower yourself forward toward the floor as slowly as possible using hamstrings eccentrically.','Use hands to catch at the bottom, then pull with hamstrings to return to upright.'],cues:['The slow lowering phase is the stimulus — aim for 3–5 seconds down.','Keep hips fully extended throughout — don\'t bend at the waist.','Among the most effective hamstring exercises for strength and injury prevention.']},
+    'Bulgarian split squats':{how:['Face away from a bench, place the top of one foot on it behind you.','Squat down on the front leg until the rear knee nears the floor.','Drive through the front heel to return to the start.'],cues:['Front foot further from the bench = more glute; closer = more quad.','Torso upright; avoid collapsing forward at the bottom of the rep.','Expect significant DOMS initially — introduce this movement with light weight.']},
+    'Step-ups':{how:['Stand facing a box or bench; place one foot fully on top.','Drive through the elevated foot to bring your whole body up onto the box.','Step back down with control; repeat for all reps then switch legs.'],cues:['Drive exclusively through the top foot — don\'t push off the floor foot.','Box height should put the working thigh at or past horizontal at the start.','Add dumbbells or a barbell to progressively increase difficulty.']},
+    'Box jumps':{how:['Stand facing a sturdy box, feet hip-width.','Dip into a quarter squat and swing your arms, then explode upward.','Land softly on the whole foot in a partial squat, then step (never jump) back down.'],cues:['Land soft — absorb force through the entire foot, not just toes or heels.','Always step down, never jump down — repeated landing impacts are hard on the knees.','Focus on the speed and power of your jump, not just box height.']},
+    'Glute bridges':{how:['Lie on your back, knees bent, feet flat and hip-width apart.','Drive hips up by squeezing glutes until your body forms a straight line from knees to shoulders.','Hold briefly at the top, then lower under control.'],cues:['Squeeze glutes hard — don\'t just thrust hips up with your lower back.','Feet close enough that your shins are roughly vertical at the top.','Progress to single-leg or weighted (barbell across hips) variations.']},
+    'Single leg deadlift':{how:['Stand on one leg with a soft knee, holding a weight in the opposite hand.','Hinge at the hip, lowering the weight toward the floor while extending the free leg behind you.','Return to upright by driving through the standing heel and squeezing the glute.'],cues:['The free leg and torso move together as one unit — maintain a straight spine.','Minimize hip rotation — the free hip should stay level with the standing hip.','Excellent for hamstring strength, glute activation, and single-leg stability.']},
+    /* ── Weighted / Gym ── */
+    'Bench press':{how:['Lie on a bench with eyes under the bar, grip slightly wider than shoulder-width.','Unrack and lower the bar to your lower chest/sternum under control.','Press back to lockout, keeping the bar path over your lower chest.'],cues:['Retract and depress shoulder blades — slight arch, blades pressed into the bench.','Bar touches the lower chest/sternum, not the upper chest.','Drive feet into the floor for leg drive and full-body tension.']},
+    'Back squat':{how:['Bar across your upper traps (high bar) or rear delts (low bar), step back to your stance.','Descend by pushing hips back and down, chest up, knees tracking over toes.','Drive through your heels from the bottom to return to full extension.'],cues:['Brace your core hard before every single rep — treat it like taking a punch.','Bar stays directly over mid-foot throughout the entire lift.','Reach at least parallel depth: hip crease below the top of the kneecap.']},
+    'Deadlift':{how:['Stand with mid-foot under the bar, hip-width stance, grip just outside your legs.','Set a neutral spine (chest up, hips above knees), pull the slack out of the bar, then push the floor away.','Extend legs and then hips to full lockout. Reverse the movement to lower.'],cues:['Bar stays in contact with your legs the whole way — it should scrape your shins.','Think "push the floor away" with your legs rather than "pull the bar up."','Hinge at the hip on the descent; don\'t let the bar drift away from your body.']},
+    'Overhead press':{how:['Hold the bar at shoulder height, grip slightly wider than shoulder-width.','Press the bar straight up, moving your head back briefly to let it pass, then forward.','Lock out fully overhead with arms vertical and the bar stacked over your base.'],cues:['Brace core and squeeze glutes hard — you press from a completely rigid base.','The bar path curves slightly back as it passes the head, then vertical overall.','Fully shrug at lockout: push the bar toward the ceiling to finish the movement.']},
+    'Barbell row':{how:['Hinge forward to roughly 45°, barbell hanging at arm\'s length, overhand grip.','Pull the bar toward your lower chest/upper abdomen, leading with the elbows.','Lower under control to full extension, maintaining the hip hinge angle.'],cues:['Keep your back flat and your hinge angle consistent throughout the set.','Pull to the lower chest — not the navel (too low) or upper chest (too high).','Squeeze shoulder blades together at the top of each rep.']},
+    'Lat pulldown':{how:['Grip the bar wider than shoulder-width, thighs secured under the pad.','Pull the bar to your upper chest, elbows driving down and back, slight backward lean.','Return to full arm extension under control, getting a full lat stretch at the top.'],cues:['"Elbows to hips" to engage the lats — don\'t just think about pulling the bar down.','Full stretch at the top is critical — don\'t cheat the range of motion.','Keep the lean under 20–30°; excessive backward lean turns it into a row.']},
+    'Leg press':{how:['Sit in the machine, feet shoulder-width on the platform.','Release the safety and lower the sled by bending knees toward your chest.','Press back to near-full extension (avoid aggressive lockout) and repeat.'],cues:['Foot position changes the emphasis: high = glute/hamstring, low = quad.','Don\'t let your lower back peel off the seat as you lower — only go as deep as control allows.','Avoid fully locking out the knees under heavy loads.']},
+    'Romanian deadlift':{how:['Stand with the bar at arm\'s length in front of you, hip-width stance.','Hinge by pushing your hips back, lowering the bar along your legs with a flat back.','Once you feel a hamstring stretch (typically mid-shin), drive hips forward to stand.'],cues:['Hinge, don\'t squat — knees remain slightly bent but largely stationary.','Bar slides close to your legs throughout the entire descent.','The hamstring stretch at the bottom is the point — don\'t cut the range short.']},
+    'Incline bench press':{how:['Set bench to 30–45°, lie back with eyes under the bar, grip slightly wider than shoulder-width.','Lower the bar to your upper chest (below the collarbone).','Press back to lockout, keeping the bar over your upper chest.'],cues:['Targets the clavicular (upper) head of the pec more than flat bench.','Same scapular setup as flat bench — retract and depress shoulder blades.','Don\'t exceed 45° incline — above that it effectively becomes a shoulder press.']},
+    'Decline bench press':{how:['Set bench to -15° to -30°, secure legs, grip slightly wider than shoulder-width.','Lower the bar to your lower chest or upper abdomen.','Press back to lockout.'],cues:['Emphasizes the lower (sternal) portion of the pec major.','Lower chest contact distinguishes it clearly from flat and incline press.','Blood rushes to the head — don\'t hold your breath; breathe steadily.']},
+    'Dumbbell bench press':{how:['Sit on a bench with dumbbells on your knees, then lie back and kick them to chest height.','Lower them to the sides of your chest with elbows at roughly 45°.','Press back up until arms are extended, letting the dumbbells nearly touch at the top.'],cues:['Greater range of motion than the barbell — exploit the deeper stretch at the bottom.','Allows each arm to work independently, which helps correct strength imbalances.','Control the lowering: don\'t let the dumbbells drop.']},
+    'Dumbbell row':{how:['Place one hand and the same-side knee on a bench for support, hold a dumbbell in the other hand.','Pull the dumbbell up along your side until your elbow passes your torso.','Lower to full arm extension.'],cues:['Keep your back flat and parallel to the bench throughout.','Drive the elbow back — "elbow to hip," not "hand to armpit."','Full extension at the bottom: complete lat stretch on every rep.']},
+    'Push press':{how:['Hold a barbell at shoulder height, feet shoulder-width.','Dip the knees in a fast, shallow bend, then explosively drive the bar overhead with leg power.','Lock out arms fully overhead, then lower under control to the shoulders.'],cues:['Dip is shallow and fast — a knee bend, not a squat.','Leg drive allows you to handle heavier loads than a strict press.','Stabilize and control the bar before lowering it back to your shoulders.']},
+    'Front squat':{how:['Hold the bar in a front rack (resting on front delts, elbows high) or crossed-arm position.','Squat down keeping your torso very upright, knees tracking over toes.','Drive back to full extension through your heels.'],cues:['Elbows must stay high throughout — if they drop, the bar rolls forward off the rack.','More upright torso than a back squat — greater quad and upper back demand.','Wrist and ankle mobility are prerequisites — address these before loading heavily.']},
+    'Goblet squat':{how:['Hold a dumbbell or kettlebell vertically at your chest with both hands.','Squat down with an upright torso, elbows tracking inside your knees.','Drive back to full extension through your heels.'],cues:['The weight counterbalances your body and naturally promotes an upright torso.','Pause at the bottom to improve depth and reinforce the squat pattern.','An excellent teaching tool and warm-up for the back squat.']},
+    'Bulgarian split squat':{how:['Face away from a bench, rest the top of one foot on it.','Squat down on the front leg until the rear knee nears the floor.','Drive through the front heel to return to standing.'],cues:['Front foot further from bench = more glute; closer = more quad emphasis.','Keep torso upright; resist the urge to lean forward at the bottom.','Highly effective for both muscle development and athletic performance.']},
+    'Hip thrust':{how:['Sit with your upper back against a bench, feet flat hip-width, barbell across your hips.','Drive hips up by squeezing your glutes until your body is parallel to the floor.','Lower under control and repeat.'],cues:['Squeeze glutes at the top — don\'t hyperextend the lower back to reach height.','Tuck your chin: don\'t crane your neck upward as your hips rise.','Use a barbell pad to protect your hip bones under heavy loads.']},
+    'Cable row':{how:['Sit at the cable row station, feet on the platform, torso upright, slight knee bend.','Pull the handle to your lower abdomen, driving elbows back past your torso.','Return to full arm extension under control, allowing a slight forward lean for a lat stretch.'],cues:['Torso stays upright and stationary — avoid rocking forward and backward.','Squeeze shoulder blades together and hold briefly at peak contraction.','Let the weight fully stretch the lats at the end of each rep.']},
+    'Chest-supported row':{how:['Lie face-down on an incline bench (~30–45°), dumbbells hanging at arm\'s length.','Pull the dumbbells up, driving elbows past your torso, squeezing shoulder blades.','Lower under control to a full hang.'],cues:['Chest support eliminates lower back fatigue and all body english — pure pulling.','Drive elbows straight back and up, not outward to the sides.','Excellent for accumulating high-volume back work with strict technique.']},
+    'T-bar row':{how:['Stand over a T-bar or landmine setup, hinge forward, and grip the handles.','Pull the weight toward your lower chest, driving elbows back.','Lower under control to full arm extension.'],cues:['Maintain a flat back at your hinged angle throughout the set.','Neutral or close grip engages more lat; wide grip targets more rear delt.','Never round the lower back under heavy loads — position over weight, always.']},
+    "Farmer's carry":{how:['Pick up heavy dumbbells or implements in each hand, standing tall.','Walk a set distance or for a set time, keeping shoulders packed back and down.','Maintain an upright torso and even strides throughout.'],cues:['Think tall posture: no leaning, no swaying. Walk with purpose.','Shoulders stay packed down, not shrugged up into your ears under load.','Grip, core, and traps are the primary muscles — a true full-body strength exercise.']},
+    'Sumo deadlift':{how:['Take a wide stance with toes pointing 30–45° outward; grip the bar inside your legs.','Set a neutral spine with upright torso, then push the floor apart as you stand.','Drive hips through at lockout, then hinge back down to return the bar.'],cues:['Push your knees out hard along the line of your toes throughout the lift.','Torso stays more upright than a conventional deadlift — intended by the setup.','Hip and groin mobility are requirements — warm up thoroughly before heavy sets.']},
+    'Hack squat':{how:['Position shoulders under the pads of the hack squat machine, feet on the platform.','Release the safety handles and lower under control until hips are at or below parallel.','Drive the platform away with your legs to return to the top.'],cues:['Lower back stays pressed against the pad throughout the movement.','Foot position (high/low, wide/narrow) changes the muscle emphasis.','Avoid aggressive knee lockout under heavy loads at the top.']},
+    'Pendlay row':{how:['Hinge to a horizontal torso (parallel to the floor), barbell on the floor in front.','Explosively pull the bar from the floor to your lower chest in one powerful movement.','Lower the bar all the way back to the floor between every rep — complete dead stop.'],cues:['The dead stop eliminates momentum — every rep is from a standstill.','Horizontal torso (not 45°) distinguishes Pendlay rows from conventional barbell rows.','Emphasizes upper back explosiveness more than any other row variation.']},
+    'Seal row':{how:['Lie face-down on an elevated bench, bar on plates or blocks beneath you.','Pull the bar to your lower chest, squeezing shoulder blades fully.','Lower to a complete dead hang.'],cues:['The strictest barbell row: zero lower back involvement, zero body english.','Full range on every rep: complete dead hang at the bottom, full contraction at the top.','Reveals and helps correct pulling strength imbalances between sides.']},
+    'Bicep curls':{how:['Stand with dumbbells or a barbell at arm\'s length, palms facing forward.','Curl the weight up by flexing your elbows, keeping upper arms stationary.','Lower under control to full extension.'],cues:['Keep elbows pinned at your sides — don\'t let them drift forward as a cheat.','Squeeze the bicep at the top of the curl for a full contraction.','Full extension at the bottom ensures complete range of motion.']},
+    'Tricep pushdowns':{how:['Stand at a cable machine, bar or rope at head height, grip overhand.','Press down by extending elbows until arms are fully straight.','Return under control, keeping upper arms pinned to your sides.'],cues:['Upper arms stay stationary — only the forearms move.','Squeeze the triceps hard at full extension.','Rope attachment allows wrists to rotate outward at the bottom for a stronger contraction.']},
+    'Lateral raises':{how:['Stand with dumbbells at your sides, a slight bend in your elbows.','Raise arms out to the sides until hands reach shoulder height, leading with elbows.','Lower under control — resist gravity on the way down.'],cues:['Lead with elbows, not wrists — think "pour a glass of water" at the top.','Avoid shrugging — keep shoulders away from your ears throughout.','Use light to moderate weight; medial delt is a small muscle.']},
+    'Front raises':{how:['Stand with dumbbells at your thighs, palms facing your body.','Raise one or both arms forward to shoulder height.','Lower under control back to the starting position.'],cues:['Don\'t lean back as you raise — keep your torso stable and upright.','Stop at shoulder height — going higher doesn\'t increase benefit.','Alternating arms reduces momentum; cables provide constant tension.']},
+    'Rear delt fly':{how:['Hinge forward ~45°, hold dumbbells hanging below with a neutral grip.','Raise arms out to the sides, leading with elbows, until they reach shoulder height.','Lower under control back to the start.'],cues:['"Elbows wide and back" — avoid bicep-curling the weight upward.','Keep the weight light — rear delts are small and form breaks easily.','Maintain a flat back in the hinge throughout; don\'t round as you fatigue.']},
+    'Face pulls':{how:['Set a cable at upper chest/face height with a rope attachment.','Pull the rope toward your face, separating the ends so your hands finish beside your ears.','Return under control to full arm extension.'],cues:['Pull to your face — not your neck or chest.','Elbows flare high (above shoulder level) at the peak of the pull.','One of the best exercises for shoulder health and external rotation strength.']},
+    'Skull crushers':{how:['Lie on a bench, hold an EZ bar or dumbbells with arms extended straight up.','Lower the weight by bending elbows, bringing it to or slightly behind your forehead.','Extend back to straight arms by contracting the triceps.'],cues:['Upper arms must stay pointing straight up — no elbow flare or drift.','Lowering slightly behind the head (not to the forehead) gives a better tricep stretch.','Control the weight meticulously — momentum here is genuinely dangerous.']},
+    'Hammer curls':{how:['Hold dumbbells with a neutral (hammer) grip, thumbs facing up.','Curl the dumbbells up maintaining the neutral grip throughout.','Lower under control to full extension.'],cues:['Neutral grip targets the brachialis and brachioradialis alongside the bicep.','Keep upper arms stationary at your sides.','Can be done alternating or simultaneously; alternating provides better control.']},
+    'Preacher curls':{how:['Sit at a preacher curl bench with upper arms resting on the angled pad.','Curl from full extension all the way up to peak contraction.','Lower under complete control — the stretch at the bottom is where the gains are.'],cues:['The pad locks your upper arm in place — strict bicep isolation only.','Don\'t let the weight drop quickly; actively resist on the way down.','Full extension at the bottom is non-negotiable — cutting it short dramatically reduces effectiveness.']},
+    'Leg extensions':{how:['Sit in the machine with the pad resting just above your ankles.','Extend legs to fully straight by contracting your quadriceps.','Lower under control to the starting position.'],cues:['Full extension with a brief peak contraction at the top.','Control the eccentric (lowering) phase to maximize quad stimulus.','Open-chain knee extension — be cautious with heavy loads if you have knee issues.']},
+    'Leg curls':{how:['Lie face-down in the machine (or sit in a seated variation), pad just above your heels.','Curl your heels toward your glutes by contracting your hamstrings.','Lower under control to full extension.'],cues:['Hips stay pressed into the pad — don\'t lift the hips to extend range of motion.','Plantarflexing (pointing toes) increases hamstring activation.','Lower slowly — the eccentric phase is where most of the hamstring stimulus comes from.']},
+    'Calf raises (machine)':{how:['Position yourself in the machine with the pad on your shoulders (standing) or thighs (seated).','Rise onto your toes as high as possible.','Lower all the way to a deep stretch and repeat.'],cues:['Maximum range of motion: deep stretch at the bottom, peak contraction at the top.','Pause briefly at both ends of the range for better time under tension.','Calves respond well to higher rep ranges — 15–25 reps per set is appropriate.']},
+    'Cable lateral raise':{how:['Stand next to a low cable, grip the handle with the arm furthest from the machine.','Raise your arm out to the side (across your body) to shoulder height.','Lower under control against constant cable tension.'],cues:['Cable provides constant tension unlike dumbbells — superior isolation throughout.','Cross the cable slightly in front of your body for a longer range of motion.','Keep the movement clean; resist the pull actively on the way back down.']},
+    'Cable bicep curl':{how:['Stand at a low cable with a straight bar or EZ attachment, palms up.','Curl the weight up with elbows stationary at your sides.','Lower under control against constant cable tension.'],cues:['Cable maintains resistance at full extension — superior stimulus compared to dumbbells.','Elbows pinned to your sides throughout the entire movement.','Squeeze the bicep hard at full flexion before lowering.']},
+    'Tricep kickbacks':{how:['Hinge forward ~45°, upper arm parallel to the floor, dumbbell in hand.','Extend your forearm back by straightening the elbow until fully extended.','Lower the forearm back to 90° and repeat.'],cues:['Upper arm stays parallel to the floor and stationary throughout — only the forearm moves.','Full extension = peak contraction. Squeeze hard at the top.','Use light weight — the leverage makes even a small dumbbell feel heavy.']},
+    'Dumbbell chest fly':{how:['Lie on a bench with dumbbells above your chest, a slight bend in your elbows.','Lower arms in a wide arc to the sides until you feel a deep chest stretch.','Bring the dumbbells back together above your chest by squeezing the pecs.'],cues:['This is an isolation movement — keep the elbow angle constant. Do not press.','Think "hugging a barrel": wide arc, not a straight push.','The stretch at the bottom is the key stimulus — don\'t sacrifice depth for more weight.']},
+    'Pec deck':{how:['Sit in the pec deck with forearms resting on the pads, elbows at shoulder height.','Bring the pads together in front by squeezing the chest.','Return under control to the fully stretched position.'],cues:['Full stretch at the end of each rep is critical — don\'t limit range to use more weight.','Squeeze the chest hard at peak contraction.','Keep your back pressed against the pad throughout — no leaning forward.']},
+    'Cable fly':{how:['Set cables at the appropriate height, grip the handles with a slight elbow bend.','Bring your hands together in a wide arc in front of you.','Return under control to the starting position to fully stretch the chest.'],cues:['Cables maintain constant tension throughout — superior to dumbbells for pec isolation.','Resist the weight actively on the return — don\'t let the cables snap back.','Adjust cable height to target different parts of the chest (high = lower pec, low = upper pec).']},
+    'Concentration curls':{how:['Sit on a bench, lean forward, and rest the back of one upper arm against your inner thigh.','Curl the dumbbell up to shoulder height with a peak contraction.','Lower slowly to complete extension.'],cues:['The thigh support locks the arm in place — strict bicep isolation.','Supinate the wrist (rotate palm toward your shoulder) as you curl for a stronger contraction.','Complete range: full stretch at the bottom, hard squeeze at the top.']},
+    'Overhead tricep extension':{how:['Hold a dumbbell or EZ bar overhead with both hands, elbows pointing forward.','Lower the weight behind your head by bending elbows until you feel a full tricep stretch.','Extend back to full lockout overhead.'],cues:['Elbows stay pointed forward and up throughout — don\'t let them flare outward.','The long head of the tricep is maximally stretched in this overhead position.','Brace your core and avoid excessive lower back arch under the load.']},
+    'Reverse fly':{how:['Hinge forward ~45°, hold dumbbells with palms facing each other.','Raise arms out to the sides with a slight elbow bend until they reach shoulder height.','Lower under control back to the start.'],cues:['Targets rear delts and rhomboids — essential for shoulder health and posture.','Keep the movement deliberate and controlled — don\'t use momentum.','Squeeze shoulder blades together at the top of each rep.']},
+    'Upright row':{how:['Hold a barbell or dumbbells at hip level with an overhand grip.','Pull straight up along your body until the bar reaches chin height, elbows leading.','Lower under control back to the starting position.'],cues:['Elbows should rise higher than the bar — elbows lead, not the bar.','Keep the bar close to your body as it travels upward.','Wide grip reduces shoulder impingement risk; avoid narrow grip under heavy loads.']},
+    'Shrugs':{how:['Hold heavy dumbbells or a barbell at arm\'s length, shoulders relaxed and depressed.','Elevate your shoulders straight up toward your ears as high as possible.','Hold briefly at peak elevation, then lower back to full depression.'],cues:['Movement is strictly up and down — no rolling or circular shoulder motion.','Full range: maximum depression at the bottom, maximum elevation at the top.','Use straps here — grip shouldn\'t be the limiting factor for trap development.']},
+    'Good mornings':{how:['Place a barbell across your upper traps, feet shoulder-width, slight knee bend.','Hinge at the hips by pushing them back, lowering your torso until near-horizontal.','Drive hips forward to return to upright, maintaining a flat back throughout.'],cues:['Neutral spine is non-negotiable — rounding the lower back under load is genuinely dangerous.','Range of motion is limited by your hamstring flexibility — never force depth.','Start with very light weight; this movement is highly technical.']},
+    'Cable crunch':{how:['Kneel in front of a cable with a rope at head height, hold the rope at your temples.','Crunch your rib cage down toward your hips, rounding your spine against the resistance.','Return under control to an upright position.'],cues:['Focus on curling the rib cage DOWN — spinal flexion, not a hip hinge.','Pelvis stays fixed — don\'t generate power by pulling with your hips.','Cables let you progressively overload the abs — a major advantage over bodyweight crunches.']},
+  };
+
+  /* ── Show / close exercise detail view ──────────────────── */
+  function showExDetail(name) {
+    const d    = EXERCISE_DETAIL[name];
+    const meta = getExMeta(name);
+    const diff = meta.diff;
+    const diffColor = diff <= 3 ? 'var(--green)' : diff <= 6 ? '#FF9500' : 'var(--red)';
+    /* find category from library */
+    const lib = getExLib();
+    let cat = '';
+    for (const c of EX_CATS) { if ((lib[c] || []).includes(name)) { cat = c; break; } }
+
+    const howHTML = d ? d.how.map((step, i) => `
+      <div class="detail-step">
+        <div class="detail-step-num">${i + 1}</div>
+        <div>${step}</div>
+      </div>`).join('') : '';
+
+    const cuesHTML = d ? d.cues.map(cue => `
+      <div class="detail-cue">
+        <div class="detail-cue-dot">✓</div>
+        <div>${cue}</div>
+      </div>`).join('') : '';
+
+    document.getElementById('lib-detail-content').innerHTML = `
+      <button class="detail-back" onclick="closeExDetail()">
+        <svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="7,1 1,7 7,13"/>
+        </svg>
+        Exercises
+      </button>
+      <div class="detail-hero">
+        <div class="detail-name">${name}</div>
+        <div class="detail-meta">
+          <span class="detail-cat-tag">${cat || 'Exercise'}</span>
+          ${meta.tb ? '<span class="detail-cat-tag" style="color:var(--blue)">⏱ Hold</span>' : ''}
+          <span class="diff-badge" style="background:${diffColor};margin-left:.125rem">${diff}/10</span>
+        </div>
+      </div>
+      ${howHTML ? `<div style="font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.65px;color:var(--tertiary);padding:0 var(--gutter) .375rem">How to Perform</div>
+      <div class="detail-card">${howHTML}<div style="height:.5rem"></div></div>` : ''}
+      ${cuesHTML ? `<div style="font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.65px;color:var(--tertiary);padding:.25rem var(--gutter) .375rem">Key Form Cues</div>
+      <div class="detail-card">${cuesHTML}<div style="height:.5rem"></div></div>` : ''}
+      <div style="height:1.5rem"></div>`;
+
+    document.querySelector('.lib-seg-wrap').style.display   = 'none';
+    document.getElementById('lib-exercises-content').style.display = 'none';
+    document.getElementById('lib-plans-content').style.display     = 'none';
+    document.getElementById('lib-detail-content').style.display    = '';
+    /* scroll back to top of the scroll area */
+    document.querySelector('#exercises-screen .scroll-area').scrollTop = 0;
+  }
+
+  function closeExDetail() {
+    document.getElementById('lib-detail-content').style.display = 'none';
+    document.querySelector('.lib-seg-wrap').style.display = '';
+    showLibSeg(_libSeg);
+  }
+
+  function getUserBW()  { return parseFloat(localStorage.getItem('userBW') || '75'); }
+  function setUserBW(v) { localStorage.setItem('userBW', String(parseFloat(v) || 75)); }
+
+  function calcSetIntensity(name, reps, kg) {
+    const meta = getExMeta(name);
+    const r = parseFloat(reps) || 0;
+    const w = parseFloat(kg)   || 0;
+    if (!r) return 0;
+    if (meta.type === 'w') return Math.round(meta.diff * r * (w || 1));
+    return Math.round(meta.diff * r * (1 + w / getUserBW()));
+  }
+  function calcSessionIntensity(name, sets) {
+    return sets.reduce((s, st) =>
+      s + calcSetIntensity(name, parseFloat(st.reps) || 0, parseFloat(st.kg) || 0), 0);
+  }
+  function fmtInt(n) {
+    return n >= 10000 ? Math.round(n/1000) + 'k'
+         : n >= 1000  ? (n/1000).toFixed(1).replace(/\.0$/, '') + 'k'
+         : String(n);
+  }
+
+  function getExLib() {
+    const s   = localStorage.getItem('exLib');
+    const lib = s ? JSON.parse(s) : {};
+    let changed = false;
+    EX_CATS.forEach(c => { if (!lib[c]) { lib[c] = [...DEFAULT_EX_LIB[c]]; changed = true; } });
+    if (changed) setExLib(lib);
+    return lib;
+  }
+  function setExLib(lib) { localStorage.setItem('exLib', JSON.stringify(lib)); }
 
   /* ── Dark mode detection (for canvas) ───────────────────── */
   const darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
@@ -701,7 +2021,7 @@
 
   /* ── Tab navigation ─────────────────────────────────────── */
   function showTab(tab) {
-    ['home', 'progress', 'history'].forEach(t => {
+    ['home', 'progress', 'history', 'exercises'].forEach(t => {
       document.getElementById(t + '-screen').classList.remove('active');
       document.getElementById('tab-' + t).classList.remove('active');
     });
@@ -711,9 +2031,10 @@
     const btn = document.getElementById('tab-' + tab);
     if (btn) btn.classList.add('active');
 
-    if (tab === 'home')     renderRecent();
-    if (tab === 'history')  renderHistory();
-    if (tab === 'progress') renderProgress();
+    if (tab === 'home')      { renderRecent(); renderHighlights(); }
+    if (tab === 'history')   renderHistory();
+    if (tab === 'progress')  renderProgress();
+    if (tab === 'exercises') showLibSeg(_libSeg);
   }
 
   /* ── Timer ──────────────────────────────────────────────── */
@@ -728,31 +2049,207 @@
     }, 1000);
   }
 
-  /* ── Start workout ──────────────────────────────────────── */
+  /* ── Exercise picker ────────────────────────────────────── */
+  let _pickerResolve = null;
+
+  function openExPicker() {
+    document.getElementById('ex-search').value = '';
+    renderExList('');
+    document.getElementById('exercise-picker').classList.add('open');
+    setTimeout(() => document.getElementById('ex-search').focus(), 320);
+    return new Promise(r => { _pickerResolve = r; });
+  }
+  function closeExPicker() {
+    document.getElementById('exercise-picker').classList.remove('open');
+    if (_pickerResolve) { _pickerResolve(null); _pickerResolve = null; }
+  }
+  function pickExercise(name) {
+    document.getElementById('exercise-picker').classList.remove('open');
+    if (_pickerResolve) { _pickerResolve(name); _pickerResolve = null; }
+  }
+  function handlePickerBgClick(e) {
+    if (e.target.id === 'exercise-picker') closeExPicker();
+  }
+
+  function renderExList(q) {
+    const lib   = getExLib();
+    const query = q.trim().toLowerCase();
+    const list  = document.getElementById('ex-picker-list');
+    list.innerHTML = '';
+    let any = false;
+
+    EX_CATS.forEach(cat => {
+      const items = lib[cat].filter(n => !query || n.toLowerCase().includes(query));
+      if (!items.length && query) return;
+      any = true;
+
+      const section = document.createElement('div');
+
+      const lbl = document.createElement('div');
+      lbl.className = 'ex-cat-label';
+      lbl.textContent = cat;
+      section.appendChild(lbl);
+
+      items.forEach(name => {
+        const row = document.createElement('div');
+        row.className = 'ex-item';
+        row.innerHTML = `
+          <button class="ex-item-btn" onclick="pickExercise(${qs(name)})">${name}</button>
+          <button class="ex-item-del" onclick="delFromLib(${qs(cat)},${qs(name)})" title="Remove">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.03 9.47a.75.75 0 0 1-1.06 1.06L8 9.06l-1.97 1.97a.75.75 0 0 1-1.06-1.06L6.94 8 4.97 6.03a.75.75 0 0 1 1.06-1.06L8 6.94l1.97-1.97a.75.75 0 0 1 1.06 1.06L9.06 8l1.97 1.97z"/>
+            </svg>
+          </button>`;
+        section.appendChild(row);
+      });
+
+      if (!query) {
+        const addRow = document.createElement('div');
+        addRow.className = 'ex-add-custom-row';
+        addRow.id = `ex-cr-${cat}`;
+        addRow.innerHTML = `
+          <button class="ex-add-custom-btn" onclick="showCustomInput(${qs(cat)})">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5a.75.75 0 0 1 1.5 0z"/>
+            </svg>
+            Add to ${cat}…
+          </button>`;
+        section.appendChild(addRow);
+      }
+
+      list.appendChild(section);
+    });
+
+    if (!any) {
+      const noRes = document.createElement('div');
+      noRes.className = 'ex-no-results';
+      const name = q.trim();
+      noRes.innerHTML = `
+        <p>No results for "<strong>${name}</strong>"</p>
+        <p style="font-size:.8125rem">Add it to:</p>
+        <div class="ex-no-results-cats">
+          ${EX_CATS.map(c =>
+            `<button class="ex-no-results-cat-btn" onclick="addAndPick(${qs(name)},${qs(c)})">${c}</button>`
+          ).join('')}
+        </div>`;
+      list.appendChild(noRes);
+    }
+  }
+
+  function showCustomInput(cat) {
+    const row = document.getElementById(`ex-cr-${cat}`);
+    if (!row) return;
+    row.className = 'ex-add-input-row';
+    row.innerHTML = `
+      <input class="ex-add-input" id="ex-ci-${cat}" type="text" placeholder="Exercise name…"
+        onkeydown="if(event.key==='Enter')confirmCustom(${qs(cat)})" />
+      <button class="ex-add-confirm" onclick="confirmCustom(${qs(cat)})">Add</button>`;
+    document.getElementById(`ex-ci-${cat}`).focus();
+  }
+
+  function confirmCustom(cat) {
+    const inp = document.getElementById(`ex-ci-${cat}`);
+    const name = inp ? inp.value.trim() : '';
+    if (!name) return;
+    const lib = getExLib();
+    if ((lib[cat] || []).includes(name)) { pickExercise(name); return; }
+    openWizard(name, cat, 'picker');
+  }
+
+  function addAndPick(name, cat) {
+    const lib = getExLib();
+    if ((lib[cat] || []).includes(name)) { pickExercise(name); return; }
+    openWizard(name, cat, 'picker');
+  }
+
+  function delFromLib(cat, name) {
+    const lib = getExLib();
+    lib[cat] = lib[cat].filter(n => n !== name);
+    setExLib(lib);
+    // Re-render whichever surface is visible
+    if (document.getElementById('exercise-picker').classList.contains('open')) {
+      renderExList(document.getElementById('ex-search').value);
+    }
+    if (document.getElementById('exercises-screen').classList.contains('active')) {
+      renderExScreen();
+    }
+  }
+
+  /* ── Start workout — show choice modal ──────────────────── */
   function startWorkout() {
+    _renderStartChoice();
+    document.getElementById('start-choice').classList.add('open');
+  }
+
+  function _renderStartChoice() {
+    const el = document.getElementById('start-choice-content');
+    const plansHTML = plans.length
+      ? plans.map(p => {
+          const sub = p.exercises.slice(0, 3).join(', ') + (p.exercises.length > 3 ? '…' : '');
+          return `<button class="wizard-choice" onclick="startFromPlanChoice(${p.id})">
+            📋 ${p.name}
+            <small>${sub || `${p.exercises.length} exercise${p.exercises.length !== 1 ? 's' : ''}`}</small>
+          </button>`;
+        }).join('')
+      : `<div style="font-size:.8125rem;color:var(--tertiary);text-align:center;padding:.375rem 0 .125rem">
+           Create plans in the Library tab
+         </div>`;
+    el.innerHTML = `
+      <div class="wizard-step-q" style="margin-bottom:.875rem">Start Workout</div>
+      <div class="wizard-choices">
+        <button class="wizard-choice" onclick="startBlankWorkout()">
+          🏃 Blank Workout
+          <small>Choose exercises as you go</small>
+        </button>
+        ${plansHTML}
+      </div>
+      <div class="wizard-footer" style="margin-top:.75rem">
+        <button class="wizard-btn-back" onclick="closeStartChoice()">Cancel</button>
+      </div>`;
+  }
+
+  function closeStartChoice() {
+    document.getElementById('start-choice').classList.remove('open');
+  }
+
+  async function startBlankWorkout() {
+    closeStartChoice();
     exerciseCount = 0;
     document.getElementById('exercise-list').innerHTML = '';
     document.getElementById('timer').textContent = '00:00';
-    addExercise();
     startTimer();
-
-    ['home', 'progress', 'history'].forEach(t => {
+    ['home', 'progress', 'history', 'exercises'].forEach(t => {
       document.getElementById(t + '-screen').classList.remove('active');
       document.getElementById('tab-' + t).classList.remove('active');
     });
     document.getElementById('workout-screen').classList.add('active');
+    await addExercise();
+  }
+
+  function startFromPlanChoice(planId) {
+    closeStartChoice();
+    startWorkoutFromPlan(planId);
   }
 
   /* ── Add exercise ───────────────────────────────────────── */
-  function addExercise() {
+  async function addExercise() {
+    const name = await openExPicker();
+    if (!name) return;
+    createExCard(name);
+  }
+
+  function createExCard(name) {
     exerciseCount++;
     const id  = 'ex-' + Date.now();
+    const tb  = !!getExMeta(name).tb;  /* time-based hold exercise? */
     const div = document.createElement('div');
     div.className = 'exercise-card';
     div.id = id;
+    if (tb) div.dataset.tb = '1';
     div.innerHTML = `
       <div class="exercise-head">
-        <input type="text" placeholder="Exercise name" value="Exercise ${exerciseCount}" />
+        <input type="text" placeholder="Exercise name" value="${name.replace(/"/g, '&quot;')}"
+          oninput="updateExIntensity('${id}')" />
         <button class="btn-delete-ex" onclick="removeExercise('${id}')" title="Remove exercise">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.03 9.47a.75.75 0 0 1-1.06 1.06L8 9.06l-1.97 1.97a.75.75 0 0 1-1.06-1.06L6.94 8 4.97 6.03a.75.75 0 0 1 1.06-1.06L8 6.94l1.97-1.97a.75.75 0 0 1 1.06 1.06L9.06 8l1.97 1.97z"/>
@@ -761,9 +2258,10 @@
       </div>
       <div class="sets-table">
         <div class="sets-col-header">
-          <span>Set</span><span>kg</span><span>Reps</span><span></span>
+          <span>Set</span><span>kg</span><span>${tb ? 'Secs' : 'Reps'}</span><span>⚡</span><span></span>
         </div>
         <div class="sets-body"></div>
+        <div class="ex-intensity-total"></div>
         <button class="btn-add-set" onclick="addSet('${id}')">
           <span class="btn-add-set-icon">+</span> Add Set
         </button>
@@ -788,18 +2286,25 @@
       <div class="set-badge">${setNum}</div>
       <input class="set-input" type="number" placeholder="—" min="0" step="0.5" inputmode="decimal" />
       <input class="set-input" type="number" placeholder="—" min="0" step="1"   inputmode="numeric" />
+      <span class="set-intensity-badge"></span>
       <button class="btn-delete-set" onclick="removeSet('${sid}','${exId}')" title="Remove set">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
           <path d="M7 .5a6.5 6.5 0 1 0 0 13A6.5 6.5 0 0 0 7 .5zm2.78 8.72a.75.75 0 0 1-1.06 1.06L7 8.56l-1.72 1.72a.75.75 0 0 1-1.06-1.06L5.94 7.5 4.22 5.78a.75.75 0 0 1 1.06-1.06L7 6.44l1.72-1.72a.75.75 0 0 1 1.06 1.06L8.06 7.5l1.72 1.72z"/>
         </svg>
       </button>`;
     body.appendChild(row);
+    // wire up real-time intensity on each input
+    row.querySelectorAll('.set-input').forEach(inp => {
+      inp.addEventListener('input', () => updateExIntensity(exId));
+    });
     renumberSets(exId);
+    updateExIntensity(exId);
   }
 
   function removeSet(sid, exId) {
     document.getElementById(sid)?.remove();
     renumberSets(exId);
+    updateExIntensity(exId);
   }
 
   function renumberSets(exId) {
@@ -812,11 +2317,12 @@
     clearInterval(timerInterval);
     const exercises = [];
     document.querySelectorAll('#exercise-list .exercise-card').forEach(card => {
-      const name = card.querySelector('.exercise-head input').value.trim() || 'Unnamed';
-      const sets = [];
+      const name   = card.querySelector('.exercise-head input').value.trim() || 'Unnamed';
+      const timeBased = !!card.dataset.tb;
+      const sets   = [];
       card.querySelectorAll('.sets-body .set-row').forEach(row => {
         const inputs = row.querySelectorAll('input');
-        sets.push({ kg: inputs[0].value || '0', reps: inputs[1].value || '0' });
+        sets.push({ kg: inputs[0].value || '0', reps: inputs[1].value || '0', tb: timeBased || undefined });
       });
       exercises.push({ name, sets });
     });
@@ -824,6 +2330,12 @@
     const workout = { id: Date.now(), date: new Date().toISOString(), duration: timerSeconds, exercises };
     workouts.unshift(workout);
     persist();
+
+    /* clear plan state */
+    activePlanData = null;
+    document.getElementById('plan-banner').style.display = 'none';
+    document.getElementById('btn-next-ex').style.display  = 'none';
+
     showToast('Workout saved 💪');
     showTab('home');
   }
@@ -832,9 +2344,8 @@
   function deleteWorkout(id) {
     workouts = workouts.filter(w => w.id !== id);
     persist();
-    // refresh whichever list is visible
-    const homeActive     = document.getElementById('home-screen').classList.contains('active');
-    const historyActive  = document.getElementById('history-screen').classList.contains('active');
+    const homeActive    = document.getElementById('home-screen').classList.contains('active');
+    const historyActive = document.getElementById('history-screen').classList.contains('active');
     if (homeActive)    renderRecent();
     if (historyActive) renderHistory();
   }
@@ -878,7 +2389,6 @@
        </div>`
     ).join('');
 
-    /* trash SVG — 16×16 */
     const trashSVG = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="2,4 14,4"/>
       <path d="M5 4V2.5A.5.5 0 0 1 5.5 2h5a.5.5 0 0 1 .5.5V4"/>
@@ -890,7 +2400,7 @@
     return `
       <div class="workout-history-card">
         <div class="workout-history-head">
-          <div>
+          <div class="workout-history-info">
             <div class="workout-history-date">${dateStr}</div>
             <div class="workout-history-time">${timeStr}</div>
           </div>
@@ -926,7 +2436,6 @@
      Progress / Charts
   ══════════════════════════════════════════════════════════ */
 
-  /* Set line colours — light and dark variants */
   const SET_COLORS_LIGHT = ['#007AFF', '#34C759', '#FF9500', '#AF52DE', '#FF2D55'];
   const SET_COLORS_DARK  = ['#0A84FF', '#30D158', '#FF9F0A', '#BF5AF2', '#FF375F'];
   const setColor = i => (isDark() ? SET_COLORS_DARK : SET_COLORS_LIGHT)[i] || '#007AFF';
@@ -991,10 +2500,15 @@
           </div>
           <div class="chart-legend">${legendHTML}</div>
         </div>
-        <div class="chart-wrap" id="wrap-${CSS.escape(name)}"></div>`;
+        <div class="chart-wrap" id="wrap-${CSS.escape(name)}"></div>
+        <div class="chart-section-label">⚡ Intensity Index</div>
+        <div class="chart-wrap" id="int-wrap-${CSS.escape(name)}"></div>`;
       container.appendChild(card);
 
-      requestAnimationFrame(() => drawChart(name, sessions, maxSets));
+      requestAnimationFrame(() => {
+        drawChart(name, sessions, maxSets);
+        drawIntensityChart(name, sessions);
+      });
     });
   }
 
@@ -1006,7 +2520,7 @@
     const dark = isDark();
     const dpr  = window.devicePixelRatio || 1;
     const W    = wrap.clientWidth;
-    const H    = 192;
+    const H    = Math.min(220, Math.max(140, Math.round(W * 0.48)));
 
     const canvas = document.createElement('canvas');
     canvas.className    = 'chart-canvas';
@@ -1023,7 +2537,6 @@
     const cW  = W - PAD.left - PAD.right;
     const cH  = H - PAD.top  - PAD.bottom;
 
-    /* y range */
     const allReps = sessions.flatMap(s => s.sets.map(st => st.reps));
     const yTicks  = niceYTicks(0, Math.max(...allReps, 1), 4);
     const yMin    = yTicks[0];
@@ -1034,10 +2547,8 @@
       : PAD.left + (i / (sessions.length - 1)) * cW;
     const yOf = r => PAD.top + (1 - (r - yMin) / (yMax - yMin)) * cH;
 
-    /* axis label colours */
     const labelColor = dark ? 'rgba(235,235,245,0.45)' : 'rgba(60,60,67,0.45)';
     const gridColor  = dark ? 'rgba(255,255,255,0.07)' : 'rgba(60,60,67,0.07)';
-    /* dot interior matches the card background */
     const dotFill    = dark ? '#1C1C1E' : '#FFFFFF';
 
     /* grid */
@@ -1073,7 +2584,7 @@
     });
     ctx.restore();
 
-    /* lines + gradient fills + dots per set */
+    /* lines + fills + dots per set */
     for (let si = 0; si < maxSets; si++) {
       const color = setColor(si);
       const pts   = sessions
@@ -1083,7 +2594,6 @@
       if (!pts.length) continue;
 
       if (pts.length > 1) {
-        /* gradient fill */
         const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
         grad.addColorStop(0, hexAlpha(color, 0.14));
         grad.addColorStop(1, hexAlpha(color, 0));
@@ -1095,7 +2605,6 @@
         ctx.fillStyle = grad;
         ctx.fill();
 
-        /* line */
         ctx.beginPath();
         ctx.strokeStyle = color;
         ctx.lineWidth   = 2;
@@ -1104,7 +2613,6 @@
         ctx.stroke();
       }
 
-      /* dots */
       pts.forEach(p => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
@@ -1115,6 +2623,110 @@
         ctx.stroke();
       });
     }
+  }
+
+  /* ── Intensity chart ────────────────────────────────────── */
+  function drawIntensityChart(name, sessions) {
+    const wrap = document.getElementById('int-wrap-' + CSS.escape(name));
+    if (!wrap) return;
+
+    const intensities = sessions.map(s => calcSessionIntensity(name, s.sets));
+    if (intensities.every(v => v === 0)) {
+      wrap.innerHTML = '<div style="text-align:center;padding:.75rem 0 .875rem;font-size:.8125rem;color:var(--tertiary)">Log weight or reps to see intensity</div>';
+      return;
+    }
+
+    const dark = isDark();
+    const dpr  = window.devicePixelRatio || 1;
+    const W    = wrap.clientWidth;
+    const H    = Math.min(160, Math.max(110, Math.round(W * 0.38)));
+
+    const canvas = document.createElement('canvas');
+    canvas.className    = 'chart-canvas';
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width        = W * dpr;
+    canvas.height       = H * dpr;
+    wrap.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const PAD   = { top: 10, right: 20, bottom: 34, left: 44 };
+    const cW    = W - PAD.left - PAD.right;
+    const cH    = H - PAD.top  - PAD.bottom;
+    const color = dark ? '#0A84FF' : '#007AFF';
+
+    const yTicks  = niceYTicks(0, Math.max(...intensities, 1), 3);
+    const yMin    = yTicks[0];
+    const yMax    = yTicks[yTicks.length - 1];
+    const xOf = i => sessions.length === 1 ? PAD.left + cW / 2
+                   : PAD.left + (i / (sessions.length - 1)) * cW;
+    const yOf = v => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * cH;
+
+    const labelColor = dark ? 'rgba(235,235,245,0.45)' : 'rgba(60,60,67,0.45)';
+    const gridColor  = dark ? 'rgba(255,255,255,0.07)' : 'rgba(60,60,67,0.07)';
+
+    /* grid lines */
+    ctx.save();
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth   = 0.5;
+    yTicks.forEach(t => {
+      ctx.beginPath(); ctx.moveTo(PAD.left, yOf(t)); ctx.lineTo(PAD.left + cW, yOf(t)); ctx.stroke();
+    });
+    ctx.restore();
+
+    /* y-axis labels */
+    ctx.save();
+    ctx.fillStyle    = labelColor;
+    ctx.font         = '400 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    yTicks.forEach(t => ctx.fillText(fmtInt(t), PAD.left - 6, yOf(t)));
+    ctx.restore();
+
+    /* x-axis labels */
+    ctx.save();
+    ctx.fillStyle    = labelColor;
+    ctx.font         = '400 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    const xIdxs = pickLabelIdxs(sessions.length, 5);
+    sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 7); });
+    ctx.restore();
+
+    const pts = intensities.map((v, i) => ({ x: xOf(i), y: yOf(v) }));
+
+    if (pts.length > 1) {
+      const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
+      grad.addColorStop(0, hexAlpha(color, 0.14));
+      grad.addColorStop(1, hexAlpha(color, 0));
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, yOf(yMin));
+      pts.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(pts[pts.length - 1].x, yOf(yMin));
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 2;
+      ctx.lineJoin    = 'round';
+      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    }
+
+    const dotFill = dark ? '#1C1C1E' : '#FFFFFF';
+    pts.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle   = dotFill;
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 2.5;
+      ctx.stroke();
+    });
   }
 
   /* ── Chart helpers ──────────────────────────────────────── */
@@ -1137,7 +2749,7 @@
   }
 
   function pickLabelIdxs(total, max) {
-    const set  = new Set([0, total - 1]);
+    const set = new Set([0, total - 1]);
     if (total <= max) { for (let i = 0; i < total; i++) set.add(i); }
     else {
       const step = Math.round((total - 1) / (max - 1));
@@ -1146,15 +2758,597 @@
     return set;
   }
 
-  /* ── Re-render charts when system theme changes ─────────── */
+  /* ── Re-render charts on theme change ───────────────────── */
   darkMQ.addEventListener('change', () => {
     if (document.getElementById('progress-screen').classList.contains('active')) {
       renderProgress();
     }
   });
 
+  /* ── Re-render charts on resize / orientation change ────── */
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (document.getElementById('progress-screen').classList.contains('active')) {
+        renderProgress();
+      }
+    }, 150);
+  });
+
+  /* ── Intensity per exercise card (total + per-set badge) ── */
+  function updateExIntensity(exId) {
+    const card = document.getElementById(exId);
+    if (!card) return;
+    const name = (card.querySelector('.exercise-head input[type="text"]')?.value || '').trim();
+    let total  = 0;
+    card.querySelectorAll('.sets-body .set-row').forEach(row => {
+      const ins = row.querySelectorAll('.set-input');
+      const v   = calcSetIntensity(name, parseFloat(ins[1]?.value) || 0, parseFloat(ins[0]?.value) || 0);
+      total += v;
+      const badge = row.querySelector('.set-intensity-badge');
+      if (badge) badge.textContent = v > 0 ? fmtInt(v) : '';
+    });
+    const el = card.querySelector('.ex-intensity-total');
+    if (el) el.textContent = total > 0 ? `⚡ ${fmtInt(total)}` : '';
+  }
+
+  /* ── Custom exercise wizard ─────────────────────────────── */
+  let _wiz = {};
+
+  function openWizard(name, cat, ctx) {
+    _wiz = { name, cat, ctx, type: null, step: 0, answers: {} };
+    _renderWizStep();
+    document.getElementById('ex-wizard').classList.add('open');
+  }
+  function closeWizard() {
+    document.getElementById('ex-wizard').classList.remove('open');
+  }
+
+  function _renderWizStep() {
+    const el = document.getElementById('wizard-content');
+    const { step, type, name } = _wiz;
+
+    const nameHTML = `<div class="wizard-ex-name">"${name}"</div>`;
+    const backBtn  = step > (type ? 1 : 0)
+      ? `<button class="wizard-btn-back" onclick="_wizBack()">← Back</button>` : '';
+
+    if (step === 0) {
+      el.innerHTML = `${nameHTML}
+        <div class="wizard-step-q">What type of exercise?</div>
+        <div class="wizard-choices">
+          <button class="wizard-choice" onclick="_wizType('bw')">
+            🤸 Bodyweight / Calisthenics
+            <small>Push-ups, pull-ups, planks…</small>
+          </button>
+          <button class="wizard-choice" onclick="_wizType('w')">
+            🏋️ Weighted / Gym
+            <small>Barbells, dumbbells, machines…</small>
+          </button>
+        </div>
+        <div class="wizard-footer">
+          <button class="wizard-btn-back" onclick="closeWizard()">Cancel</button>
+        </div>`;
+      return;
+    }
+
+    if (type === 'w') {
+      el.innerHTML = `${nameHTML}
+        <div class="wizard-step-q">Movement type?</div>
+        <div class="wizard-choices">
+          <button class="wizard-choice" onclick="_wizWAnswer('compound')">
+            ⚙️ Compound (multi-joint)
+            <small>e.g. bench press, squat, row</small>
+          </button>
+          <button class="wizard-choice" onclick="_wizWAnswer('isolation')">
+            🎯 Isolation (single-joint)
+            <small>e.g. bicep curl, leg extension</small>
+          </button>
+        </div>
+        <div class="wizard-footer">
+          <button class="wizard-btn-back" onclick="_wizBack()">← Back</button>
+        </div>`;
+      return;
+    }
+
+    /* bodyweight questionnaire */
+    const bwSteps = [
+      { q: 'How many limbs involved?',
+        hint: 'Single-limb movements are significantly harder.',
+        opts: [{ l: '🦾 Single limb', v: 'single' }, { l: '💪 Double limb', v: 'double' }] },
+      { q: 'Balance or stability required?',
+        hint: 'Does the movement require active balance (e.g. handstand vs push-up)?',
+        opts: [{ l: '⚖️ Yes — active balance', v: 'yes' }, { l: '🧱 No — stable position', v: 'no' }] },
+      { q: 'Movement type?',
+        hint: 'Isometric holds (static) tend to be harder for equivalent strength requirements.',
+        opts: [{ l: '🧊 Isometric hold (static)', v: 'iso' }, { l: '🔄 Dynamic (moving)', v: 'dyn' }] },
+      { q: 'Body angle to vertical?',
+        hint: 'Horizontal and inverted positions demand extreme strength and body control.',
+        opts: [
+          { l: '🧍 Upright — vertical or close', v: 'up' },
+          { l: '↗️ Diagonal — roughly 45°', v: '45' },
+          { l: '➡️ Horizontal — parallel to ground', v: 'h' },
+          { l: '🙃 Inverted — upside down', v: 'inv' },
+        ] },
+    ];
+    const qi = step - 1;
+    if (qi < bwSteps.length) {
+      const s = bwSteps[qi];
+      el.innerHTML = `${nameHTML}
+        <div class="wizard-step-hint">Step ${step}/4</div>
+        <div class="wizard-step-q">${s.q}</div>
+        <div class="wizard-step-hint">${s.hint}</div>
+        <div class="wizard-choices">
+          ${s.opts.map(o => `<button class="wizard-choice" onclick="_wizBWAnswer(${qs(o.v)})">${o.l}</button>`).join('')}
+        </div>
+        <div class="wizard-footer">
+          ${backBtn}
+        </div>`;
+    } else {
+      _showWizResult(_calcBWDiff(_wiz.answers));
+    }
+  }
+
+  function _wizType(t) { _wiz.type = t; _wiz.step = 1; _renderWizStep(); }
+
+  function _wizBWAnswer(v) {
+    const keys = ['limbs','balance','movement','angle'];
+    _wiz.answers[keys[_wiz.step - 1]] = v;
+    _wiz.step++;
+    _renderWizStep();
+  }
+
+  function _wizWAnswer(v) {
+    _showWizResult(v === 'compound' ? 5 : 3);
+  }
+
+  function _wizBack() { _wiz.step = Math.max(0, _wiz.step - 1); _renderWizStep(); }
+
+  function _calcBWDiff(a) {
+    let d = 2;
+    if (a.limbs    === 'single') d += 2;
+    if (a.balance  === 'yes')    d += 2;
+    if (a.movement === 'iso')    d += 1;
+    if (a.angle    === '45')     d += 2;
+    if (a.angle    === 'h')      d += 4;
+    if (a.angle    === 'inv')    d += 6;
+    return Math.min(10, Math.max(1, Math.round(d)));
+  }
+
+  function _showWizResult(diff) {
+    _wiz.diff = diff;
+    const pct   = diff * 10;
+    const color = diff <= 3 ? 'var(--green)' : diff <= 6 ? '#FF9500' : 'var(--red)';
+    const tier  = diff <= 2 ? 'Beginner' : diff <= 4 ? 'Novice'
+                : diff <= 6 ? 'Intermediate' : diff <= 8 ? 'Advanced' : 'Elite';
+    const typeLabel = _wiz.type === 'w' ? 'Weighted' : 'Bodyweight';
+    document.getElementById('wizard-content').innerHTML = `
+      <div class="wizard-ex-name">"${_wiz.name}"</div>
+      <div class="wizard-step-q" style="margin-bottom:.25rem">Difficulty Score</div>
+      <div class="wizard-diff-center">
+        <div class="wizard-diff-num">${diff}<sup>/10</sup></div>
+        <div class="wizard-diff-track">
+          <div class="wizard-diff-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+        <div class="wizard-diff-tier">${tier} · ${typeLabel}</div>
+      </div>
+      <div class="wizard-footer">
+        <button class="wizard-btn-back" onclick="closeWizard()">Cancel</button>
+        <button class="wizard-btn-confirm" onclick="_wizConfirm(${diff})">Add Exercise</button>
+      </div>`;
+  }
+
+  function _wizConfirm(diff) {
+    const { name, cat, type, ctx, answers } = _wiz;
+    const lib = getExLib();
+    if (!lib[cat]) lib[cat] = [];
+    if (!lib[cat].includes(name)) lib[cat].push(name);
+    setExLib(lib);
+    const meta = getCustomMeta();
+    const m = { type, diff };
+    if (answers && answers.movement === 'iso') m.tb = 1;  /* time-based hold */
+    meta[name] = m;
+    setCustomMeta(meta);
+    closeWizard();
+    if (ctx === 'picker') pickExercise(name);
+    else renderExScreen();
+  }
+
+  /* ── Exercises screen ──────────────────────────────────── */
+  function renderExScreen() {
+    const container = document.getElementById('ex-screen-list');
+    container.innerHTML = '';
+    const lib = getExLib();
+
+    EX_CATS.forEach(cat => {
+      const card = document.createElement('div');
+      card.className = 'ex-screen-card';
+
+      const head = document.createElement('div');
+      head.className = 'ex-screen-cat-head';
+      head.textContent = cat;
+      card.appendChild(head);
+
+      const body = document.createElement('div');
+
+      lib[cat].forEach(name => {
+        const meta  = getExMeta(name);
+        const diff  = meta.diff;
+        const bkgd  = diff <= 3 ? '#34C759' : diff <= 6 ? '#FF9500' : '#FF3B30';
+        const row   = document.createElement('div');
+        row.className = 'ex-screen-item';
+        row.innerHTML = `
+          <button class="ex-screen-item-btn" onclick="showExDetail(${qs(name)})">${name}</button>
+          <span class="diff-badge" style="background:${bkgd}" title="Difficulty ${diff}/10">${diff}</span>
+          <button class="ex-item-del"
+            onclick="delFromLib(${qs(cat)},${qs(name)})"
+            title="Remove">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.03 9.47a.75.75 0 0 1-1.06 1.06L8 9.06l-1.97 1.97a.75.75 0 0 1-1.06-1.06L6.94 8 4.97 6.03a.75.75 0 0 1 1.06-1.06L8 6.94l1.97-1.97a.75.75 0 0 1 1.06 1.06L9.06 8l1.97 1.97z"/>
+            </svg>
+          </button>`;
+        body.appendChild(row);
+      });
+
+      const addRow = document.createElement('div');
+      addRow.className = 'ex-screen-add-row';
+      addRow.id = `exs-add-${cat}`;
+      addRow.innerHTML = `
+        <button class="ex-add-custom-btn" onclick="showExScreenInput(${qs(cat)})">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5a.75.75 0 0 1 1.5 0z"/>
+          </svg>
+          Add to ${cat}…
+        </button>`;
+      body.appendChild(addRow);
+
+      card.appendChild(body);
+      container.appendChild(card);
+    });
+  }
+
+  function showExScreenInput(cat) {
+    const row = document.getElementById(`exs-add-${cat}`);
+    if (!row) return;
+    row.className = 'ex-screen-add-input-row';
+    row.innerHTML = `
+      <input class="ex-add-input" id="exs-ci-${cat}" type="text" placeholder="Exercise name…"
+        onkeydown="if(event.key==='Enter')confirmExScreenInput(${qs(cat)})" />
+      <button class="ex-add-confirm" onclick="confirmExScreenInput(${qs(cat)})">Add</button>`;
+    document.getElementById(`exs-ci-${cat}`).focus();
+  }
+
+  function confirmExScreenInput(cat) {
+    const inp = document.getElementById(`exs-ci-${cat}`);
+    const name = inp ? inp.value.trim() : '';
+    if (!name) return;
+    const lib = getExLib();
+    if ((lib[cat] || []).includes(name)) { renderExScreen(); return; }
+    openWizard(name, cat, 'screen');
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     Training Plans — managed inline in Library tab
+  ══════════════════════════════════════════════════════════ */
+  function persistPlans() { localStorage.setItem('plans', JSON.stringify(plans)); }
+
+  let _plansMode  = 'list';   /* 'list' | 'editor' */
+  let _planDraft  = null;     /* { id?, name, exercises[] } while editing */
+
+  /* ── Library segment switcher ───────────────────────────── */
+  let _libSeg = 'exercises';
+
+  function showLibSeg(seg) {
+    _libSeg = seg;
+    document.getElementById('lib-seg-exercises').classList.toggle('active', seg === 'exercises');
+    document.getElementById('lib-seg-plans').classList.toggle('active', seg === 'plans');
+    document.getElementById('lib-exercises-content').style.display = seg === 'exercises' ? '' : 'none';
+    document.getElementById('lib-plans-content').style.display     = seg === 'plans'     ? '' : 'none';
+    if (seg === 'exercises') renderExScreen();
+    if (seg === 'plans')     renderLibPlans();
+  }
+
+  /* ── Plans list/editor renderer (targets #lib-plans-inner) ─ */
+  function renderLibPlans() {
+    const el = document.getElementById('lib-plans-inner');
+    if (!el) return;
+    if (_plansMode === 'editor') {
+      _renderPlanEditor(el);
+    } else {
+      _plansMode = 'list';
+      _renderPlanList(el);
+    }
+  }
+
+  function _renderPlanList(el) {
+    const trashSVG = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="2,4 14,4"/>
+      <path d="M5 4V2.5A.5.5 0 0 1 5.5 2h5a.5.5 0 0 1 .5.5V4"/>
+      <path d="M3 4l.8 9.2A1 1 0 0 0 4.8 14h6.4a1 1 0 0 0 1-.8L13 4"/>
+    </svg>`;
+    const editSVG = `<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11.5 2.5a1.41 1.41 0 0 1 2 2L5 13l-3 1 1-3 8.5-8.5z"/>
+    </svg>`;
+
+    let html = '';
+    if (!plans.length) {
+      html += `<div class="empty-state" style="padding-top:1.5rem">
+        <span class="empty-state-emoji">📋</span>
+        <div class="empty-state-title">No Plans Yet</div>
+        Create a training plan to structure your workouts.
+      </div>`;
+    } else {
+      plans.forEach(plan => {
+        const subs = plan.exercises.slice(0, 4).join(' · ') + (plan.exercises.length > 4 ? ' …' : '');
+        html += `<div class="plan-item">
+          <div class="plan-item-main" style="cursor:default">
+            <div class="plan-item-name">${plan.name}</div>
+            <div class="plan-item-subs">${subs || 'No exercises'}</div>
+          </div>
+          <button class="plan-item-del" onclick="openPlanEditorForId(${plan.id})" title="Edit plan" style="margin-right:.125rem">${editSVG}</button>
+          <button class="plan-item-del" onclick="deletePlan(${plan.id})" title="Delete plan">${trashSVG}</button>
+        </div>`;
+      });
+    }
+    html += `<button class="btn-plan-create" onclick="openPlanEditor()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5a.75.75 0 0 1 1.5 0z"/>
+      </svg>
+      New Plan
+    </button>`;
+    el.innerHTML = html;
+  }
+
+  function _renderPlanEditor(el) {
+    const exItems = (_planDraft.exercises || []).map((name, i) => `
+      <div class="plan-ex-item">
+        <span class="plan-ex-num">${i + 1}</span>
+        <span class="plan-ex-name-lbl">${name}</span>
+        <button class="plan-ex-del" onclick="planEditorRemoveEx(${i})" title="Remove">×</button>
+      </div>`).join('');
+
+    const title = _planDraft.id ? 'Edit Plan' : 'New Plan';
+    el.innerHTML = `<div class="section-header">${title}</div>
+    <div class="plan-editor">
+      <input class="plan-editor-name" id="plan-name-input" type="text"
+        placeholder="Plan name (e.g. Push Day)"
+        value="${(_planDraft.name || '').replace(/"/g, '&quot;')}"
+        oninput="_planDraft.name = this.value" />
+      <div class="plan-ex-list">${exItems}</div>
+      <button class="btn-plan-add-ex" onclick="planEditorAddEx()">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5a.75.75 0 0 1 1.5 0z"/>
+        </svg>
+        Add Exercise
+      </button>
+      <div class="plan-editor-footer">
+        <button class="wizard-btn-back" style="flex:1" onclick="_plansMode='list';_planDraft=null;renderLibPlans()">Cancel</button>
+        <button class="wizard-btn-confirm" style="flex:2" onclick="savePlan()">Save Plan</button>
+      </div>
+    </div>`;
+  }
+
+  /* ── Plan editor actions ─────────────────────────────────── */
+  function openPlanEditor() {
+    _plansMode = 'editor';
+    _planDraft = { name: '', exercises: [] };
+    renderLibPlans();
+  }
+
+  function openPlanEditorForId(id) {
+    const plan = plans.find(p => p.id === id);
+    if (!plan) return;
+    _plansMode = 'editor';
+    _planDraft = { id: plan.id, name: plan.name, exercises: [...plan.exercises] };
+    renderLibPlans();
+    /* scroll editor into view */
+    setTimeout(() => document.getElementById('lib-plans-inner')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  }
+
+  async function planEditorAddEx() {
+    const name = await openExPicker();
+    if (!name) return;
+    _planDraft.exercises.push(name);
+    renderLibPlans();
+  }
+
+  function planEditorRemoveEx(idx) {
+    _planDraft.exercises.splice(idx, 1);
+    renderLibPlans();
+  }
+
+  function savePlan() {
+    const name = (document.getElementById('plan-name-input')?.value || _planDraft.name || '').trim();
+    if (!name) { showToast('Enter a plan name first'); return; }
+    if (!_planDraft.exercises.length) { showToast('Add at least one exercise'); return; }
+    if (_planDraft.id) {
+      const idx = plans.findIndex(p => p.id === _planDraft.id);
+      if (idx !== -1) plans[idx] = { id: _planDraft.id, name, exercises: [..._planDraft.exercises] };
+    } else {
+      plans.push({ id: Date.now(), name, exercises: [..._planDraft.exercises] });
+    }
+    persistPlans();
+    _plansMode = 'list';
+    _planDraft = null;
+    renderLibPlans();
+    showToast('Plan saved ✓');
+  }
+
+  function deletePlan(id) {
+    plans = plans.filter(p => p.id !== id);
+    persistPlans();
+    renderLibPlans();
+  }
+
+  /* ── Start workout from plan ─────────────────────────────── */
+  function startWorkoutFromPlan(planId) {
+    const plan = plans.find(p => p.id === planId);
+    if (!plan || !plan.exercises.length) return;
+
+    exerciseCount = 0;
+    document.getElementById('exercise-list').innerHTML = '';
+    document.getElementById('timer').textContent = '00:00';
+    startTimer();
+
+    ['home', 'progress', 'history', 'exercises'].forEach(t => {
+      document.getElementById(t + '-screen').classList.remove('active');
+      document.getElementById('tab-' + t).classList.remove('active');
+    });
+    document.getElementById('workout-screen').classList.add('active');
+
+    activePlanData = { planName: plan.name, exercises: [...plan.exercises], nextIndex: 1 };
+    createExCard(plan.exercises[0]);
+    updatePlanBanner();
+    updateNextExBtn();
+  }
+
+  /* ── Next exercise (plan mode) ───────────────────────────── */
+  function planNextExercise() {
+    if (!activePlanData || activePlanData.nextIndex >= activePlanData.exercises.length) return;
+    const name = activePlanData.exercises[activePlanData.nextIndex++];
+    createExCard(name);
+    updateNextExBtn();
+    updatePlanBanner();
+    /* scroll new card into view */
+    const last = document.getElementById('exercise-list').lastElementChild;
+    if (last) setTimeout(() => last.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  }
+
+  function updatePlanBanner() {
+    const banner = document.getElementById('plan-banner');
+    if (!banner) return;
+    if (!activePlanData) { banner.style.display = 'none'; return; }
+    const done  = activePlanData.nextIndex;
+    const total = activePlanData.exercises.length;
+    banner.textContent = `📋 ${activePlanData.planName} · ${done}/${total}`;
+    banner.style.display = '';
+  }
+
+  function updateNextExBtn() {
+    const btn = document.getElementById('btn-next-ex');
+    if (!btn) return;
+    if (!activePlanData || activePlanData.nextIndex >= activePlanData.exercises.length) {
+      btn.style.display = 'none';
+    } else {
+      const next      = activePlanData.exercises[activePlanData.nextIndex];
+      const remaining = activePlanData.exercises.length - activePlanData.nextIndex;
+      btn.textContent = `Next: ${next} (${remaining} left →)`;
+      btn.style.display = '';
+    }
+  }
+
+  /* ── Summary highlights ─────────────────────────────────── */
+  function calcStreak() {
+    if (!workouts.length) return 0;
+    const fmt = d => d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+    const days = new Set(workouts.map(w => fmt(new Date(w.date))));
+    const cur  = new Date();
+    // Streak is valid if today or yesterday has a workout
+    if (!days.has(fmt(cur))) {
+      cur.setDate(cur.getDate() - 1);
+      if (!days.has(fmt(cur))) return 0;
+    }
+    let streak = 0;
+    while (days.has(fmt(cur))) {
+      streak++;
+      cur.setDate(cur.getDate() - 1);
+    }
+    return streak;
+  }
+
+  function findTopPR() {
+    // Highest single-set rep count across all workouts
+    let best = null;
+    workouts.forEach(w => {
+      w.exercises.forEach(ex => {
+        ex.sets.forEach(s => {
+          const r = parseInt(s.reps) || 0;
+          if (r > 0 && (!best || r > best.reps)) best = { name: ex.name, reps: r };
+        });
+      });
+    });
+    return best;
+  }
+
+  function findBiggestImprovement() {
+    // Compare most recent workout to closest prior workout with same exercises (total reps)
+    if (workouts.length < 2) return null;
+    const latestTotals = {};
+    workouts[0].exercises.forEach(ex => {
+      const t = ex.sets.reduce((s, st) => s + (parseInt(st.reps) || 0), 0);
+      if (t > 0) latestTotals[ex.name] = t;
+    });
+    let best = null;
+    for (let i = 1; i < Math.min(workouts.length, 10); i++) {
+      workouts[i].exercises.forEach(ex => {
+        if (!latestTotals[ex.name]) return;
+        const prev = ex.sets.reduce((s, st) => s + (parseInt(st.reps) || 0), 0);
+        if (!prev) return;
+        const pct = Math.round(((latestTotals[ex.name] - prev) / prev) * 100);
+        if (pct > 0 && (!best || pct > best.pct)) best = { name: ex.name, pct };
+      });
+    }
+    return best;
+  }
+
+  function renderHighlights() {
+    const section = document.getElementById('highlights-section');
+    const list    = document.getElementById('highlights-list');
+    if (!section || !list) return;
+    if (!workouts.length) { section.style.display = 'none'; return; }
+
+    const items = [];
+
+    const streak = calcStreak();
+    if (streak >= 2) {
+      items.push({ icon: '🔥', title: `${streak}-Day Streak!`, body: 'Consistency is your superpower.' });
+    } else if (streak === 1) {
+      items.push({ icon: '⚡', title: 'Session logged!', body: 'Come back tomorrow to build your streak.' });
+    }
+
+    const pr = findTopPR();
+    if (pr) {
+      items.push({ icon: '🏆', title: `${pr.reps}-rep best`, body: `Personal record · ${pr.name}` });
+    }
+
+    const imp = findBiggestImprovement();
+    if (imp) {
+      items.push({ icon: '📈', title: `+${imp.pct}% improvement`, body: `${imp.name} — keep it up!` });
+    }
+
+    if (!items.length) {
+      items.push({ icon: '💪', title: `${workouts.length} workout${workouts.length !== 1 ? 's' : ''} logged`, body: 'Every session counts. Keep going!' });
+    }
+
+    list.innerHTML = items.slice(0, 3).map(it => `
+      <div class="highlight-card">
+        <div class="highlight-icon">${it.icon}</div>
+        <div>
+          <div class="highlight-title">${it.title}</div>
+          <div class="highlight-body">${it.body}</div>
+        </div>
+      </div>`).join('');
+
+    section.style.display = '';
+  }
+
   /* ── Init ───────────────────────────────────────────────── */
+  (function initBW() {
+    const el = document.getElementById('bw-input');
+    if (el) el.value = getUserBW();
+  })();
   renderRecent();
+  renderHighlights();
+
+  /* ── Splash ─────────────────────────────────────────────── */
+  (function initSplash() {
+    const splash = document.getElementById('splash');
+    if (!splash) return;
+    setTimeout(() => {
+      splash.classList.add('fade-out');
+      setTimeout(() => splash.remove(), 480);
+    }, 1800);
+  })();
 </script>
 </body>
 </html>
