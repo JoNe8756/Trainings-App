@@ -46,29 +46,116 @@
     /* ── Design tokens — dark ────────────────────────────── */
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg:          #000000;
-        --card:        #1C1C1E;
+        --bg:          #0A0A0A;   /* deep background — noticeably darker than cards */
+        --card:        #242426;   /* card surface — clearly lighter than bg          */
+        --card-inner:  #2E2E30;   /* nested inputs / secondary surfaces              */
         --blue:        #0A84FF;
         --green:       #30D158;
         --red:         #FF453A;
-        --label:       #FFFFFF;
-        --secondary:   rgba(235,235,245,.6);
-        --tertiary:    #8E8E93;
-        --separator:   rgba(84,84,88,.65);
-        --fill:        #2C2C2E;
-        --fill-focus:  #0A2A52;
-        --shadow:      0 1px 0 rgba(0,0,0,.3), 0 2px 16px rgba(0,0,0,.4);
-        --glass-nav:   rgba(28,28,30,.92);
-        --glass-tab:   rgba(28,28,30,.94);
-        --dur-bg:      rgba(10,132,255,.18);
-        --del-hover:   rgba(255,69,58,.14);
+        --label:       #F5F5F7;   /* slightly off-white — easier on the eyes        */
+        --secondary:   rgba(235,235,245,.72);  /* raised from .6 for better contrast */
+        --tertiary:    #A0A0A8;   /* raised from #8E8E93 for better readability     */
+        --separator:   rgba(255,255,255,.10);  /* visible but subtle card borders    */
+        --fill:        #2E2E30;   /* input / pill backgrounds                       */
+        --fill-focus:  #0D2D5A;
+        --shadow:      0 0 0 0.5px rgba(255,255,255,.08),   /* crisp card outline   */
+                       0 2px 8px rgba(0,0,0,.55),
+                       0 8px 24px rgba(0,0,0,.35);
+        --glass-nav:   rgba(18,18,20,.94);
+        --glass-tab:   rgba(18,18,20,.96);
+        --dur-bg:      rgba(10,132,255,.22);
+        --del-hover:   rgba(255,69,58,.18);
 
         /* Liquid Glass — dark, buttons & nav only */
-        --glass:        rgba(255,255,255,.10);
-        --glass-border: rgba(255,255,255,.14);
-        --glass-shadow: 0 4px 20px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.10);
+        --glass:        rgba(255,255,255,.12);
+        --glass-border: rgba(255,255,255,.16);
+        --glass-shadow: 0 4px 20px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12);
         --glass-blur:   blur(20px) saturate(180%);
       }
+    }
+
+    /* ── Dark mode element overrides ─────────────────────── */
+    @media (prefers-color-scheme: dark) {
+      /* Cards get a hairline top-lit border to pop off the background */
+      .exercise-card,
+      .workout-history-card,
+      .chart-card,
+      .highlight-card,
+      .bw-card,
+      .detail-card,
+      .plan-card {
+        border: 0.5px solid rgba(255,255,255,.10) !important;
+      }
+
+      /* Inputs and pill backgrounds use the slightly lighter inner surface */
+      .set-input,
+      .set-badge,
+      .ex-picker-search,
+      .ex-add-input,
+      .bw-card-input,
+      .plan-editor-name,
+      .lib-seg {
+        background: var(--card-inner) !important;
+      }
+
+      /* Exercise head input uses card-inner too */
+      .exercise-head input[type="text"] {
+        background: var(--card-inner) !important;
+      }
+
+      /* Segment control active pill stays card-color (slightly brighter) */
+      .lib-seg-btn.active {
+        background: #3A3A3C !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,.5);
+      }
+
+      /* Plan banner: white text on bg needs a boost */
+      .plan-banner { border-bottom: 0.5px solid rgba(255,255,255,.08); }
+
+      /* Exercise picker sheet needs stronger shadow to float above workout */
+      .ex-picker-sheet {
+        box-shadow: 0 -8px 40px rgba(0,0,0,.7), 0 -2px 0 rgba(255,255,255,.06);
+      }
+
+      /* Wizard card pop */
+      .wizard-card {
+        border: 0.5px solid rgba(255,255,255,.12) !important;
+        box-shadow: 0 12px 60px rgba(0,0,0,.7), 0 4px 16px rgba(0,0,0,.5) !important;
+      }
+
+      /* Resume banner border */
+      #resume-banner {
+        border: 0.5px solid rgba(255,255,255,.2);
+      }
+
+      /* Toast in dark */
+      .toast { border: 0.5px solid rgba(255,255,255,.12); }
+
+      /* Empty state text: tertiary is now lighter so fine, but icon dims a bit less */
+      .empty-state { opacity: 0.9; }
+
+      /* Workout history separator line */
+      .workout-history-exercises { border-top-color: rgba(255,255,255,.08); }
+
+      /* Set row separators need to be visible on the lighter card */
+      .set-row + .set-row { border-top-color: rgba(255,255,255,.07); }
+
+      /* Section headers readable on dark bg */
+      .section-header { color: var(--tertiary); }
+
+      /* diff badge text stays white */
+      .diff-badge { color: #fff !important; }
+
+      /* Duration pill needs slight lift */
+      .workout-history-dur {
+        background: rgba(10,132,255,.25) !important;
+      }
+
+      /* Highlight card body text */
+      .highlight-body { color: var(--tertiary); }
+
+      /* Plan item separators */
+      .plan-item + .plan-item { border-top-color: rgba(255,255,255,.07); }
     }
 
     /* ── Layout shell ─────────────────────────────────────── */
@@ -160,6 +247,23 @@
       transition: opacity .12s, box-shadow .12s;
     }
     .btn-start:active { opacity: .85; box-shadow: 0 2px 8px rgba(0,100,255,.22), inset 0 1px 0 rgba(255,255,255,.15); }
+
+    /* ── Discard button ──────────────────────────────────── */
+    .btn-discard {
+      background: none;
+      border: none;
+      color: var(--red);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      padding: 0.4375rem 0.25rem;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      opacity: .88;
+    }
+    .btn-discard:active { opacity: .55; }
 
     /* ── Finish button ────────────────────────────────────── */
     .btn-finish {
@@ -486,6 +590,32 @@
     .workout-history-ex-name { color: var(--label); font-weight: 500; }
 
     /* ── Bottom tab bar — always stuck to bottom of body ──── */
+    /* ── Resume-workout banner ──────────────────────────────── */
+    #resume-banner {
+      display: none;           /* shown via JS when workout is active */
+      position: absolute;
+      bottom: calc(max(4.25rem + env(safe-area-inset-bottom), 5rem) + 0.5rem);
+      left: var(--gutter);
+      right: var(--gutter);
+      z-index: 150;
+      background: var(--blue);
+      color: #fff;
+      border-radius: 0.875rem;
+      box-shadow: 0 4px 20px rgba(0,122,255,.45), 0 2px 6px rgba(0,0,0,.18);
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      padding: 0.6875rem 1rem;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #resume-banner.visible { display: flex; }
+    #resume-banner-label { font-size: 0.9375rem; font-weight: 600; }
+    #resume-banner-timer { font-size: 0.8125rem; font-weight: 500; opacity: .88; font-variant-numeric: tabular-nums; }
+
     .tab-bar {
       background: var(--glass-tab);
       backdrop-filter: blur(24px) saturate(180%);
@@ -551,10 +681,11 @@
       bottom: 6rem;
       left: 50%;
       transform: translateX(-50%) translateY(1rem);
-      background: rgba(28,28,30,.88);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      color: #fff;
+      background: rgba(36,36,38,.94);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      color: #F5F5F7;
+      border: 0.5px solid rgba(255,255,255,.12);
       border-radius: 1.375rem;
       padding: 0.6875rem 1.375rem;
       font-size: 0.875rem;
@@ -1548,6 +1679,7 @@
 <!-- ═══════════════ WORKOUT SCREEN ═══════════════ -->
 <div id="workout-screen" class="screen">
   <div class="nav-bar-compact">
+    <button class="btn-discard" onclick="discardWorkout()" title="Discard workout">Discard</button>
     <h1>Active Workout</h1>
     <button class="btn-finish" onclick="finishWorkout()">Finish</button>
   </div>
@@ -1627,6 +1759,12 @@
   </div>
 </div>
 
+<!-- ═══════════════ RESUME BANNER ═══════════════ -->
+<button id="resume-banner" onclick="resumeWorkout()">
+  <span id="resume-banner-label">💪 Workout in progress — tap to resume</span>
+  <span id="resume-banner-timer">00:00</span>
+</button>
+
 <!-- ═══════════════ TAB BAR ═══════════════ -->
 <div class="tab-bar">
   <button class="tab-btn active" id="tab-home" onclick="showTab('home')">
@@ -1704,6 +1842,7 @@
   let timerInterval  = null;
   let timerSeconds   = 0;
   let exerciseCount  = 0;
+  let _workoutActive = false;  /* true while a workout is in progress */
 
   /* ── Exercise library ───────────────────────────────────── */
   const DEFAULT_EX_LIB = {
@@ -2031,22 +2170,63 @@
     const btn = document.getElementById('tab-' + tab);
     if (btn) btn.classList.add('active');
 
+    /* show/hide resume banner whenever we leave the workout screen */
+    updateResumeBanner();
+
     if (tab === 'home')      { renderRecent(); renderHighlights(); }
     if (tab === 'history')   renderHistory();
     if (tab === 'progress')  renderProgress();
     if (tab === 'exercises') showLibSeg(_libSeg);
   }
 
+  /* Show the workout screen (used by resume and initial start) */
+  function showWorkoutScreen() {
+    ['home', 'progress', 'history', 'exercises'].forEach(t => {
+      document.getElementById(t + '-screen').classList.remove('active');
+      document.getElementById('tab-' + t).classList.remove('active');
+    });
+    document.getElementById('workout-screen').classList.add('active');
+    updateResumeBanner();
+  }
+
+  /* Resume: switch back to workout screen */
+  function resumeWorkout() {
+    showWorkoutScreen();
+  }
+
+  /* Update visibility of the floating resume banner */
+  function updateResumeBanner() {
+    const banner = document.getElementById('resume-banner');
+    if (!banner) return;
+    const workoutVisible = document.getElementById('workout-screen').classList.contains('active');
+    if (_workoutActive && !workoutVisible) {
+      banner.classList.add('visible');
+    } else {
+      banner.classList.remove('visible');
+    }
+  }
+
   /* ── Timer ──────────────────────────────────────────────── */
-  function startTimer() {
-    timerSeconds = 0;
+  function startTimer(fromSeconds) {
+    timerSeconds = fromSeconds || 0;
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
       timerSeconds++;
-      const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
-      const s = String(timerSeconds % 60).padStart(2, '0');
-      document.getElementById('timer').textContent = m + ':' + s;
+      _tickTimer();
+      /* auto-save timer every 5 seconds so a refresh restores close to correct time */
+      if (timerSeconds % 5 === 0) persistActiveWorkout();
     }, 1000);
+    _tickTimer();
+  }
+
+  function _tickTimer() {
+    const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+    const s = String(timerSeconds % 60).padStart(2, '0');
+    const txt = m + ':' + s;
+    const timerEl = document.getElementById('timer');
+    if (timerEl) timerEl.textContent = txt;
+    const bannerTimer = document.getElementById('resume-banner-timer');
+    if (bannerTimer) bannerTimer.textContent = txt;
   }
 
   /* ── Exercise picker ────────────────────────────────────── */
@@ -2215,14 +2395,15 @@
   async function startBlankWorkout() {
     closeStartChoice();
     exerciseCount = 0;
+    activePlanData = null;
+    _workoutActive = true;
     document.getElementById('exercise-list').innerHTML = '';
     document.getElementById('timer').textContent = '00:00';
+    document.getElementById('plan-banner').style.display = 'none';
+    document.getElementById('btn-next-ex').style.display = 'none';
     startTimer();
-    ['home', 'progress', 'history', 'exercises'].forEach(t => {
-      document.getElementById(t + '-screen').classList.remove('active');
-      document.getElementById('tab-' + t).classList.remove('active');
-    });
-    document.getElementById('workout-screen').classList.add('active');
+    persistActiveWorkout();
+    showWorkoutScreen();
     await addExercise();
   }
 
@@ -2268,10 +2449,12 @@
       </div>`;
     document.getElementById('exercise-list').appendChild(div);
     addSet(id);
+    persistActiveWorkout();
   }
 
   function removeExercise(id) {
     document.getElementById(id)?.remove();
+    persistActiveWorkout();
   }
 
   /* ── Add / remove set ───────────────────────────────────── */
@@ -2293,18 +2476,20 @@
         </svg>
       </button>`;
     body.appendChild(row);
-    // wire up real-time intensity on each input
+    // wire up real-time intensity + persistence on each input
     row.querySelectorAll('.set-input').forEach(inp => {
-      inp.addEventListener('input', () => updateExIntensity(exId));
+      inp.addEventListener('input', () => { updateExIntensity(exId); persistActiveWorkout(); });
     });
     renumberSets(exId);
     updateExIntensity(exId);
+    persistActiveWorkout();
   }
 
   function removeSet(sid, exId) {
     document.getElementById(sid)?.remove();
     renumberSets(exId);
     updateExIntensity(exId);
+    persistActiveWorkout();
   }
 
   function renumberSets(exId) {
@@ -2331,12 +2516,29 @@
     workouts.unshift(workout);
     persist();
 
-    /* clear plan state */
+    /* clear workout state */
+    _workoutActive = false;
     activePlanData = null;
+    exerciseCount  = 0;
+    clearActiveWorkout();
     document.getElementById('plan-banner').style.display = 'none';
     document.getElementById('btn-next-ex').style.display  = 'none';
 
     showToast('Workout saved 💪');
+    showTab('home');
+  }
+
+  /* ── Discard active workout ─────────────────────────────── */
+  function discardWorkout() {
+    if (!confirm('Discard this workout? All logged sets will be lost.')) return;
+    clearInterval(timerInterval);
+    _workoutActive = false;
+    activePlanData = null;
+    exerciseCount  = 0;
+    clearActiveWorkout();
+    document.getElementById('exercise-list').innerHTML = '';
+    document.getElementById('plan-banner').style.display = 'none';
+    document.getElementById('btn-next-ex').style.display  = 'none';
     showTab('home');
   }
 
@@ -2353,6 +2555,113 @@
   /* ── Persist to localStorage ────────────────────────────── */
   function persist() {
     localStorage.setItem('workouts', JSON.stringify(workouts));
+  }
+
+  /* Snapshot the in-progress workout to localStorage */
+  function persistActiveWorkout() {
+    if (!_workoutActive) return;
+    const exercises = [];
+    document.querySelectorAll('#exercise-list .exercise-card').forEach(card => {
+      const nameInput = card.querySelector('.exercise-head input');
+      const name = nameInput ? nameInput.value.trim() || '' : '';
+      const tb   = !!card.dataset.tb;
+      const sets = [];
+      card.querySelectorAll('.sets-body .set-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        sets.push({ kg: inputs[0]?.value || '', reps: inputs[1]?.value || '' });
+      });
+      exercises.push({ name, tb, sets });
+    });
+    const snap = {
+      timerSeconds,
+      exercises,
+      activePlanData: activePlanData ? JSON.parse(JSON.stringify(activePlanData)) : null,
+    };
+    localStorage.setItem('activeWorkout', JSON.stringify(snap));
+  }
+
+  /* Remove the active workout snapshot */
+  function clearActiveWorkout() {
+    localStorage.removeItem('activeWorkout');
+    document.getElementById('resume-banner').classList.remove('visible');
+  }
+
+  /* Restore an in-progress workout after page refresh */
+  function restoreActiveWorkout() {
+    const raw = localStorage.getItem('activeWorkout');
+    if (!raw) return;
+    let snap;
+    try { snap = JSON.parse(raw); } catch (e) { localStorage.removeItem('activeWorkout'); return; }
+
+    /* Rebuild state */
+    _workoutActive = true;
+    activePlanData = snap.activePlanData || null;
+    exerciseCount  = 0;
+    document.getElementById('exercise-list').innerHTML = '';
+
+    snap.exercises.forEach(ex => {
+      exerciseCount++;
+      const id  = 'ex-' + Date.now() + '-' + exerciseCount;
+      const tb  = !!ex.tb;
+      const div = document.createElement('div');
+      div.className = 'exercise-card';
+      div.id = id;
+      if (tb) div.dataset.tb = '1';
+      div.innerHTML = `
+        <div class="exercise-head">
+          <input type="text" placeholder="Exercise name" value="${(ex.name || '').replace(/"/g, '&quot;')}"
+            oninput="updateExIntensity('${id}'); persistActiveWorkout();" />
+          <button class="btn-delete-ex" onclick="removeExercise('${id}')" title="Remove exercise">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.03 9.47a.75.75 0 0 1-1.06 1.06L8 9.06l-1.97 1.97a.75.75 0 0 1-1.06-1.06L6.94 8 4.97 6.03a.75.75 0 0 1 1.06-1.06L8 6.94l1.97-1.97a.75.75 0 0 1 1.06 1.06L9.06 8l1.97 1.97z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="sets-table">
+          <div class="sets-col-header">
+            <span>Set</span><span>kg</span><span>${tb ? 'Secs' : 'Reps'}</span><span>⚡</span><span></span>
+          </div>
+          <div class="sets-body"></div>
+          <div class="ex-intensity-total"></div>
+          <button class="btn-add-set" onclick="addSet('${id}')">
+            <span class="btn-add-set-icon">+</span> Add Set
+          </button>
+        </div>`;
+      document.getElementById('exercise-list').appendChild(div);
+
+      /* Restore sets */
+      const body = div.querySelector('.sets-body');
+      ex.sets.forEach((setData, idx) => {
+        const sid = 'set-' + Date.now() + '-' + idx;
+        const row = document.createElement('div');
+        row.className = 'set-row';
+        row.id = sid;
+        row.innerHTML = `
+          <div class="set-badge">${idx + 1}</div>
+          <input class="set-input" type="number" placeholder="—" min="0" step="0.5" inputmode="decimal" value="${setData.kg || ''}" />
+          <input class="set-input" type="number" placeholder="—" min="0" step="1" inputmode="numeric" value="${setData.reps || ''}" />
+          <span class="set-intensity-badge"></span>
+          <button class="btn-delete-set" onclick="removeSet('${sid}','${id}')" title="Remove set">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <path d="M7 .5a6.5 6.5 0 1 0 0 13A6.5 6.5 0 0 0 7 .5zm2.78 8.72a.75.75 0 0 1-1.06 1.06L7 8.56l-1.72 1.72a.75.75 0 0 1-1.06-1.06L5.94 7.5 4.22 5.78a.75.75 0 0 1 1.06-1.06L7 6.44l1.72-1.72a.75.75 0 0 1 1.06 1.06L8.06 7.5l1.72 1.72z"/>
+            </svg>
+          </button>`;
+        body.appendChild(row);
+        row.querySelectorAll('.set-input').forEach(inp => {
+          inp.addEventListener('input', () => { updateExIntensity(id); persistActiveWorkout(); });
+        });
+      });
+      updateExIntensity(id);
+    });
+
+    /* Restore plan UI */
+    if (activePlanData) { updatePlanBanner(); updateNextExBtn(); }
+
+    /* Resume timer from where we left off */
+    startTimer(snap.timerSeconds || 0);
+
+    /* Don't auto-navigate to workout — show the banner on whatever tab is active */
+    updateResumeBanner();
   }
 
   /* ── Render: recent (home) ──────────────────────────────── */
@@ -2547,9 +2856,9 @@
       : PAD.left + (i / (sessions.length - 1)) * cW;
     const yOf = r => PAD.top + (1 - (r - yMin) / (yMax - yMin)) * cH;
 
-    const labelColor = dark ? 'rgba(235,235,245,0.45)' : 'rgba(60,60,67,0.45)';
-    const gridColor  = dark ? 'rgba(255,255,255,0.07)' : 'rgba(60,60,67,0.07)';
-    const dotFill    = dark ? '#1C1C1E' : '#FFFFFF';
+    const labelColor = dark ? 'rgba(160,160,168,0.85)' : 'rgba(60,60,67,0.50)';
+    const gridColor  = dark ? 'rgba(255,255,255,0.10)' : 'rgba(60,60,67,0.08)';
+    const dotFill    = dark ? '#242426' : '#FFFFFF';
 
     /* grid */
     ctx.save();
@@ -2664,8 +2973,8 @@
                    : PAD.left + (i / (sessions.length - 1)) * cW;
     const yOf = v => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * cH;
 
-    const labelColor = dark ? 'rgba(235,235,245,0.45)' : 'rgba(60,60,67,0.45)';
-    const gridColor  = dark ? 'rgba(255,255,255,0.07)' : 'rgba(60,60,67,0.07)';
+    const labelColor = dark ? 'rgba(160,160,168,0.85)' : 'rgba(60,60,67,0.50)';
+    const gridColor  = dark ? 'rgba(255,255,255,0.10)' : 'rgba(60,60,67,0.08)';
 
     /* grid lines */
     ctx.save();
@@ -2717,7 +3026,7 @@
       ctx.stroke();
     }
 
-    const dotFill = dark ? '#1C1C1E' : '#FFFFFF';
+    const dotFill = dark ? '#242426' : '#FFFFFF';
     pts.forEach(p => {
       ctx.beginPath();
       ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
@@ -3186,20 +3495,18 @@
     if (!plan || !plan.exercises.length) return;
 
     exerciseCount = 0;
+    _workoutActive = true;
     document.getElementById('exercise-list').innerHTML = '';
     document.getElementById('timer').textContent = '00:00';
     startTimer();
 
-    ['home', 'progress', 'history', 'exercises'].forEach(t => {
-      document.getElementById(t + '-screen').classList.remove('active');
-      document.getElementById('tab-' + t).classList.remove('active');
-    });
-    document.getElementById('workout-screen').classList.add('active');
+    showWorkoutScreen();
 
     activePlanData = { planName: plan.name, exercises: [...plan.exercises], nextIndex: 1 };
     createExCard(plan.exercises[0]);
     updatePlanBanner();
     updateNextExBtn();
+    persistActiveWorkout();
   }
 
   /* ── Next exercise (plan mode) ───────────────────────────── */
@@ -3209,6 +3516,7 @@
     createExCard(name);
     updateNextExBtn();
     updatePlanBanner();
+    persistActiveWorkout();
     /* scroll new card into view */
     const last = document.getElementById('exercise-list').lastElementChild;
     if (last) setTimeout(() => last.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
@@ -3339,6 +3647,9 @@
   })();
   renderRecent();
   renderHighlights();
+
+  /* ── Restore in-progress workout on page load ───────────── */
+  restoreActiveWorkout();
 
   /* ── Splash ─────────────────────────────────────────────── */
   (function initSplash() {
