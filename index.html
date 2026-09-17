@@ -227,10 +227,18 @@
       padding: 1.375rem var(--gutter) 0.5rem;
     }
 
+    /* ── Start / Repeat button row ───────────────────────── */
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      margin: 0.5rem var(--gutter) 0;
+      align-items: stretch;
+    }
+
     /* ── Start Workout button ─────────────────────────────── */
     .btn-start {
+      flex: 3;
       display: block;
-      margin: 0.5rem var(--gutter) 0;
       background: var(--blue);
       color: #fff;
       border: none;
@@ -240,13 +248,33 @@
       font-weight: 600;
       letter-spacing: -.3px;
       padding: 1.0625rem 1.25rem;
-      width: calc(100% - 2 * var(--gutter));
       cursor: pointer;
       text-align: center;
       box-shadow: 0 4px 18px rgba(0,100,255,.35), inset 0 1.5px 0 rgba(255,255,255,.28);
       transition: opacity .12s, box-shadow .12s;
     }
     .btn-start:active { opacity: .85; box-shadow: 0 2px 8px rgba(0,100,255,.22), inset 0 1px 0 rgba(255,255,255,.15); }
+
+    /* ── Repeat Last Workout button ──────────────────────── */
+    .btn-repeat {
+      display: none;           /* shown via JS when history exists */
+      flex: 1;
+      background: var(--card);
+      color: var(--blue);
+      border: none;
+      border-radius: var(--radius-btn);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      letter-spacing: -.2px;
+      padding: 0.875rem 0.5rem;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: var(--shadow);
+      transition: opacity .12s;
+      font-family: inherit;
+      line-height: 1.3;
+    }
+    .btn-repeat:active { opacity: .75; }
 
     /* ── Discard button ──────────────────────────────────── */
     .btn-discard {
@@ -1616,6 +1644,343 @@
       margin-top: 1rem;
     }
 
+    /* ── Training frequency goal card ───────────────────────── */
+    #freq-goal-card {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      margin: 0.5rem var(--gutter) 0;
+      padding: 1rem 1rem 0.875rem;
+    }
+    .freq-goal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.625rem;
+    }
+    .freq-goal-label {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      letter-spacing: -.2px;
+    }
+    .freq-goal-edit-btn {
+      background: none;
+      border: none;
+      color: var(--blue);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+    }
+    .freq-goal-count {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -.5px;
+      line-height: 1;
+      margin-bottom: 0.375rem;
+    }
+    .freq-goal-count span { color: var(--tertiary); font-size: 1.1rem; font-weight: 500; }
+    .freq-goal-bar-track {
+      height: 7px;
+      background: var(--divider, rgba(128,128,128,.18));
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+    .freq-goal-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: var(--blue);
+      transition: width .4s cubic-bezier(.4,0,.2,1);
+    }
+    .freq-goal-bar-fill.done { background: #34c759; }
+    .freq-goal-msg {
+      font-size: 0.8125rem;
+      color: var(--tertiary);
+      line-height: 1.35;
+    }
+    /* ── Set goal prompt card (shown when no goal) ─────────── */
+    /* ── Goal editor overlay ────────────────────────────────── */
+    #freq-goal-editor {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 900;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+    #freq-goal-editor.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .freq-goal-sheet {
+      background: var(--card);
+      border-radius: 18px 18px 0 0;
+      width: 100%;
+      max-width: 540px;
+      padding: 1.25rem 1.25rem 2rem;
+      transform: translateY(100%);
+      transition: transform .25s cubic-bezier(.4,0,.2,1);
+    }
+    #freq-goal-editor.open .freq-goal-sheet { transform: translateY(0); }
+    .freq-goal-sheet h3 {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      margin: 0 0 1rem;
+      letter-spacing: -.3px;
+    }
+    .freq-goal-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .freq-goal-row label {
+      font-size: 0.875rem;
+      color: var(--tertiary);
+      min-width: 3rem;
+    }
+    .freq-goal-row input[type=number] {
+      width: 4rem;
+      background: var(--bg);
+      border: 1.5px solid var(--divider, rgba(128,128,128,.25));
+      border-radius: 8px;
+      color: var(--primary);
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.5rem 0.625rem;
+      text-align: center;
+      font-family: inherit;
+    }
+    .freq-goal-period-btns {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .freq-goal-period-btn {
+      flex: 1;
+      background: var(--bg);
+      border: 1.5px solid var(--divider, rgba(128,128,128,.25));
+      border-radius: 8px;
+      color: var(--primary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.5rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .1s, border-color .1s, color .1s;
+    }
+    .freq-goal-period-btn.active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+      font-weight: 600;
+    }
+    .freq-goal-sheet-footer {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+    .freq-goal-save-btn {
+      flex: 2;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      padding: 0.8125rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .freq-goal-remove-btn {
+      flex: 1;
+      background: none;
+      border: 1.5px solid var(--red, #ff3b30);
+      color: var(--red, #ff3b30);
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.8125rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    /* ── Settings screen ─────────────────────────────────── */
+    /* ── Settings — shared layer ──────────────────────────── */
+
+    /* Each "panel" slides in from the right; the root panel is at z:800,
+       sub-panels at z:810 so they stack on top during push navigation. */
+    .settings-panel {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform .28s cubic-bezier(.4,0,.2,1);
+      z-index: 800;
+    }
+    .settings-panel.sub { z-index: 810; }
+    .settings-panel.open { transform: translateX(0); }
+
+    /* Nav bar — mirrors .nav-bar-compact exactly */
+    .settings-nav {
+      display: flex;
+      align-items: center;
+      padding: calc(env(safe-area-inset-top, 0px) + 0.875rem) var(--gutter) 0.75rem;
+      background: var(--glass-nav);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 0.5px solid var(--separator);
+      flex-shrink: 0;
+      position: relative;
+    }
+    .settings-back-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: none;
+      border: none;
+      color: var(--blue);
+      font-size: 1.0625rem;
+      font-weight: 400;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 0;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+      z-index: 1;
+    }
+    .settings-nav-title {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.0625rem;
+      font-weight: 600;
+      letter-spacing: -.3px;
+      color: var(--label);
+      pointer-events: none;
+    }
+
+    .settings-body {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);
+    }
+
+    /* Section header — identical to .section-header */
+    .settings-section-header {
+      font-size: 0.8125rem;
+      font-weight: 400;
+      color: var(--tertiary);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      padding: 1.375rem var(--gutter) 0.5rem;
+    }
+
+    /* Card — same tokens as every other card in the app */
+    .settings-card {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      margin: 0 var(--gutter);
+      overflow: hidden;
+    }
+    @media (prefers-color-scheme: dark) {
+      .settings-card { border: 0.5px solid rgba(255,255,255,.10); }
+      .settings-num-input { background: var(--card-inner) !important; }
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+      padding: 0.875rem 1rem;
+      min-height: 3.25rem;
+      border-bottom: 0.5px solid var(--separator);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row-tappable { cursor: pointer; }
+    .settings-row-tappable:active { background: var(--fill); }
+
+    /* Icon pill — 30 × 30, matches iOS SF-symbol container */
+    .settings-row-icon {
+      width: 1.875rem;
+      height: 1.875rem;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .icon-blue   { background: rgba(0,122,255,.15); }
+    .icon-green  { background: rgba(52,199,89,.15); }
+    .icon-orange { background: rgba(255,149,0,.15); }
+    .icon-purple { background: rgba(175,82,222,.15); }
+    .icon-yellow { background: rgba(255,204,0,.18); }
+    .icon-red    { background: rgba(255,59,48,.12); }
+    .icon-gray   { background: rgba(142,142,147,.15); }
+
+    .settings-row-label {
+      flex: 1;
+      font-size: 0.9375rem;
+      font-weight: 400;
+      color: var(--label);
+    }
+    .settings-row-value {
+      font-size: 0.9375rem;
+      color: var(--tertiary);
+    }
+    .settings-row-danger { color: var(--red); }
+
+    /* Number input — pixel-match to .bw-card-input */
+    .settings-num-input {
+      width: 4.5rem;
+      background: var(--fill);
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.3125rem 0.5rem;
+      font-size: 0.9375rem;
+      font-family: inherit;
+      text-align: center;
+      color: var(--label);
+      font-weight: 600;
+      outline: none;
+      transition: background .12s;
+    }
+    .settings-num-input:focus { background: var(--fill-focus); }
+    .settings-unit { font-size: 0.875rem; color: var(--tertiary); }
+
+    /* Chevron on drill-in rows */
+    .settings-chevron { flex-shrink: 0; color: var(--tertiary); opacity: .4; }
+
+    /* Gear button in Summary nav */
+    .nav-bar { position: relative; }
+    .btn-settings-gear {
+      position: absolute;
+      right: var(--gutter);
+      bottom: 0.625rem;
+      background: none;
+      border: none;
+      color: var(--tertiary);
+      cursor: pointer;
+      padding: 0.25rem;
+      line-height: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-settings-gear:active { opacity: .55; }
+
     /* ── Summary highlights ───────────────────────────────── */
     #highlights-section { display: none; }
     .highlight-card {
@@ -1649,17 +2014,29 @@
   <div class="scroll-area">
     <div class="nav-bar">
       <div class="nav-bar-title">Summary</div>
+      <button class="btn-settings-gear" onclick="openSettings()" aria-label="Settings">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
     </div>
-    <button class="btn-start" onclick="startWorkout()">Start Workout</button>
-    <div class="bw-card">
-      <span class="bw-card-label">Your bodyweight</span>
-      <div class="bw-card-right">
-        <input type="number" id="bw-input" class="bw-card-input"
-          min="30" max="300" step="0.5" inputmode="decimal" placeholder="75"
-          onchange="setUserBW(this.value)" />
-        <span class="bw-card-unit">kg</span>
+    <div class="btn-row">
+      <button class="btn-start" onclick="startWorkout()">Start Workout</button>
+      <button class="btn-repeat" id="btn-repeat" onclick="repeatLastWorkout()">↩ Repeat Last</button>
+    </div>
+
+    <!-- Training frequency goal card -->
+    <div id="freq-goal-card" style="display:none">
+      <div class="freq-goal-header">
+        <div class="freq-goal-label" id="freq-goal-period-label">Weekly Goal</div>
+        <button class="freq-goal-edit-btn" onclick="openFreqGoalEditor()">Edit</button>
       </div>
+      <div class="freq-goal-count"><span id="freq-goal-done">0</span><span> / <span id="freq-goal-target">4</span> workouts</span></div>
+      <div class="freq-goal-bar-track"><div class="freq-goal-bar-fill" id="freq-goal-bar" style="width:0%"></div></div>
+      <div class="freq-goal-msg" id="freq-goal-msg"></div>
     </div>
+
     <div id="highlights-section">
       <div class="section-header">Highlights</div>
       <div id="highlights-list"></div>
@@ -1766,6 +2143,194 @@
 </button>
 
 <!-- ═══════════════ TAB BAR ═══════════════ -->
+
+<!-- ═══════════════════════════════════════════════════════
+     SETTINGS — ROOT PANEL
+═══════════════════════════════════════════════════════ -->
+<div id="settings-root" class="settings-panel">
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="closeSettings()">
+      <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+      Back
+    </button>
+    <div class="settings-nav-title">Settings</div>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-header">Settings</div>
+    <div class="settings-card">
+      <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-personal')">
+        <div class="settings-row-icon icon-blue">👤</div>
+        <div class="settings-row-label">Personal Info</div>
+        <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
+      </div>
+      <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-goals')">
+        <div class="settings-row-icon icon-green">🎯</div>
+        <div class="settings-row-label">Training Goals</div>
+        <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
+      </div>
+      <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-prefs')">
+        <div class="settings-row-icon icon-purple">⚙️</div>
+        <div class="settings-row-label">Preferences</div>
+        <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
+      </div>
+      <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-data')">
+        <div class="settings-row-icon icon-orange">💾</div>
+        <div class="settings-row-label">Data Management</div>
+        <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
+      </div>
+      <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-about')">
+        <div class="settings-row-icon icon-yellow">🏋️</div>
+        <div class="settings-row-label">About</div>
+        <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SETTINGS — PERSONAL INFO
+═══════════════════════════════════════════════════════ -->
+<div id="settings-personal" class="settings-panel sub">
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="settingsPop()">
+      <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+      Settings
+    </button>
+    <div class="settings-nav-title">Personal Info</div>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-header">Body</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div class="settings-row-icon icon-blue">⚖️</div>
+        <div class="settings-row-label">Bodyweight</div>
+        <input type="number" id="settings-bw-input" class="settings-num-input"
+          min="30" max="300" step="0.5" inputmode="decimal" placeholder="75"
+          onchange="settingsBWChanged(this.value)" />
+        <span class="settings-unit">kg</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SETTINGS — TRAINING GOALS
+═══════════════════════════════════════════════════════ -->
+<div id="settings-goals" class="settings-panel sub">
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="settingsPop()">
+      <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+      Settings
+    </button>
+    <div class="settings-nav-title">Training Goals</div>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-header">Frequency</div>
+    <div class="settings-card">
+      <div class="settings-row settings-row-tappable" onclick="openFreqGoalEditor()">
+        <div class="settings-row-icon icon-green">🎯</div>
+        <div class="settings-row-label">Frequency Goal</div>
+        <span class="settings-row-value" id="settings-freq-display">Not set</span>
+        <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SETTINGS — PREFERENCES
+═══════════════════════════════════════════════════════ -->
+<div id="settings-prefs" class="settings-panel sub">
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="settingsPop()">
+      <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+      Settings
+    </button>
+    <div class="settings-nav-title">Preferences</div>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-header">Coming Soon</div>
+    <div class="settings-card">
+      <div class="settings-row" style="opacity:.5">
+        <div class="settings-row-icon icon-gray">👻</div>
+        <div class="settings-row-label">
+          Ghost Mode
+          <div style="font-size:.75rem;color:var(--tertiary);margin-top:.1rem">Hide your data from shared devices</div>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section-header" style="padding-top:.75rem"></div>
+    <div style="padding:0 var(--gutter);font-size:.8125rem;color:var(--tertiary);line-height:1.5">
+      More preference options will be added in future updates.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SETTINGS — DATA MANAGEMENT
+═══════════════════════════════════════════════════════ -->
+<div id="settings-data" class="settings-panel sub">
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="settingsPop()">
+      <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+      Settings
+    </button>
+    <div class="settings-nav-title">Data Management</div>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-header">Backup</div>
+    <div class="settings-card">
+      <div class="settings-row settings-row-tappable" onclick="exportData()">
+        <div class="settings-row-icon icon-blue">📤</div>
+        <div class="settings-row-label">Export Data</div>
+        <span class="settings-row-value">JSON</span>
+      </div>
+      <div class="settings-row settings-row-tappable" onclick="triggerImport()">
+        <div class="settings-row-icon icon-green">📥</div>
+        <div class="settings-row-label">Import Data</div>
+      </div>
+    </div>
+    <div style="padding:.625rem var(--gutter) 0;font-size:.8125rem;color:var(--tertiary);line-height:1.5">
+      Export saves all your workouts, plans, exercises, goals, and settings to a JSON file. Import replaces all current data with a previously exported file.
+    </div>
+    <!-- hidden file input for import -->
+    <input type="file" id="import-file-input" accept=".json,application/json" style="display:none" onchange="importData(event)" />
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SETTINGS — ABOUT
+═══════════════════════════════════════════════════════ -->
+<div id="settings-about" class="settings-panel sub">
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="settingsPop()">
+      <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+      Settings
+    </button>
+    <div class="settings-nav-title">About</div>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-header">App</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div class="settings-row-icon icon-yellow">🏋️</div>
+        <div class="settings-row-label">Workout Logger</div>
+        <span class="settings-row-value">v1.0</span>
+      </div>
+    </div>
+    <div class="settings-section-header">Danger Zone</div>
+    <div class="settings-card">
+      <div class="settings-row settings-row-tappable" onclick="clearAllData()">
+        <div class="settings-row-icon icon-red">🗑️</div>
+        <div class="settings-row-label settings-row-danger">Reset All Data</div>
+      </div>
+    </div>
+    <div style="padding:.625rem var(--gutter) 0;font-size:.8125rem;color:var(--tertiary);line-height:1.5">
+      Permanently deletes all workouts, plans, exercises, goals, and settings. This cannot be undone. Consider exporting first.
+    </div>
+  </div>
+</div>
+
 <div class="tab-bar">
   <button class="tab-btn active" id="tab-home" onclick="showTab('home')">
     <svg viewBox="0 0 25 25" fill="currentColor">
@@ -1833,6 +2398,29 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ═══════════════ FREQ GOAL EDITOR ═══════════════ -->
+<div id="freq-goal-editor" onclick="freqEditorBgClick(event)">
+  <div class="freq-goal-sheet">
+    <h3>Training Frequency Goal</h3>
+    <div class="freq-goal-row">
+      <label>Count</label>
+      <input type="number" id="freq-editor-count" min="1" max="30" step="1" inputmode="numeric" value="4" />
+      <span style="font-size:.875rem;color:var(--tertiary)">workouts per</span>
+    </div>
+    <div class="freq-goal-row">
+      <label>Period</label>
+      <div class="freq-goal-period-btns">
+        <button class="freq-goal-period-btn active" data-period="week" onclick="selectFreqPeriod(this)">Week</button>
+        <button class="freq-goal-period-btn" data-period="month" onclick="selectFreqPeriod(this)">Month</button>
+      </div>
+    </div>
+    <div class="freq-goal-sheet-footer">
+      <button class="freq-goal-save-btn" onclick="saveFreqGoal()">Save Goal</button>
+      <button class="freq-goal-remove-btn" id="freq-remove-btn" onclick="removeFreqGoal()" style="display:none">Remove</button>
+    </div>
+  </div>
+</div>
 
 <script>
   /* ── State ──────────────────────────────────────────────── */
@@ -2173,7 +2761,7 @@
     /* show/hide resume banner whenever we leave the workout screen */
     updateResumeBanner();
 
-    if (tab === 'home')      { renderRecent(); renderHighlights(); }
+    if (tab === 'home')      { renderRecent(); renderFreqGoal(); renderHighlights(); }
     if (tab === 'history')   renderHistory();
     if (tab === 'progress')  renderProgress();
     if (tab === 'exercises') showLibSeg(_libSeg);
@@ -2412,6 +3000,33 @@
     startWorkoutFromPlan(planId);
   }
 
+  /* ── Repeat Last Workout ────────────────────────────────── */
+  function repeatLastWorkout() {
+    if (!workouts.length) return;
+    const last = workouts[0];
+    const names = (last.exercises || []).map(e => e.name).filter(Boolean);
+    if (!names.length) return;
+
+    exerciseCount = 0;
+    activePlanData = null;
+    _workoutActive = true;
+    document.getElementById('exercise-list').innerHTML = '';
+    document.getElementById('timer').textContent = '00:00';
+    document.getElementById('plan-banner').style.display = 'none';
+    document.getElementById('btn-next-ex').style.display = 'none';
+    startTimer();
+
+    names.forEach(name => createExCard(name));
+
+    persistActiveWorkout();
+    showWorkoutScreen();
+  }
+
+  function updateRepeatBtn() {
+    const btn = document.getElementById('btn-repeat');
+    if (btn) btn.style.display = workouts.length ? 'block' : 'none';
+  }
+
   /* ── Add exercise ───────────────────────────────────────── */
   async function addExercise() {
     const name = await openExPicker();
@@ -2524,6 +3139,7 @@
     document.getElementById('plan-banner').style.display = 'none';
     document.getElementById('btn-next-ex').style.display  = 'none';
 
+    renderFreqGoal();
     showToast('Workout saved 💪');
     showTab('home');
   }
@@ -2548,7 +3164,7 @@
     persist();
     const homeActive    = document.getElementById('home-screen').classList.contains('active');
     const historyActive = document.getElementById('history-screen').classList.contains('active');
-    if (homeActive)    renderRecent();
+    if (homeActive)    { renderRecent(); renderFreqGoal(); }
     if (historyActive) renderHistory();
   }
 
@@ -2669,9 +3285,11 @@
     const el = document.getElementById('recent-list');
     if (!workouts.length) {
       el.innerHTML = emptyState('🏋️', 'No Workouts Yet', 'Tap Start Workout to log your first session.');
+      updateRepeatBtn();
       return;
     }
     el.innerHTML = workouts.slice(0, 3).map(w => workoutCard(w)).join('');
+    updateRepeatBtn();
   }
 
   /* ── Render: history ────────────────────────────────────── */
@@ -3640,12 +4258,249 @@
     section.style.display = '';
   }
 
+  /* ══════════════════════════════════════════════════════════
+     SETTINGS SCREEN
+     ══════════════════════════════════════════════════════════ */
+
+  /* ══════════════════════════════════════════════════════════
+     SETTINGS NAVIGATION
+     ══════════════════════════════════════════════════════════ */
+
+  let _settingsStack = [];  /* stack of sub-panel IDs currently open */
+
+  function openSettings() {
+    /* Sync live values before showing */
+    const bwEl = document.getElementById('settings-bw-input');
+    if (bwEl) bwEl.value = getUserBW();
+    updateSettingsFreqDisplay();
+    _settingsStack = [];
+    document.getElementById('settings-root').classList.add('open');
+  }
+
+  function closeSettings() {
+    /* Close root + all sub-panels without animation (instant reset) */
+    document.querySelectorAll('.settings-panel.open').forEach(p => p.classList.remove('open'));
+    _settingsStack = [];
+  }
+
+  function settingsPush(id) {
+    const panel = document.getElementById(id);
+    if (!panel) return;
+    _settingsStack.push(id);
+    /* small rAF delay so the push starts after the tap-active state clears */
+    requestAnimationFrame(() => panel.classList.add('open'));
+  }
+
+  function settingsPop() {
+    const id = _settingsStack.pop();
+    if (id) document.getElementById(id)?.classList.remove('open');
+  }
+
+  function settingsBWChanged(val) {
+    setUserBW(val);
+  }
+
+  function updateSettingsFreqDisplay() {
+    const goal = getFreqGoal();
+    const el   = document.getElementById('settings-freq-display');
+    if (!el) return;
+    if (!goal) { el.textContent = 'Not set'; return; }
+    el.textContent = `${goal.count}× / ${goal.period === 'week' ? 'week' : 'month'}`;
+  }
+
+  function clearAllData() {
+    if (!confirm('Delete all workouts, plans, and settings? This cannot be undone.')) return;
+    localStorage.clear();
+    workouts = [];
+    plans    = [];
+    closeSettings();
+    renderRecent();
+    renderFreqGoal();
+    renderHighlights();
+    showToast('All data cleared');
+  }
+
+  /* ── Export ─────────────────────────────────────────────── */
+  function exportData() {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      version:    1,
+      workouts:   JSON.parse(localStorage.getItem('workouts')     || '[]'),
+      plans:      JSON.parse(localStorage.getItem('plans')        || '[]'),
+      exLib:      JSON.parse(localStorage.getItem('exLib')        || 'null'),
+      customExMeta: JSON.parse(localStorage.getItem('customExMeta') || '{}'),
+      freqGoal:   JSON.parse(localStorage.getItem('freqGoal')     || 'null'),
+      userBW:     localStorage.getItem('userBW') || null,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const date = new Date().toISOString().slice(0, 10);
+    a.href     = url;
+    a.download = `workout-logger-backup-${date}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Data exported ✓');
+  }
+
+  function triggerImport() {
+    document.getElementById('import-file-input').value = '';
+    document.getElementById('import-file-input').click();
+  }
+
+  function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      let payload;
+      try { payload = JSON.parse(e.target.result); }
+      catch { showToast('Invalid file — import failed'); return; }
+
+      if (!payload.version || !Array.isArray(payload.workouts)) {
+        showToast('Unrecognised format — import failed');
+        return;
+      }
+
+      if (!confirm('Replace all current data with the imported backup? This cannot be undone.')) return;
+
+      /* Restore each key */
+      localStorage.setItem('workouts',     JSON.stringify(payload.workouts   || []));
+      localStorage.setItem('plans',        JSON.stringify(payload.plans      || []));
+      if (payload.exLib)        localStorage.setItem('exLib',        JSON.stringify(payload.exLib));
+      if (payload.customExMeta) localStorage.setItem('customExMeta', JSON.stringify(payload.customExMeta));
+      if (payload.freqGoal)     localStorage.setItem('freqGoal',     JSON.stringify(payload.freqGoal));
+      if (payload.userBW)       localStorage.setItem('userBW',       payload.userBW);
+
+      /* Reload in-memory state */
+      workouts = payload.workouts || [];
+      plans    = payload.plans    || [];
+
+      /* Refresh UI */
+      closeSettings();
+      renderRecent();
+      renderFreqGoal();
+      renderHighlights();
+      showToast('Data imported ✓');
+    };
+    reader.readAsText(file);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     TRAINING FREQUENCY GOAL
+     ══════════════════════════════════════════════════════════ */
+
+  function getFreqGoal() {
+    try { return JSON.parse(localStorage.getItem('freqGoal') || 'null'); } catch(e) { return null; }
+  }
+  function saveFreqGoalData(goal) {
+    if (goal) localStorage.setItem('freqGoal', JSON.stringify(goal));
+    else       localStorage.removeItem('freqGoal');
+  }
+
+  /* Count workouts within the current period window */
+  function countWorkoutsInPeriod(period) {
+    const now  = new Date();
+    let start;
+    if (period === 'week') {
+      /* Monday of the current week */
+      const day = now.getDay();           /* 0=Sun … 6=Sat */
+      const diff = (day === 0 ? -6 : 1 - day);
+      start = new Date(now);
+      start.setDate(now.getDate() + diff);
+      start.setHours(0, 0, 0, 0);
+    } else {
+      /* 1st of the current month */
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+    return workouts.filter(w => new Date(w.date) >= start).length;
+  }
+
+  function freqGoalMsg(done, target) {
+    const left = target - done;
+    if (done === 0)    return `${target} workout${target !== 1 ? 's' : ''} to go — let's get started!`;
+    if (left <= 0)     return '🎉 Goal reached — great work!';
+    if (left === 1)    return 'One more to hit your goal!';
+    return `${left} more workout${left !== 1 ? 's' : ''} to go — keep it up!`;
+  }
+
+  function renderFreqGoal() {
+    const goal = getFreqGoal();
+    const card = document.getElementById('freq-goal-card');
+    if (!goal) {
+      if (card) card.style.display = 'none';
+      return;
+    }
+    if (!card) return;
+    card.style.display = '';
+
+    const done   = countWorkoutsInPeriod(goal.period);
+    const target = goal.count;
+    const pct    = Math.min(100, Math.round(done / target * 100));
+    const label  = goal.period === 'week' ? 'Weekly Goal' : 'Monthly Goal';
+
+    document.getElementById('freq-goal-period-label').textContent = label;
+    document.getElementById('freq-goal-done').textContent         = done;
+    document.getElementById('freq-goal-target').textContent       = target;
+    document.getElementById('freq-goal-msg').textContent          = freqGoalMsg(done, target);
+
+    const bar = document.getElementById('freq-goal-bar');
+    bar.style.width = pct + '%';
+    bar.classList.toggle('done', done >= target);
+  }
+
+  function openFreqGoalEditor() {
+    const goal = getFreqGoal();
+    const countEl  = document.getElementById('freq-editor-count');
+    const removeBtn = document.getElementById('freq-remove-btn');
+    if (goal) {
+      countEl.value = goal.count;
+      /* set correct period button */
+      document.querySelectorAll('.freq-goal-period-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.period === goal.period);
+      });
+      removeBtn.style.display = '';
+    } else {
+      countEl.value = '4';
+      document.querySelectorAll('.freq-goal-period-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+      removeBtn.style.display = 'none';
+    }
+    document.getElementById('freq-goal-editor').classList.add('open');
+  }
+
+  function closeFreqGoalEditor() {
+    document.getElementById('freq-goal-editor').classList.remove('open');
+  }
+
+  function freqEditorBgClick(e) {
+    if (e.target === document.getElementById('freq-goal-editor')) closeFreqGoalEditor();
+  }
+
+  function selectFreqPeriod(btn) {
+    document.querySelectorAll('.freq-goal-period-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function saveFreqGoal() {
+    const count  = parseInt(document.getElementById('freq-editor-count').value, 10);
+    if (!count || count < 1) return;
+    const period = document.querySelector('.freq-goal-period-btn.active')?.dataset.period || 'week';
+    saveFreqGoalData({ count, period });
+    closeFreqGoalEditor();
+    renderFreqGoal();
+    updateSettingsFreqDisplay();
+  }
+
+  function removeFreqGoal() {
+    saveFreqGoalData(null);
+    closeFreqGoalEditor();
+    renderFreqGoal();
+    updateSettingsFreqDisplay();
+  }
+
   /* ── Init ───────────────────────────────────────────────── */
-  (function initBW() {
-    const el = document.getElementById('bw-input');
-    if (el) el.value = getUserBW();
-  })();
-  renderRecent();
+  renderRecent();    /* also calls updateRepeatBtn() */
+  renderFreqGoal();
   renderHighlights();
 
   /* ── Restore in-progress workout on page load ───────────── */
@@ -3659,6 +4514,78 @@
       splash.classList.add('fade-out');
       setTimeout(() => splash.remove(), 480);
     }, 1800);
+  })();
+
+  /* ══════════════════════════════════════════════════════════
+     SWIPE-BACK GESTURE
+     Detects a right-swipe that starts within 20 px of the left
+     edge and travels ≥ 60 px horizontally with < 40 px vertical
+     drift.  Fires the same action as the visible Back button.
+     Does NOT interfere with vertical scrolling, horizontal
+     swipes that start mid-screen, or overlays that slide up
+     (freq-goal editor, exercise picker).
+     ══════════════════════════════════════════════════════════ */
+  (function initSwipeBack() {
+    const EDGE_ZONE   = 20;   /* px from left edge to begin tracking */
+    const MIN_TRAVEL  = 60;   /* px horizontal travel to trigger      */
+    const MAX_DRIFT   = 40;   /* px vertical drift allowed            */
+
+    let startX = null, startY = null, tracking = false;
+
+    /* Determine what "back" means given current UI state */
+    function swipeBackAction() {
+      /* 1. Settings sub-panel open? */
+      const subPanels = ['settings-personal','settings-goals','settings-prefs',
+                         'settings-data','settings-about'];
+      for (const id of subPanels) {
+        if (document.getElementById(id)?.classList.contains('open')) {
+          return () => settingsPop();
+        }
+      }
+      /* 2. Settings root open? */
+      if (document.getElementById('settings-root')?.classList.contains('open')) {
+        return () => closeSettings();
+      }
+      /* 3. Exercise detail view open? */
+      const detail = document.getElementById('lib-detail-content');
+      if (detail && detail.style.display !== 'none') {
+        return () => closeExDetail();
+      }
+      /* 4. Nothing to do */
+      return null;
+    }
+
+    document.addEventListener('touchstart', (e) => {
+      const t = e.touches[0];
+      if (t.clientX > EDGE_ZONE) return;   /* only track from left edge */
+      /* Ignore if an overlay/sheet is open (they capture their own scroll) */
+      if (document.getElementById('freq-goal-editor')?.classList.contains('open')) return;
+      if (document.getElementById('exercise-picker')?.classList.contains('open')) return;
+      if (!swipeBackAction()) return;       /* nothing to go back to     */
+      startX   = t.clientX;
+      startY   = t.clientY;
+      tracking = true;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+      if (!tracking) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = Math.abs(e.touches[0].clientY - startY);
+      /* Cancel tracking if vertical scroll is dominant */
+      if (dy > MAX_DRIFT && dy > dx) { tracking = false; }
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      if (!tracking) { startX = startY = null; return; }
+      tracking = false;
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = Math.abs(e.changedTouches[0].clientY - startY);
+      startX = startY = null;
+      if (dx >= MIN_TRAVEL && dy <= MAX_DRIFT) {
+        const action = swipeBackAction();
+        if (action) action();
+      }
+    }, { passive: true });
   })();
 </script>
 </body>
