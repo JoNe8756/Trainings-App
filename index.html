@@ -2539,7 +2539,14 @@
     .wsc-ex-unit { font-size: .75rem; color: var(--tertiary); min-width: 2.25rem; }
     /* ── Workout detail overlay ─────────────────────────────────── */
     #workout-detail {
-      position: fixed; inset: 0; z-index: 1100;
+      position: fixed;
+      top: 0; bottom: 0;
+      left: 0; right: 0;
+      /* Match the app frame — same constraint as the tab-bar */
+      max-width: min(430px, 100%);
+      margin-left: auto;
+      margin-right: auto;
+      z-index: 1100;
       background: var(--bg);
       transform: translateX(100%);
       transition: transform .28s cubic-bezier(.4,0,.2,1);
@@ -4421,7 +4428,8 @@
     }).join('');
 
     // ── Totals chips
-    const volStr  = totalVol > 0 ? (totalVol >= 1000 ? (totalVol/1000).toFixed(1)+'t' : totalVol+'kg') : null;
+    const volRounded = Math.round(totalVol);
+    const volStr  = volRounded >= 1 ? (volRounded >= 1000 ? (volRounded/1000).toFixed(1)+'t' : volRounded+'kg') : null;
     const chips = [
       { label: 'Intensity', val: totalIntensity > 0 ? fmtInt(totalIntensity) + ' ⚡' : '—' },
       { label: 'Total Reps', val: totalReps > 0 ? String(totalReps) : '—' },
