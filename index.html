@@ -787,6 +787,37 @@
       flex-shrink: 0;
     }
     .workout-history-ex-name { color: var(--label); font-weight: 500; }
+    /* ── Killer Set history row ───────────────────────────── */
+    .wh-killer-row {
+      display: flex; align-items: center; gap: .5rem;
+      margin-bottom: .1875rem; cursor: pointer;
+      border-radius: 6px; padding: .1875rem .375rem .1875rem 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .wh-killer-row::before { display: none; }  /* suppress bullet */
+    .wh-killer-badge {
+      font-size: .625rem; font-weight: 700; letter-spacing: .02em;
+      color: var(--red); background: rgba(255,59,48,.12);
+      padding: .15rem .4rem; border-radius: 4px; flex-shrink: 0;
+    }
+    .wh-killer-label { color: var(--label); font-weight: 600; font-size: .8125rem; flex: 1; }
+    .wh-killer-total { font-size: .8125rem; color: var(--tertiary); }
+    .wh-killer-chevron {
+      font-size: .875rem; color: var(--tertiary);
+      transition: transform .2s; display: inline-block;
+    }
+    .wh-killer-row.open .wh-killer-chevron { transform: rotate(90deg); }
+    .wh-killer-detail {
+      display: none; padding: .25rem 0 .375rem 1.25rem;
+    }
+    .wh-killer-row.open + .wh-killer-detail { display: block; }
+    .wh-killer-detail-row {
+      font-size: .75rem; color: var(--tertiary);
+      padding: .125rem 0; display: flex; gap: .375rem; align-items: baseline;
+    }
+    .wh-killer-detail-name { color: var(--label); font-weight: 500; flex: 1; }
+    .wh-killer-detail-val  { font-weight: 600; color: var(--label); }
+    .wh-killer-detail-unit { font-size: .6875rem; }
 
     /* ── Bottom tab bar — always stuck to bottom of body ──── */
     /* ── Resume-workout banner ──────────────────────────────── */
@@ -3896,6 +3927,51 @@
     el.innerHTML = workouts.map(w => workoutCard(w)).join('');
   }
 
+  /* ── Killer history helpers ────────────────────────────── */
+  function _whKillerToggle(el) {
+    el.classList.toggle('open');
+  }
+
+  function _whBuildRows(exercises) {
+    // group consecutive killer exercises into one collapsed row
+    const rows = [];
+    let ki = 0;  // killer group index within this workout card
+    let i  = 0;
+    while (i < exercises.length) {
+      const e = exercises[i];
+      if (!e.killer) {
+        rows.push(`<div class="workout-history-ex">
+          <span class="workout-history-ex-name">${e.name}</span> — ${e.sets.length} set${e.sets.length !== 1 ? 's' : ''}
+        </div>`);
+        i++;
+      } else {
+        // collect consecutive killer exercises
+        const group = [];
+        while (i < exercises.length && exercises[i].killer) { group.push(exercises[i]); i++; }
+        const total = group.reduce((s, ex) => s + (parseFloat(ex.sets[0]?.reps) || 0), 0);
+        const uid   = 'wh-ks-' + Date.now() + '-' + (ki++);
+        const detail = group.map(ex => {
+          const val  = parseFloat(ex.sets[0]?.reps) || 0;
+          const unit = getExMeta(ex.name).tb ? 'secs' : 'reps';
+          return `<div class="wh-killer-detail-row">
+            <span class="wh-killer-detail-name">${ex.name}</span>
+            <span class="wh-killer-detail-val">${val > 0 ? val : '—'}</span>
+            <span class="wh-killer-detail-unit">${val > 0 ? unit : ''}</span>
+          </div>`;
+        }).join('');
+        rows.push(`
+          <div class="workout-history-ex wh-killer-row" onclick="_whKillerToggle(this)" id="${uid}">
+            <span class="wh-killer-badge">💀 Killer</span>
+            <span class="wh-killer-label">Killer Set</span>
+            <span class="wh-killer-total">${total} reps</span>
+            <span class="wh-killer-chevron">›</span>
+          </div>
+          <div class="wh-killer-detail">${detail}</div>`);
+      }
+    }
+    return rows.join('');
+  }
+
   /* ── Workout card HTML ──────────────────────────────────── */
   function workoutCard(w) {
     const d       = new Date(w.date);
@@ -3904,12 +3980,7 @@
     const mins    = Math.floor(w.duration / 60);
     const secs    = w.duration % 60;
     const durStr  = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-    const exRows  = w.exercises.map(e =>
-      `<div class="workout-history-ex">
-         ${e.killer ? '<span style="font-size:.625rem;font-weight:700;color:var(--red);background:rgba(255,59,48,.12);padding:.1rem .35rem;border-radius:4px;margin-right:.375rem;vertical-align:middle">💀</span>' : ''}
-         <span class="workout-history-ex-name">${e.name}</span> &mdash; ${e.sets.length} set${e.sets.length !== 1 ? 's' : ''}
-       </div>`
-    ).join('');
+    const exRows  = _whBuildRows(w.exercises);
 
     const trashSVG = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="2,4 14,4"/>
