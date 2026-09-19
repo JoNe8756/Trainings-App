@@ -3712,9 +3712,13 @@
 
   async function startBlankWorkout() {
     closeStartChoice();
-    exerciseCount = 0;
+    exerciseCount  = 0;
     activePlanData = null;
     _workoutActive = true;
+    _killerRoutine = [];
+    _killerResults = [];
+    _killerStep    = 0;
+    _wscHideAll();
     document.getElementById('exercise-list').innerHTML = '';
     document.getElementById('timer').textContent = '00:00';
     document.getElementById('plan-banner').style.display = 'none';
@@ -3737,9 +3741,13 @@
     const names = (last.exercises || []).map(e => e.name).filter(Boolean);
     if (!names.length) return;
 
-    exerciseCount = 0;
+    exerciseCount  = 0;
     activePlanData = null;
     _workoutActive = true;
+    _killerRoutine = [];
+    _killerResults = [];
+    _killerStep    = 0;
+    _wscHideAll();
     document.getElementById('exercise-list').innerHTML = '';
     document.getElementById('timer').textContent = '00:00';
     document.getElementById('plan-banner').style.display = 'none';
@@ -3889,12 +3897,16 @@
     persist();
 
     /* clear workout state */
-    _workoutActive = false;
-    activePlanData = null;
-    exerciseCount  = 0;
+    _workoutActive   = false;
+    activePlanData   = null;
+    exerciseCount    = 0;
+    _killerRoutine   = [];
+    _killerResults   = [];
+    _killerStep      = 0;
     clearActiveWorkout();
     document.getElementById('plan-banner').style.display = 'none';
     document.getElementById('btn-next-ex').style.display  = 'none';
+    _wscHideAll();
 
     renderFreqGoal();
     showToast('Workout saved 💪');
@@ -5449,8 +5461,12 @@
     const plan = plans.find(p => p.id === planId);
     if (!plan || !plan.exercises.length) return;
 
-    exerciseCount = 0;
+    exerciseCount  = 0;
     _workoutActive = true;
+    _killerRoutine = [];
+    _killerResults = [];
+    _killerStep    = 0;
+    _wscHideAll();
     document.getElementById('exercise-list').innerHTML = '';
     document.getElementById('timer').textContent = '00:00';
     startTimer();
