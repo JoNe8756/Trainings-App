@@ -520,6 +520,90 @@
       transition: opacity .12s;
     }
     .btn-add-exercise:active { opacity: .7; }
+
+    /* ── Killer Set button ───────────────────────────────── */
+    .btn-killer-set {
+      display: block;
+      margin: -.75rem var(--gutter) 2rem;
+      background: rgba(255,59,48,.08);
+      border: 1.5px solid rgba(255,59,48,.25);
+      border-radius: var(--radius-btn);
+      padding: 0.75rem 1rem;
+      width: calc(100% - 2 * var(--gutter));
+      font-size: 0.9375rem; font-family: inherit; font-weight: 700;
+      color: var(--red); cursor: pointer; text-align: left;
+      transition: opacity .12s;
+    }
+    .btn-killer-set:active { opacity: .7; }
+
+    /* ── Killer Set overlay ──────────────────────────────── */
+    #killer-overlay {
+      position: absolute; inset: 0; z-index: 860;
+      background: var(--bg);
+      transform: translateY(100%);
+      transition: transform .3s cubic-bezier(.4,0,.2,1);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    #killer-overlay.open { transform: translateY(0); }
+    .killer-nav {
+      position: sticky; top: 0; z-index: 1;
+      background: var(--bg); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem var(--gutter) .875rem;
+      border-bottom: 0.5px solid var(--separator);
+    }
+    .killer-nav-title { font-size: 1rem; font-weight: 700; color: var(--label); }
+    .killer-nav-prog  { font-size: .9375rem; color: var(--tertiary); font-weight: 500; }
+    .killer-back-btn  {
+      background: none; border: none; color: var(--blue);
+      font-size: .9375rem; cursor: pointer; padding: .25rem .5rem .25rem 0;
+    }
+    .killer-body {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 2rem var(--gutter); gap: 1.5rem;
+      min-height: 320px;
+    }
+    .killer-ex-name {
+      font-size: 1.625rem; font-weight: 700; color: var(--label);
+      text-align: center; line-height: 1.25;
+    }
+    .killer-ex-sub { font-size: .875rem; color: var(--tertiary); text-align: center; }
+    .killer-input-wrap { display: flex; flex-direction: column; align-items: center; gap: .5rem; }
+    .killer-input {
+      width: 180px; height: 110px;
+      font-size: 3.5rem; font-weight: 800; text-align: center;
+      background: var(--fill); border: none; border-radius: 1.25rem;
+      color: var(--label); -webkit-text-fill-color: var(--label);
+      -moz-appearance: textfield; font-family: inherit;
+    }
+    .killer-input::-webkit-outer-spin-button,
+    .killer-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .killer-input:focus { background: var(--fill-focus); outline: 3px solid var(--red); outline-offset: 2px; }
+    .killer-input-label { font-size: .9375rem; color: var(--tertiary); font-weight: 500; }
+    .killer-footer {
+      position: sticky; bottom: 0; z-index: 1;
+      background: var(--bg); flex-shrink: 0;
+      display: flex; gap: .75rem;
+      padding: 1rem var(--gutter) 2rem;
+      border-top: 0.5px solid var(--separator);
+    }
+    .killer-btn-skip {
+      flex: 1; padding: 1rem; border: none; border-radius: var(--radius-btn);
+      background: var(--fill); color: var(--secondary);
+      font-size: 1rem; font-weight: 500; font-family: inherit; cursor: pointer;
+    }
+    .killer-btn-next {
+      flex: 2; padding: 1rem; border: none; border-radius: var(--radius-btn);
+      background: var(--red); color: #fff;
+      font-size: 1rem; font-weight: 700; font-family: inherit; cursor: pointer;
+    }
+    .killer-btn-done {
+      flex: 2; padding: 1rem; border: none; border-radius: var(--radius-btn);
+      background: var(--green); color: #fff;
+      font-size: 1rem; font-weight: 700; font-family: inherit; cursor: pointer;
+    }
     .btn-add-ex-icon {
       width: 1.75rem; height: 1.75rem;
       border-radius: 50%;
@@ -2333,6 +2417,30 @@
       <div class="btn-add-ex-icon">+</div>
       Add Exercise
     </button>
+    <button class="btn-killer-set" onclick="openKillerSet()">💀 Add Killer Set</button>
+  </div>
+</div>
+
+<!-- ═══════════════ KILLER SET ════════════════ -->
+<div id="killer-overlay">
+  <div class="killer-nav">
+    <button class="killer-back-btn" onclick="killerSetBack()">← Back</button>
+    <div class="killer-nav-title">💀 Killer Set</div>
+    <div class="killer-nav-prog" id="killer-prog">1 / 9</div>
+  </div>
+  <div class="killer-body">
+    <div class="killer-ex-name" id="killer-ex-name"></div>
+    <div class="killer-ex-sub"  id="killer-ex-sub">Max reps · no rest</div>
+    <div class="killer-input-wrap">
+      <input class="killer-input" id="killer-input" type="number"
+        inputmode="numeric" min="0" placeholder="0"
+        onkeydown="if(event.key==='Enter')killerSetNext()" />
+      <div class="killer-input-label" id="killer-input-label">reps</div>
+    </div>
+  </div>
+  <div class="killer-footer">
+    <button class="killer-btn-skip" onclick="killerSetSkip()">Skip</button>
+    <button id="killer-btn-action" class="killer-btn-next" onclick="killerSetNext()">Next →</button>
   </div>
 </div>
 
@@ -2518,6 +2626,14 @@
         <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
       </div>
     </div>
+    <div class="settings-section-header">Finisher</div>
+    <div class="settings-card">
+      <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-killer-edit')">
+        <div class="settings-row-icon icon-red">💀</div>
+        <div class="settings-row-label">Killer Set Routine</div>
+        <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2544,6 +2660,34 @@
     <div style="padding:.75rem var(--gutter) 0;display:flex;gap:.5rem">
       <button onclick="wuEditSave()" style="flex:2;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-btn);font-size:.9375rem;font-weight:600;padding:.875rem;cursor:pointer;font-family:inherit">Save Routine</button>
       <button onclick="wuEditReset()" style="flex:1;background:none;border:1.5px solid var(--red);color:var(--red);border-radius:var(--radius-btn);font-size:.875rem;font-weight:600;padding:.875rem;cursor:pointer;font-family:inherit">Reset</button>
+    </div>
+    <div style="height:1rem"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SETTINGS — KILLER SET EDITOR
+═══════════════════════════════════════════════════════ -->
+<div id="settings-killer-edit" class="settings-panel sub">
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="settingsPop()">
+      <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+      Training Goals
+    </button>
+    <div class="settings-nav-title">Killer Set Routine</div>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-header">Exercises (in order)</div>
+    <div class="settings-card" id="ks-edit-list"></div>
+    <div style="padding:.625rem var(--gutter) 0;display:flex;gap:.5rem">
+      <button onclick="ksEditAddRow()" style="flex:1;background:var(--card);border:none;border-radius:var(--radius-btn);color:var(--blue);font-size:.9375rem;font-weight:600;padding:.75rem;cursor:pointer;font-family:inherit;box-shadow:var(--shadow)">+ Add Exercise</button>
+    </div>
+    <div style="padding:.75rem var(--gutter) 0;font-size:.8125rem;color:var(--tertiary);line-height:1.5">
+      Reorder or remove exercises. Changes apply on next Killer Set.
+    </div>
+    <div style="padding:.75rem var(--gutter) 0;display:flex;gap:.5rem">
+      <button onclick="ksEditSave()" style="flex:2;background:var(--red);color:#fff;border:none;border-radius:var(--radius-btn);font-size:.9375rem;font-weight:600;padding:.875rem;cursor:pointer;font-family:inherit">Save Routine</button>
+      <button onclick="ksEditReset()" style="flex:1;background:none;border:1.5px solid var(--secondary);color:var(--secondary);border-radius:var(--radius-btn);font-size:.875rem;font-weight:600;padding:.875rem;cursor:pointer;font-family:inherit">Reset</button>
     </div>
     <div style="height:1rem"></div>
   </div>
@@ -2749,15 +2893,18 @@
     Push: ['Push-ups','Dips','Pike push-ups','Handstand push-ups','Negative Slow Handstand Push-ups',
            'Handstand Hold','Diamond push-ups','Archer push-ups','Pseudo planche push-ups','One arm push-up',
            'Frog stand','Tuck planche','Advanced tuck planche','Straddle planche','Full planche',
-           'Wall handstand','Freestanding handstand','L-sit to handstand'],
+           'Wall handstand','Freestanding handstand','L-sit to handstand',
+           'Straight Bar Dips','Dips with Chest Press at Top','Push-ups with Raised Legs'],
     Pull: ['Pull-ups','Chin-ups','Rows','Muscle-ups','Fast Muscle-ups','Slow Transition Muscle-ups',
            'Australian rows','Archer pull-ups','One arm pull-up','Commando pull-ups',
            'Tuck front lever','Advanced tuck front lever','Straddle front lever','Full front lever',
            'Front Lever Hold','Front Lever Bicycles','Tucked Front Lever Rows',
-           'Tuck back lever','Straddle back lever','Full back lever'],
+           'Tuck back lever','Straddle back lever','Full back lever',
+           'Fast Pull-ups','30 Second Pull-up Hold'],
     Core: ['Planks','Leg raises','Sit-ups','Hollow holds','Dragon flag',
            'L-sit','V-sit','Tuck L-sit','Hollow body rock','Dead bug',
-           'Ab wheel rollouts','Hanging knee raises','Toes to bar','Human flag'],
+           'Ab wheel rollouts','Hanging knee raises','Toes to bar','Human flag',
+           'Windshield Wipers'],
     Legs: ['Squats','Lunges','Pistol squats','Calf raises','Shrimp squats',
            'Sissy squats','Nordic curls','Bulgarian split squats',
            'Step-ups','Box jumps','Glute bridges','Single leg deadlift'],
@@ -2791,6 +2938,9 @@
     'Full planche':{type:'bw',diff:10,tb:1},'Wall handstand':{type:'bw',diff:2,tb:1},
     'Freestanding handstand':{type:'bw',diff:5,tb:1},
     'L-sit to handstand':{type:'bw',diff:8,tb:1},
+    'Straight Bar Dips':{type:'bw',diff:6},
+    'Dips with Chest Press at Top':{type:'bw',diff:5},
+    'Push-ups with Raised Legs':{type:'bw',diff:4},
     /* Pull — bodyweight */
     'Pull-ups':{type:'bw',diff:6},'Chin-ups':{type:'bw',diff:7},
     'Rows':{type:'bw',diff:4},'Muscle-ups':{type:'bw',diff:8},
@@ -2803,6 +2953,8 @@
     'Straddle front lever':{type:'bw',diff:8,tb:1},'Full front lever':{type:'bw',diff:9,tb:1},
     'Tuck back lever':{type:'bw',diff:5,tb:1},'Straddle back lever':{type:'bw',diff:7,tb:1},
     'Full back lever':{type:'bw',diff:9,tb:1},
+    'Fast Pull-ups':{type:'bw',diff:7},
+    '30 Second Pull-up Hold':{type:'bw',diff:5,tb:1},
     /* Core — bodyweight */
     'Planks':{type:'bw',diff:2,tb:1},'Leg raises':{type:'bw',diff:3},
     'Sit-ups':{type:'bw',diff:2},'Hollow holds':{type:'bw',diff:3,tb:1},
@@ -2811,6 +2963,7 @@
     'Hollow body rock':{type:'bw',diff:1},'Dead bug':{type:'bw',diff:2},
     'Ab wheel rollouts':{type:'bw',diff:6},'Hanging knee raises':{type:'bw',diff:3},
     'Toes to bar':{type:'bw',diff:7},'Human flag':{type:'bw',diff:9,tb:1},
+    'Windshield Wipers':{type:'bw',diff:7},
     /* Legs — bodyweight */
     'Squats':{type:'bw',diff:1},'Lunges':{type:'bw',diff:2},
     'Pistol squats':{type:'bw',diff:9},'Calf raises':{type:'bw',diff:1},
@@ -3364,9 +3517,10 @@
     createExCard(name);
   }
 
+  let _exCardSeq = 0;
   function createExCard(name) {
     exerciseCount++;
-    const id  = 'ex-' + Date.now();
+    const id  = 'ex-' + Date.now() + '-' + (++_exCardSeq);
     const tb  = !!getExMeta(name).tb;  /* time-based hold exercise? */
     const div = document.createElement('div');
     div.className = 'exercise-card';
@@ -4053,6 +4207,180 @@
     });
     const el = card.querySelector('.ex-intensity-total');
     if (el) el.textContent = total > 0 ? `⚡ ${fmtInt(total)}` : '';
+  }
+
+  /* ── Killer Set ─────────────────────────────────────────── */
+  const KILLER_SET_DEFAULT_NAMES = [
+    'Fast Pull-ups', 'Dips with Chest Press at Top', 'Windshield Wipers',
+    'Rows', 'Straight Bar Dips', 'Toes to bar',
+    '30 Second Pull-up Hold', 'Push-ups with Raised Legs', 'Leg raises',
+  ];
+
+  function getKillerRoutine() {
+    try {
+      const s = localStorage.getItem('killerSetRoutine');
+      if (s) { const a = JSON.parse(s); if (Array.isArray(a) && a.length) return a; }
+    } catch(e) {}
+    return [...KILLER_SET_DEFAULT_NAMES];
+  }
+
+  function _killerLabel(name) {
+    return !!getExMeta(name).tb ? 'secs' : 'reps';
+  }
+
+  let _killerRoutine = [], _killerResults = [], _killerStep = 0;
+
+  function openKillerSet() {
+    _killerRoutine = getKillerRoutine();
+    _killerResults = new Array(_killerRoutine.length).fill('');
+    _killerStep    = 0;
+    const ov = document.getElementById('killer-overlay');
+    ov.scrollTop = 0;
+    ov.classList.add('open');
+    _renderKillerStep();
+  }
+
+  function closeKillerSet() {
+    document.getElementById('killer-overlay').classList.remove('open');
+  }
+
+  function _renderKillerStep() {
+    const name   = _killerRoutine[_killerStep];
+    const label  = _killerLabel(name);
+    const total  = _killerRoutine.length;
+    const isLast = _killerStep === total - 1;
+    document.getElementById('killer-prog').textContent    = `${_killerStep + 1} / ${total}`;
+    document.getElementById('killer-ex-name').textContent = name;
+    document.getElementById('killer-ex-sub').textContent  =
+      label === 'secs' ? 'Max hold · no rest' : 'Max reps · no rest';
+    document.getElementById('killer-input-label').textContent = label;
+    const inp = document.getElementById('killer-input');
+    inp.value = _killerResults[_killerStep] ?? '';
+    requestAnimationFrame(() => {
+      inp.focus();
+      inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    const btn = document.getElementById('killer-btn-action');
+    btn.textContent = isLast ? '✓ Finish' : 'Next →';
+    btn.className   = isLast ? 'killer-btn-done' : 'killer-btn-next';
+    document.querySelector('.killer-back-btn').style.visibility = _killerStep === 0 ? 'hidden' : 'visible';
+  }
+
+  function killerSetNext() {
+    _killerResults[_killerStep] = document.getElementById('killer-input').value;
+    if (_killerStep < _killerRoutine.length - 1) {
+      _killerStep++;
+      _renderKillerStep();
+    } else {
+      _killerSetFinish();
+    }
+  }
+
+  function killerSetSkip() {
+    _killerResults[_killerStep] = '';
+    if (_killerStep < _killerRoutine.length - 1) {
+      _killerStep++;
+      _renderKillerStep();
+    } else {
+      _killerSetFinish();
+    }
+  }
+
+  function killerSetBack() {
+    if (_killerStep === 0) { closeKillerSet(); return; }
+    _killerResults[_killerStep] = document.getElementById('killer-input').value;
+    _killerStep--;
+    _renderKillerStep();
+  }
+
+  function _killerSetFinish() {
+    closeKillerSet();
+    _killerRoutine.forEach((name, i) => {
+      const val = parseFloat(_killerResults[i]) || 0;
+      if (val <= 0) return;            // skip blanked/skipped exercises
+      const cardsBefore = document.querySelectorAll('#exercise-list .exercise-card').length;
+      createExCard(name);              // adds card + one empty set row
+      const card = document.querySelectorAll('#exercise-list .exercise-card')[cardsBefore];
+      if (!card) return;
+      const inputs = card.querySelectorAll('.set-input');
+      if (inputs.length >= 2) {
+        inputs[0].value = '0';         // kg = 0 (bodyweight)
+        inputs[1].value = val;
+        inputs[1].dispatchEvent(new Event('input')); // trigger intensity + ghost update
+      }
+    });
+    persistActiveWorkout();
+    // scroll to bottom so user sees the added exercises
+    const sa = document.querySelector('#workout-screen .scroll-area');
+    if (sa) requestAnimationFrame(() => sa.scrollTo({ top: sa.scrollHeight, behavior: 'smooth' }));
+  }
+
+  /* ── Killer Set Editor ──────────────────────────────────── */
+  function ksEditRender() { _ksEditDraw(); }
+
+  function _ksEditDraw() {
+    const list = document.getElementById('ks-edit-list');
+    if (!list) return;
+    const routine = getKillerRoutine();
+    list.innerHTML = routine.map((name, idx) => `
+      <div class="settings-row" style="gap:.5rem;align-items:center">
+        <div style="display:flex;flex-direction:column;gap:2px;margin-right:.25rem">
+          <button onclick="ksEditMove(${idx},-1)" style="background:none;border:none;color:var(--blue);font-size:.875rem;cursor:pointer;padding:0;line-height:1" ${idx===0?'disabled style="opacity:.3"':''}>▲</button>
+          <button onclick="ksEditMove(${idx},1)"  style="background:none;border:none;color:var(--blue);font-size:.875rem;cursor:pointer;padding:0;line-height:1" ${idx===routine.length-1?'disabled style="opacity:.3"':''}>▼</button>
+        </div>
+        <input id="ks-name-${idx}" value="${name.replace(/"/g,'&quot;')}" style="flex:1;background:var(--fill);border:none;border-radius:.5rem;padding:.5rem .75rem;font-size:.9375rem;color:var(--label);font-family:inherit" />
+        <button onclick="ksEditDelete(${idx})" style="background:none;border:none;color:var(--red);font-size:1.25rem;cursor:pointer;padding:.25rem">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function _ksEditRead() {
+    const routine = getKillerRoutine();
+    return routine.map((_, idx) => {
+      const inp = document.getElementById('ks-name-' + idx);
+      return inp ? inp.value.trim() : '';
+    }).filter(Boolean);
+  }
+
+  function ksEditMove(idx, dir) {
+    const names = _ksEditRead();
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= names.length) return;
+    [names[idx], names[newIdx]] = [names[newIdx], names[idx]];
+    localStorage.setItem('killerSetRoutine', JSON.stringify(names));
+    _ksEditDraw();
+  }
+
+  function ksEditDelete(idx) {
+    const names = _ksEditRead();
+    names.splice(idx, 1);
+    localStorage.setItem('killerSetRoutine', JSON.stringify(names));
+    _ksEditDraw();
+  }
+
+  function ksEditAddRow() {
+    const names = _ksEditRead();
+    names.push('');
+    localStorage.setItem('killerSetRoutine', JSON.stringify(names));
+    _ksEditDraw();
+    // focus the new row
+    requestAnimationFrame(() => {
+      const inp = document.getElementById('ks-name-' + (names.length - 1));
+      if (inp) inp.focus();
+    });
+  }
+
+  function ksEditSave() {
+    const names = _ksEditRead();
+    if (!names.length) { alert('Add at least one exercise.'); return; }
+    localStorage.setItem('killerSetRoutine', JSON.stringify(names));
+    _ksEditDraw();
+    settingsPop();
+  }
+
+  function ksEditReset() {
+    localStorage.removeItem('killerSetRoutine');
+    _ksEditDraw();
   }
 
   /* ── Ghost mode ─────────────────────────────────────────── */
@@ -4763,6 +5091,7 @@
     requestAnimationFrame(() => {
       panel.classList.add('open');
       if (id === 'settings-warmup-edit') wuEditRender();
+      if (id === 'settings-killer-edit') ksEditRender();
       if (id === 'settings-prefs') {
         const tog = document.getElementById('ghost-mode-toggle');
         if (tog) tog.checked = getGhostMode();
@@ -5390,7 +5719,8 @@
     function swipeBackAction() {
       /* 1. Settings sub-panel open? */
       const subPanels = ['settings-personal','settings-goals','settings-prefs',
-                         'settings-data','settings-about','settings-warmup-edit'];
+                         'settings-data','settings-about','settings-warmup-edit',
+                         'settings-killer-edit'];
       for (const id of subPanels) {
         if (document.getElementById(id)?.classList.contains('open')) {
           return () => settingsPop();
