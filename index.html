@@ -600,6 +600,68 @@
       background: var(--green); color: #fff;
       font-size: 1rem; font-weight: 700; font-family: inherit; cursor: pointer;
     }
+    /* ── Killer Set exercise badge ────────────────────────── */
+    .ex-killer-tag {
+      display: inline-flex; align-items: center; gap: .25rem;
+      background: rgba(255,59,48,.12); color: var(--red);
+      font-size: .6875rem; font-weight: 700; letter-spacing: .02em;
+      padding: .2rem .5rem; border-radius: 6px;
+      margin-bottom: .375rem; align-self: flex-start;
+    }
+    /* ── Killer Set completion summary ───────────────────── */
+    #killer-summary {
+      position: absolute; inset: 0; z-index: 1001;
+      background: var(--bg);
+      transform: translateY(100%);
+      transition: transform .3s cubic-bezier(.4,0,.2,1);
+      display: flex; flex-direction: column;
+    }
+    #killer-summary.open { transform: translateY(0); }
+    .killer-sum-nav {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.125rem var(--gutter) 1rem;
+      border-bottom: 0.5px solid var(--separator);
+    }
+    .killer-sum-title {
+      font-size: 1rem; font-weight: 700; color: var(--label);
+    }
+    .killer-sum-body {
+      flex: 1; overflow-y: auto; padding: .75rem var(--gutter) 0;
+    }
+    .killer-sum-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .625rem 0; border-bottom: 0.5px solid var(--separator);
+    }
+    .killer-sum-row:last-child { border-bottom: none; }
+    .killer-sum-ex-name { font-size: .9375rem; color: var(--label); flex: 1; }
+    .killer-sum-ex-val  { font-size: .9375rem; font-weight: 700; color: var(--label); }
+    .killer-sum-ex-unit { font-size: .75rem; color: var(--tertiary); margin-left: .25rem; }
+    .killer-sum-ex-skip { font-size: .875rem; color: var(--tertiary); font-style: italic; }
+    .killer-sum-total {
+      margin-top: .75rem;
+      padding: .75rem 1rem; border-radius: var(--radius-card);
+      background: var(--card); text-align: center;
+    }
+    .killer-sum-total-label { font-size: .8125rem; color: var(--tertiary); margin-bottom: .25rem; }
+    .killer-sum-total-num   { font-size: 2.5rem; font-weight: 800; color: var(--label); line-height: 1; }
+    .killer-sum-delta {
+      text-align: center; font-size: .875rem; font-weight: 600;
+      padding: .5rem 0 .25rem;
+    }
+    .killer-sum-delta.up   { color: var(--green); }
+    .killer-sum-delta.down { color: var(--red); }
+    .killer-sum-delta.same { color: var(--tertiary); }
+    .killer-sum-footer {
+      flex-shrink: 0;
+      padding: 1rem var(--gutter) 2rem;
+      border-top: 0.5px solid var(--separator);
+    }
+    .killer-sum-btn {
+      width: 100%; padding: 1rem; border: none; border-radius: var(--radius-btn);
+      background: var(--green); color: #fff;
+      font-size: 1rem; font-weight: 700; font-family: inherit; cursor: pointer;
+    }
     .btn-add-ex-icon {
       width: 1.75rem; height: 1.75rem;
       border-radius: 50%;
@@ -2440,6 +2502,17 @@
   </div>
 </div>
 
+<!-- ═══════════════ KILLER SUMMARY ═══════════════ -->
+<div id="killer-summary">
+  <div class="killer-sum-nav">
+    <div class="killer-sum-title">💀 Killer Set Complete</div>
+  </div>
+  <div class="killer-sum-body" id="killer-sum-body"></div>
+  <div class="killer-sum-footer">
+    <button class="killer-sum-btn" onclick="_killerSummaryAdd()">Add to Workout 💪</button>
+  </div>
+</div>
+
 <!-- ═══════════════ HISTORY SCREEN ═══════════════ -->
 <div id="history-screen" class="screen">
   <div class="scroll-area">
@@ -3514,15 +3587,17 @@
   }
 
   let _exCardSeq = 0;
-  function createExCard(name) {
+  function createExCard(name, isKiller = false) {
     exerciseCount++;
     const id  = 'ex-' + Date.now() + '-' + (++_exCardSeq);
     const tb  = !!getExMeta(name).tb;  /* time-based hold exercise? */
     const div = document.createElement('div');
     div.className = 'exercise-card';
     div.id = id;
-    if (tb) div.dataset.tb = '1';
+    if (tb)       div.dataset.tb     = '1';
+    if (isKiller) div.dataset.killer = '1';
     div.innerHTML = `
+      ${isKiller ? '<div class="ex-killer-tag">💀 Killer Set</div>' : ''}
       <div class="exercise-head">
         <input type="text" placeholder="Exercise name" value="${name.replace(/"/g, '&quot;')}"
           oninput="updateExIntensity('${id}'); updateGhostHint('${id}')" />
@@ -3602,12 +3677,13 @@
     document.querySelectorAll('#exercise-list .exercise-card').forEach(card => {
       const name   = card.querySelector('.exercise-head input').value.trim() || 'Unnamed';
       const timeBased = !!card.dataset.tb;
+      const killer = !!card.dataset.killer;
       const sets   = [];
       card.querySelectorAll('.sets-body .set-row').forEach(row => {
         const inputs = row.querySelectorAll('input');
         sets.push({ kg: inputs[0].value || '0', reps: inputs[1].value || '0', tb: timeBased || undefined });
       });
-      exercises.push({ name, sets });
+      exercises.push({ name, sets, ...(killer && { killer: true }) });
     });
 
     const workout = { id: Date.now(), date: new Date().toISOString(), duration: timerSeconds, exercises };
@@ -3662,14 +3738,15 @@
     const exercises = [];
     document.querySelectorAll('#exercise-list .exercise-card').forEach(card => {
       const nameInput = card.querySelector('.exercise-head input');
-      const name = nameInput ? nameInput.value.trim() || '' : '';
-      const tb   = !!card.dataset.tb;
-      const sets = [];
+      const name   = nameInput ? nameInput.value.trim() || '' : '';
+      const tb     = !!card.dataset.tb;
+      const killer = !!card.dataset.killer;
+      const sets   = [];
       card.querySelectorAll('.sets-body .set-row').forEach(row => {
         const inputs = row.querySelectorAll('input');
         sets.push({ kg: inputs[0]?.value || '', reps: inputs[1]?.value || '' });
       });
-      exercises.push({ name, tb, sets });
+      exercises.push({ name, tb, sets, ...(killer && { killer: true }) });
     });
     const snap = {
       timerSeconds,
@@ -3705,8 +3782,10 @@
       const div = document.createElement('div');
       div.className = 'exercise-card';
       div.id = id;
-      if (tb) div.dataset.tb = '1';
+      if (tb)       div.dataset.tb     = '1';
+      if (ex.killer) div.dataset.killer = '1';
       div.innerHTML = `
+        ${ex.killer ? '<div class="ex-killer-tag">💀 Killer Set</div>' : ''}
         <div class="exercise-head">
           <input type="text" placeholder="Exercise name" value="${(ex.name || '').replace(/"/g, '&quot;')}"
             oninput="updateExIntensity('${id}'); persistActiveWorkout();" />
@@ -3797,6 +3876,7 @@
     const durStr  = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
     const exRows  = w.exercises.map(e =>
       `<div class="workout-history-ex">
+         ${e.killer ? '<span style="font-size:.625rem;font-weight:700;color:var(--red);background:rgba(255,59,48,.12);padding:.1rem .35rem;border-radius:4px;margin-right:.375rem;vertical-align:middle">💀</span>' : ''}
          <span class="workout-history-ex-name">${e.name}</span> &mdash; ${e.sets.length} set${e.sets.length !== 1 ? 's' : ''}
        </div>`
     ).join('');
@@ -4289,24 +4369,85 @@
 
   function _killerSetFinish() {
     closeKillerSet();
+    _showKillerSummary();
+  }
+
+  function _showKillerSummary() {
+    const history = _getKillerHistory();
+    const prev    = history.length > 0 ? history[0] : null;
+    const total   = _killerRoutine.reduce((s, _, i) => s + (parseFloat(_killerResults[i]) || 0), 0);
+
+    const rows = _killerRoutine.map((name, i) => {
+      const val     = parseFloat(_killerResults[i]) || 0;
+      const label   = _killerLabel(name);
+      const skipped = val <= 0;
+      return `
+        <div class="killer-sum-row">
+          <span class="killer-sum-ex-name">${name}</span>
+          ${skipped
+            ? '<span class="killer-sum-ex-skip">—</span>'
+            : `<span><span class="killer-sum-ex-val">${val}</span><span class="killer-sum-ex-unit"> ${label}</span></span>`}
+        </div>`;
+    }).join('');
+
+    let deltaHTML = '';
+    if (prev !== null) {
+      const diff = total - prev.total;
+      if (diff > 0)      deltaHTML = `<div class="killer-sum-delta up">▲ ${diff} reps vs last time</div>`;
+      else if (diff < 0) deltaHTML = `<div class="killer-sum-delta down">▼ ${Math.abs(diff)} reps vs last time</div>`;
+      else               deltaHTML = `<div class="killer-sum-delta same">= Same total as last time</div>`;
+    }
+
+    document.getElementById('killer-sum-body').innerHTML = `
+      <div>${rows}</div>
+      <div class="killer-sum-total" style="margin-top:.75rem">
+        <div class="killer-sum-total-label">Total reps</div>
+        <div class="killer-sum-total-num">${total}</div>
+      </div>
+      ${deltaHTML}
+      <div style="height:.75rem"></div>`;
+
+    document.getElementById('killer-summary').classList.add('open');
+  }
+
+  function _killerSummaryAdd() {
+    const total   = _killerRoutine.reduce((s, _, i) => s + (parseFloat(_killerResults[i]) || 0), 0);
+    const entry   = {
+      date:      new Date().toISOString(),
+      exercises: _killerRoutine.map((name, i) => ({ name, val: parseFloat(_killerResults[i]) || 0 })),
+      total
+    };
+    const history = _getKillerHistory();
+    history.unshift(entry);
+    localStorage.setItem('killerSetHistory', JSON.stringify(history.slice(0, 20)));
+
+    document.getElementById('killer-summary').classList.remove('open');
+
     _killerRoutine.forEach((name, i) => {
       const val = parseFloat(_killerResults[i]) || 0;
-      if (val <= 0) return;            // skip blanked/skipped exercises
+      if (val <= 0) return;
       const cardsBefore = document.querySelectorAll('#exercise-list .exercise-card').length;
-      createExCard(name);              // adds card + one empty set row
+      createExCard(name, true);   // isKiller = true
       const card = document.querySelectorAll('#exercise-list .exercise-card')[cardsBefore];
       if (!card) return;
       const inputs = card.querySelectorAll('.set-input');
       if (inputs.length >= 2) {
-        inputs[0].value = '0';         // kg = 0 (bodyweight)
+        inputs[0].value = '0';
         inputs[1].value = val;
-        inputs[1].dispatchEvent(new Event('input')); // trigger intensity + ghost update
+        inputs[1].dispatchEvent(new Event('input'));
       }
     });
     persistActiveWorkout();
-    // scroll to bottom so user sees the added exercises
     const sa = document.querySelector('#workout-screen .scroll-area');
     if (sa) requestAnimationFrame(() => sa.scrollTo({ top: sa.scrollHeight, behavior: 'smooth' }));
+  }
+
+  function _getKillerHistory() {
+    try {
+      const s = localStorage.getItem('killerSetHistory');
+      if (s) { const a = JSON.parse(s); if (Array.isArray(a)) return a; }
+    } catch(e) {}
+    return [];
   }
 
   /* ── Killer Set Editor ────────────────────────────────────── */
