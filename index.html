@@ -538,17 +538,15 @@
 
     /* ── Killer Set overlay ──────────────────────────────── */
     #killer-overlay {
-      position: absolute; inset: 0; z-index: 860;
+      position: absolute; inset: 0; z-index: 1000;
       background: var(--bg);
       transform: translateY(100%);
       transition: transform .3s cubic-bezier(.4,0,.2,1);
       display: flex; flex-direction: column;
-      overflow-y: auto;
     }
     #killer-overlay.open { transform: translateY(0); }
     .killer-nav {
-      position: sticky; top: 0; z-index: 1;
-      background: var(--bg); flex-shrink: 0;
+      flex-shrink: 0;
       display: flex; align-items: center; justify-content: space-between;
       padding: 1rem var(--gutter) .875rem;
       border-bottom: 0.5px solid var(--separator);
@@ -561,9 +559,8 @@
     }
     .killer-body {
       flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 2rem var(--gutter); gap: 1.5rem;
-      min-height: 320px;
+      align-items: center; justify-content: flex-start;
+      padding: 2.5rem var(--gutter) 1.5rem; gap: 1.5rem;
     }
     .killer-ex-name {
       font-size: 1.625rem; font-weight: 700; color: var(--label);
@@ -583,8 +580,7 @@
     .killer-input:focus { background: var(--fill-focus); outline: 3px solid var(--red); outline-offset: 2px; }
     .killer-input-label { font-size: .9375rem; color: var(--tertiary); font-weight: 500; }
     .killer-footer {
-      position: sticky; bottom: 0; z-index: 1;
-      background: var(--bg); flex-shrink: 0;
+      flex-shrink: 0;
       display: flex; gap: .75rem;
       padding: 1rem var(--gutter) 2rem;
       border-top: 0.5px solid var(--separator);
@@ -4256,10 +4252,8 @@
     document.getElementById('killer-input-label').textContent = label;
     const inp = document.getElementById('killer-input');
     inp.value = _killerResults[_killerStep] ?? '';
-    requestAnimationFrame(() => {
-      inp.focus();
-      inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
+    // delay focus until slide-in animation completes (300ms)
+    setTimeout(() => { try { inp.focus(); } catch(e) {} }, 320);
     const btn = document.getElementById('killer-btn-action');
     btn.textContent = isLast ? '✓ Finish' : 'Next →';
     btn.className   = isLast ? 'killer-btn-done' : 'killer-btn-next';
@@ -4315,71 +4309,76 @@
     if (sa) requestAnimationFrame(() => sa.scrollTo({ top: sa.scrollHeight, behavior: 'smooth' }));
   }
 
-  /* ── Killer Set Editor ──────────────────────────────────── */
-  function ksEditRender() { _ksEditDraw(); }
+  /* ── Killer Set Editor ────────────────────────────────────── */
+  let _ksEditNames = [];   // working copy; only flushed to localStorage on Save
+
+  function ksEditRender() {
+    _ksEditNames = getKillerRoutine();
+    _ksEditDraw();
+  }
 
   function _ksEditDraw() {
     const list = document.getElementById('ks-edit-list');
     if (!list) return;
-    const routine = getKillerRoutine();
-    list.innerHTML = routine.map((name, idx) => `
-      <div class="settings-row" style="gap:.5rem;align-items:center">
+    const n = _ksEditNames.length;
+    list.innerHTML = _ksEditNames.map((name, idx) => `
+      <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border-bottom:${idx<n-1?'0.5px solid var(--separator)':'none'}">
         <div style="display:flex;flex-direction:column;gap:2px;margin-right:.25rem">
-          <button onclick="ksEditMove(${idx},-1)" style="background:none;border:none;color:var(--blue);font-size:.875rem;cursor:pointer;padding:0;line-height:1" ${idx===0?'disabled style="opacity:.3"':''}>▲</button>
-          <button onclick="ksEditMove(${idx},1)"  style="background:none;border:none;color:var(--blue);font-size:.875rem;cursor:pointer;padding:0;line-height:1" ${idx===routine.length-1?'disabled style="opacity:.3"':''}>▼</button>
+          <button onclick="ksEditMove(${idx},-1)" style="background:none;border:none;color:var(--blue);font-size:.875rem;cursor:pointer;padding:0;line-height:1;opacity:${idx===0?'.3':'1'}" ${idx===0?'disabled':''}>▲</button>
+          <button onclick="ksEditMove(${idx},1)"  style="background:none;border:none;color:var(--blue);font-size:.875rem;cursor:pointer;padding:0;line-height:1;opacity:${idx===n-1?'.3':'1'}" ${idx===n-1?'disabled':''}>▼</button>
         </div>
-        <input id="ks-name-${idx}" value="${name.replace(/"/g,'&quot;')}" style="flex:1;background:var(--fill);border:none;border-radius:.5rem;padding:.5rem .75rem;font-size:.9375rem;color:var(--label);font-family:inherit" />
-        <button onclick="ksEditDelete(${idx})" style="background:none;border:none;color:var(--red);font-size:1.25rem;cursor:pointer;padding:.25rem">✕</button>
+        <input id="ks-name-${idx}" value="${name.replace(/"/g,'&quot;')}"
+          style="flex:1;background:var(--fill);border:none;border-radius:.5rem;padding:.5rem .75rem;font-size:.9375rem;color:var(--label);font-family:inherit"
+          oninput="_ksEditNames[${idx}]=this.value" />
+        <button onclick="ksEditDelete(${idx})" style="background:none;border:none;color:var(--red);font-size:1.25rem;cursor:pointer;padding:.25rem .375rem;line-height:1" title="Remove">✕</button>
       </div>
     `).join('');
   }
 
-  function _ksEditRead() {
-    const routine = getKillerRoutine();
-    return routine.map((_, idx) => {
-      const inp = document.getElementById('ks-name-' + idx);
-      return inp ? inp.value.trim() : '';
-    }).filter(Boolean);
+  function _ksFlushDOM() {
+    _ksEditNames.forEach((_, i) => {
+      const el = document.getElementById('ks-name-' + i);
+      if (el) _ksEditNames[i] = el.value;
+    });
   }
 
   function ksEditMove(idx, dir) {
-    const names = _ksEditRead();
     const newIdx = idx + dir;
-    if (newIdx < 0 || newIdx >= names.length) return;
-    [names[idx], names[newIdx]] = [names[newIdx], names[idx]];
-    localStorage.setItem('killerSetRoutine', JSON.stringify(names));
+    if (newIdx < 0 || newIdx >= _ksEditNames.length) return;
+    _ksFlushDOM();
+    [_ksEditNames[idx], _ksEditNames[newIdx]] = [_ksEditNames[newIdx], _ksEditNames[idx]];
     _ksEditDraw();
   }
 
   function ksEditDelete(idx) {
-    const names = _ksEditRead();
-    names.splice(idx, 1);
-    localStorage.setItem('killerSetRoutine', JSON.stringify(names));
+    if (_ksEditNames.length <= 1) { alert('Must have at least one exercise.'); return; }
+    _ksFlushDOM();
+    _ksEditNames.splice(idx, 1);
     _ksEditDraw();
   }
 
   function ksEditAddRow() {
-    const names = _ksEditRead();
-    names.push('');
-    localStorage.setItem('killerSetRoutine', JSON.stringify(names));
+    _ksFlushDOM();
+    _ksEditNames.push('');
     _ksEditDraw();
-    // focus the new row
     requestAnimationFrame(() => {
-      const inp = document.getElementById('ks-name-' + (names.length - 1));
-      if (inp) inp.focus();
+      const inp = document.getElementById('ks-name-' + (_ksEditNames.length - 1));
+      if (inp) { inp.focus(); inp.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
     });
   }
 
   function ksEditSave() {
-    const names = _ksEditRead();
+    _ksFlushDOM();
+    const names = _ksEditNames.filter(Boolean);
     if (!names.length) { alert('Add at least one exercise.'); return; }
     localStorage.setItem('killerSetRoutine', JSON.stringify(names));
-    _ksEditDraw();
     settingsPop();
   }
 
   function ksEditReset() {
+    if (!confirm('Reset to the default 9-exercise Killer Set?')) return;
     localStorage.removeItem('killerSetRoutine');
+    _ksEditNames = [...KILLER_SET_DEFAULT_NAMES];
     _ksEditDraw();
   }
 
