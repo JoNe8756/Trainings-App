@@ -795,6 +795,23 @@
       -webkit-tap-highlight-color: transparent;
     }
     .wh-killer-row::before { display: none; }  /* suppress bullet */
+    .wh-warmup-row::before { display: none; }  /* suppress bullet */
+    .wh-warmup-row {
+      display: flex; align-items: center; gap: .5rem;
+      margin-bottom: .1875rem; cursor: pointer;
+      border-radius: 6px; padding: .1875rem .375rem .1875rem 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .wh-warmup-badge {
+      font-size: .625rem; font-weight: 700; letter-spacing: .02em;
+      color: #c45200; background: rgba(255,149,0,.15);
+      padding: .15rem .4rem; border-radius: 4px; flex-shrink: 0;
+    }
+    @media (prefers-color-scheme: dark) {
+      .wh-warmup-badge { color: #ff9f0a; background: rgba(255,149,0,.18); }
+    }
+    .wh-warmup-row.open .wh-killer-chevron { transform: rotate(90deg); }
+    .wh-warmup-row.open + .wh-killer-detail { display: block; }
     .wh-killer-badge {
       font-size: .625rem; font-weight: 700; letter-spacing: .02em;
       color: var(--red); background: rgba(255,59,48,.12);
@@ -3747,7 +3764,9 @@
       exercises.push({ name, sets, ...(killer && { killer: true }) });
     });
 
-    const workout = { id: Date.now(), date: new Date().toISOString(), duration: timerSeconds, exercises };
+    const workout = { id: Date.now(), date: new Date().toISOString(), duration: timerSeconds, exercises,
+      ...(_completedWarmup && { warmup: _completedWarmup }) };
+    _completedWarmup = null;
     workouts.unshift(workout);
     persist();
 
@@ -3972,7 +3991,31 @@
     return rows.join('');
   }
 
-  /* ── Workout card HTML ──────────────────────────────────── */
+  function _whWarmupRow(w) {
+    if (!w.warmup) return '';
+    const wm      = w.warmup;
+    const elapsed = wm.elapsed;
+    const fmtT    = s => (Math.floor(s/60) > 0 ? Math.floor(s/60) + 'm ' : '') + (s % 60) + 's';
+    const summary = elapsed != null ? fmtT(elapsed) + ' strength' : 'completed';
+    const uid     = 'wh-wu-' + w.id;
+    const genLine = '<div class="wh-killer-detail-row"><span class="wh-killer-detail-name">General warm-up</span><span class="wh-killer-detail-val" style="color:var(--tertiary)">4 min</span></div>';
+    const seqLines = (wm.routine || []).map(s =>
+      `<div class="wh-killer-detail-row">
+         <span class="wh-killer-detail-name">${s.name}</span>
+         <span class="wh-killer-detail-val">${s.reps}</span>
+         <span class="wh-killer-detail-unit">reps</span>
+       </div>`).join('');
+    return `
+      <div class="workout-history-ex wh-warmup-row" onclick="_whKillerToggle(this)" id="${uid}">
+        <span class="wh-warmup-badge">🔥 Warmup</span>
+        <span class="wh-killer-label">Warmup</span>
+        <span class="wh-killer-total">${summary}</span>
+        <span class="wh-killer-chevron">›</span>
+      </div>
+      <div class="wh-killer-detail">${genLine}${seqLines}</div>`;
+  }
+
+  /* ── Workout card HTML ──────────────────────────────────────────── */
   function workoutCard(w) {
     const d       = new Date(w.date);
     const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -3980,7 +4023,7 @@
     const mins    = Math.floor(w.duration / 60);
     const secs    = w.duration % 60;
     const durStr  = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-    const exRows  = _whBuildRows(w.exercises);
+    const exRows  = _whWarmupRow(w) + _whBuildRows(w.exercises);
 
     const trashSVG = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="2,4 14,4"/>
@@ -4406,6 +4449,7 @@
   }
 
   let _killerRoutine = [], _killerResults = [], _killerStep = 0;
+  let _completedWarmup = null; /* set by warmup, consumed by finishWorkout */
 
   function openKillerSet() {
     _killerRoutine = getKillerRoutine();
@@ -5802,6 +5846,10 @@
   function _warmupStrengthFinish() {
     const elapsed = Math.round((Date.now() - _warmupStrStart) / 1000);
     _saveStrengthTime(elapsed);
+    _completedWarmup = {
+      elapsed,
+      routine: WARMUP_STRENGTH.map(s => ({ name: s.name, reps: s.reps })),
+    };
     _warmupRenderComplete(elapsed);
     _warmupSpeak("Incredible — strength warmup done! You are absolutely ready to train!");
   }
