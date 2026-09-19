@@ -2462,6 +2462,61 @@
     }
 
     /* ── Summary highlights ───────────────────────────────── */
+    /* ── Workout summary cards (Warmup + Killer Set above exercise list) ── */
+    .wsc-card {
+      margin: 0 var(--gutter) .5rem;
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .wsc-header {
+      display: flex; align-items: center; gap: .625rem;
+      padding: .6875rem 1rem;
+      cursor: pointer; user-select: none; -webkit-user-select: none;
+    }
+    .wsc-badge {
+      flex-shrink: 0;
+      font-size: .6875rem; font-weight: 700; letter-spacing: .02em;
+      padding: .125rem .5rem; border-radius: 99px;
+    }
+    .wsc-badge.warmup { background: rgba(255,149,0,.18); color: #ff9500; }
+    .wsc-badge.killer { background: rgba(255,59,48,.18); color: var(--red); }
+    .wsc-summary-text {
+      flex: 1; font-size: .875rem; color: var(--secondary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .wsc-chevron {
+      color: var(--tertiary); font-size: 1.25rem; line-height: 1;
+      transition: transform .2s;
+    }
+    .wsc-card.open .wsc-chevron { transform: rotate(90deg); }
+    .wsc-body {
+      padding: .5rem 1rem .75rem;
+      border-top: .5px solid var(--separator);
+    }
+    .wsc-ex-row {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .3125rem 0;
+      border-bottom: .5px solid var(--separator);
+      font-size: .875rem;
+    }
+    .wsc-ex-row:last-child { border-bottom: none; }
+    .wsc-ex-name { flex: 1; color: var(--label); }
+    .wsc-ex-val {
+      font-weight: 700; color: var(--label); font-size: .9375rem;
+      text-align: right; min-width: 2.5rem;
+    }
+    .wsc-ex-input {
+      border: none; background: transparent;
+      font-size: .9375rem; font-weight: 700; color: var(--label);
+      font-family: inherit; text-align: right; width: 3.25rem; padding: 0;
+      -moz-appearance: textfield; cursor: text;
+    }
+    input.wsc-ex-input::-webkit-outer-spin-button,
+    input.wsc-ex-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .wsc-ex-input:focus { outline: none; border-bottom: 2px solid var(--red); color: var(--red); }
+    .wsc-ex-unit { font-size: .75rem; color: var(--tertiary); min-width: 2.25rem; }
     #highlights-section { display: none; }
     .highlight-card {
       background: var(--card);
@@ -2550,6 +2605,23 @@
       <div class="timer-dot"></div>
     </div>
     <div class="section-header">Exercises</div>
+    <!-- Warmup + Killer Set summary cards sit above regular exercises -->
+    <div id="workout-warmup-card" class="wsc-card" style="display:none">
+      <div class="wsc-header" onclick="_wscToggle('warmup')">
+        <span class="wsc-badge warmup">🔥 Warmup</span>
+        <span class="wsc-summary-text" id="wsc-warmup-summary"></span>
+        <span class="wsc-chevron">›</span>
+      </div>
+      <div class="wsc-body" id="wsc-warmup-body" style="display:none"></div>
+    </div>
+    <div id="workout-killer-card" class="wsc-card" style="display:none">
+      <div class="wsc-header" onclick="_wscToggle('killer')">
+        <span class="wsc-badge killer">💀 Killer Set</span>
+        <span class="wsc-summary-text" id="wsc-killer-summary"></span>
+        <span class="wsc-chevron">›</span>
+      </div>
+      <div class="wsc-body" id="wsc-killer-body" style="display:none"></div>
+    </div>
     <div id="exercise-list"></div>
     <button id="btn-next-ex" class="btn-next-ex" style="display:none" onclick="planNextExercise()"></button>
     <button class="btn-add-exercise" onclick="addExercise()">
@@ -3410,6 +3482,8 @@
     });
     document.getElementById('workout-screen').classList.add('active');
     updateResumeBanner();
+    // Show warmup card if warmup was completed before this workout
+    _showWarmupWorkoutCard();
   }
 
   /* Resume: switch back to workout screen */
@@ -3758,17 +3832,34 @@
   function finishWorkout() {
     clearInterval(timerInterval);
     const exercises = [];
+
+    // Regular exercises (killer set is no longer in #exercise-list)
     document.querySelectorAll('#exercise-list .exercise-card').forEach(card => {
-      const name   = card.querySelector('.exercise-head input').value.trim() || 'Unnamed';
+      const name      = card.querySelector('.exercise-head input').value.trim() || 'Unnamed';
       const timeBased = !!card.dataset.tb;
-      const killer = !!card.dataset.killer;
-      const sets   = [];
+      const sets      = [];
       card.querySelectorAll('.sets-body .set-row').forEach(row => {
         const inputs = row.querySelectorAll('input');
         sets.push({ kg: inputs[0].value || '0', reps: inputs[1].value || '0', tb: timeBased || undefined });
       });
-      exercises.push({ name, sets, ...(killer && { killer: true }) });
+      exercises.push({ name, sets });
     });
+
+    // Killer Set: read from compact workout card if present
+    const killerCard = document.getElementById('workout-killer-card');
+    if (killerCard && killerCard.style.display !== 'none' && _killerRoutine.length) {
+      // Sync any in-progress edits from the DOM inputs
+      killerCard.querySelectorAll('.wsc-ex-input').forEach((inp, i) => {
+        _killerResults[i] = inp.value;
+      });
+      _killerRoutine.forEach((name, i) => {
+        const val = parseFloat(_killerResults[i]) || 0;
+        if (val > 0) {
+          const tb = !!getExMeta(name).tb;
+          exercises.push({ name, sets: [{ kg: '0', reps: String(val), ...(tb && { tb: true }) }], killer: true });
+        }
+      });
+    }
 
     const workout = { id: Date.now(), date: new Date().toISOString(), duration: timerSeconds, exercises,
       ...(_completedWarmup && { warmup: _completedWarmup }) };
@@ -3796,10 +3887,14 @@
     _workoutActive = false;
     activePlanData = null;
     exerciseCount  = 0;
+    _completedWarmup = null;
+    _killerRoutine   = [];
+    _killerResults   = [];
     clearActiveWorkout();
     document.getElementById('exercise-list').innerHTML = '';
     document.getElementById('plan-banner').style.display = 'none';
     document.getElementById('btn-next-ex').style.display  = 'none';
+    _wscHideAll();
     showTab('home');
   }
 
@@ -3834,10 +3929,19 @@
       });
       exercises.push({ name, tb, sets, ...(killer && { killer: true }) });
     });
+    const killerCard = document.getElementById('workout-killer-card');
+    const killerVisible = killerCard && killerCard.style.display !== 'none' && _killerRoutine.length > 0;
+    if (killerVisible) {
+      // sync DOM edits before persisting
+      killerCard.querySelectorAll('.wsc-ex-input').forEach((inp, i) => { _killerResults[i] = inp.value; });
+    }
     const snap = {
       timerSeconds,
       exercises,
-      activePlanData: activePlanData ? JSON.parse(JSON.stringify(activePlanData)) : null,
+      activePlanData:  activePlanData ? JSON.parse(JSON.stringify(activePlanData)) : null,
+      killerRoutine:   killerVisible ? [..._killerRoutine]  : null,
+      killerResults:   killerVisible ? [..._killerResults]  : null,
+      warmup:          _completedWarmup || null,
     };
     localStorage.setItem('activeWorkout', JSON.stringify(snap));
   }
@@ -3862,6 +3966,7 @@
     document.getElementById('exercise-list').innerHTML = '';
 
     snap.exercises.forEach(ex => {
+      if (ex.killer) return;  // killer set is now shown as a compact card, not individual cards
       exerciseCount++;
       const id  = 'ex-' + Date.now() + '-' + exerciseCount;
       const tb  = !!ex.tb;
@@ -3869,9 +3974,7 @@
       div.className = 'exercise-card';
       div.id = id;
       if (tb)       div.dataset.tb     = '1';
-      if (ex.killer) div.dataset.killer = '1';
       div.innerHTML = `
-        ${ex.killer ? '<div class="ex-killer-tag">💀 Killer Set</div>' : ''}
         <div class="exercise-head">
           <input type="text" placeholder="Exercise name" value="${(ex.name || '').replace(/"/g, '&quot;')}"
             oninput="updateExIntensity('${id}'); persistActiveWorkout();" />
@@ -3919,6 +4022,19 @@
       updateExIntensity(id);
       updateGhostHint(id);
     });
+
+    /* Restore Killer Set compact card */
+    if (snap.killerRoutine && snap.killerRoutine.length) {
+      _killerRoutine = snap.killerRoutine;
+      _killerResults = snap.killerResults || [];
+      _showKillerWorkoutCard();
+    }
+
+    /* Restore warmup compact card */
+    if (snap.warmup) {
+      _completedWarmup = snap.warmup;
+      _showWarmupWorkoutCard();
+    }
 
     /* Restore plan UI */
     if (activePlanData) { updatePlanBanner(); updateNextExBtn(); }
@@ -4607,31 +4723,12 @@
     history.unshift(entry);
     localStorage.setItem('killerSetHistory', JSON.stringify(history.slice(0, 20)));
 
-    // dismiss summary
     document.getElementById('killer-summary').classList.remove('open');
-
-    // ensure workout tab is showing
     showTab('workout');
 
-    // add exercises to the active workout
-    _killerRoutine.forEach((name, i) => {
-      const val = parseFloat(_killerResults[i]) || 0;
-      if (val <= 0) return;
-      const cardsBefore = document.querySelectorAll('#exercise-list .exercise-card').length;
-      createExCard(name, true);   // isKiller = true
-      const card = document.querySelectorAll('#exercise-list .exercise-card')[cardsBefore];
-      if (!card) return;
-      const inputs = card.querySelectorAll('.set-input');
-      if (inputs.length >= 2) {
-        inputs[0].value = '0';
-        inputs[1].value = val;
-        inputs[1].dispatchEvent(new Event('input'));
-      }
-    });
+    // Show as single compact card above exercises (no individual cards)
+    _showKillerWorkoutCard();
     persistActiveWorkout();
-    // scroll to newly added exercises
-    const sa = document.querySelector('#workout-screen .scroll-area');
-    if (sa) requestAnimationFrame(() => sa.scrollTo({ top: sa.scrollHeight, behavior: 'smooth' }));
     showToast('Killer Set added! 💣');
   }
 
@@ -4639,6 +4736,81 @@
     if (!confirm('Discard this Killer Set? Results will not be saved to your workout.')) return;
     document.getElementById('killer-summary').classList.remove('open');
     showTab('workout');
+  }
+
+  /* ── Workout summary cards: Warmup + Killer Set ─────────────────── */
+
+  function _wscToggle(type) {
+    const card = document.getElementById('workout-' + type + '-card');
+    if (!card) return;
+    const body = card.querySelector('.wsc-body');
+    const open = card.classList.toggle('open');
+    if (body) body.style.display = open ? 'block' : 'none';
+  }
+
+  function _showKillerWorkoutCard() {
+    const card = document.getElementById('workout-killer-card');
+    if (!card || !_killerRoutine.length) return;
+    _wscKillerRefresh();
+    card.style.display = '';
+  }
+
+  function _wscKillerRefresh() {
+    const total   = _killerRoutine.reduce((s, _, i) => s + (parseFloat(_killerResults[i]) || 0), 0);
+    const summary = document.getElementById('wsc-killer-summary');
+    const body    = document.getElementById('wsc-killer-body');
+    if (summary) summary.textContent = total + ' total reps';
+    if (body) {
+      body.innerHTML = _killerRoutine.map((name, i) => {
+        const label = _killerLabel(name);
+        const val   = parseFloat(_killerResults[i]) || 0;
+        return `<div class="wsc-ex-row">
+          <span class="wsc-ex-name">${name}</span>
+          <input class="wsc-ex-input" type="number" inputmode="numeric" min="0"
+            value="${val > 0 ? val : ''}" placeholder="—"
+            onchange="_wscKillerSave(${i}, this.value)"
+            onkeydown="if(event.key==='Enter')this.blur()" />
+          <span class="wsc-ex-unit">${label}</span>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  function _wscKillerSave(idx, val) {
+    _killerResults[idx] = val;
+    const total   = _killerRoutine.reduce((s, _, i) => s + (parseFloat(_killerResults[i]) || 0), 0);
+    const summary = document.getElementById('wsc-killer-summary');
+    if (summary) summary.textContent = total + ' total reps';
+    persistActiveWorkout();
+  }
+
+  function _showWarmupWorkoutCard() {
+    if (!_completedWarmup) return;
+    const card = document.getElementById('workout-warmup-card');
+    if (!card) return;
+    const fmtT   = s => (Math.floor(s / 60) > 0 ? Math.floor(s / 60) + 'm ' : '') + (s % 60) + 's';
+    const elapsed = _completedWarmup.elapsed;
+    const summary = document.getElementById('wsc-warmup-summary');
+    const body    = document.getElementById('wsc-warmup-body');
+    if (summary) summary.textContent = elapsed != null ? fmtT(elapsed) + ' strength' : 'completed';
+    if (body && _completedWarmup.routine) {
+      body.innerHTML = _completedWarmup.routine.map(step =>
+        `<div class="wsc-ex-row">
+          <span class="wsc-ex-name">${step.name}</span>
+          <span class="wsc-ex-val">${step.reps || ''}</span>
+        </div>`
+      ).join('');
+    }
+    card.style.display = '';
+  }
+
+  function _wscHideAll() {
+    ['workout-warmup-card', 'workout-killer-card'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.style.display = 'none'; el.classList.remove('open'); }
+      const body = el && el.querySelector('.wsc-body');
+      if (body) body.style.display = 'none';
+    });
   }
 
   function _getKillerHistory() {
