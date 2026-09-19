@@ -2537,6 +2537,104 @@
     input.wsc-ex-input::-webkit-inner-spin-button { -webkit-appearance: none; }
     .wsc-ex-input:focus { outline: none; border-bottom: 2px solid var(--red); color: var(--red); }
     .wsc-ex-unit { font-size: .75rem; color: var(--tertiary); min-width: 2.25rem; }
+    /* ── Workout detail overlay ─────────────────────────────────── */
+    #workout-detail {
+      position: fixed; inset: 0; z-index: 1100;
+      background: var(--bg);
+      transform: translateX(100%);
+      transition: transform .28s cubic-bezier(.4,0,.2,1);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    #workout-detail.open { transform: translateX(0); }
+    .wd-nav {
+      flex-shrink: 0;
+      display: flex; align-items: center; gap: .625rem;
+      padding: max(.875rem, env(safe-area-inset-top, .875rem)) var(--gutter) .75rem;
+      border-bottom: .5px solid var(--separator);
+      background: var(--bg);
+    }
+    .wd-back-btn {
+      background: none; border: none; color: var(--blue);
+      font-size: .9375rem; cursor: pointer; padding: .25rem .5rem .25rem 0;
+      font-family: inherit; flex-shrink: 0;
+    }
+    .wd-nav-title { font-size: 1rem; font-weight: 700; color: var(--label); flex: 1; }
+    .wd-scroll { flex: 1; overflow-y: auto; padding-bottom: max(5rem, calc(4rem + env(safe-area-inset-bottom,0px))); }
+    .wd-header {
+      padding: 1.125rem var(--gutter) .75rem;
+      border-bottom: .5px solid var(--separator);
+    }
+    .wd-plan-name {
+      font-size: .75rem; font-weight: 600; color: var(--blue); margin-bottom: .25rem;
+    }
+    .wd-date { font-size: 1.0625rem; font-weight: 700; color: var(--label); }
+    .wd-meta { display: flex; gap: 1rem; margin-top: .375rem; }
+    .wd-meta-item { font-size: .8125rem; color: var(--secondary); }
+    .wd-totals {
+      display: flex; gap: .75rem;
+      padding: .75rem var(--gutter);
+      border-bottom: .5px solid var(--separator);
+    }
+    .wd-total-chip {
+      flex: 1; background: var(--card); border-radius: .75rem;
+      padding: .625rem .75rem; text-align: center;
+    }
+    .wd-total-label { font-size: .6875rem; color: var(--tertiary); margin-bottom: .1875rem; text-transform: uppercase; letter-spacing: .04em; }
+    .wd-total-val   { font-size: 1.25rem; font-weight: 800; color: var(--label); }
+    /* summary cards inside detail view (warmup/killer) */
+    .wd-wsc-card {
+      margin: .625rem var(--gutter) 0;
+      background: var(--card); border-radius: var(--radius-card);
+      box-shadow: var(--shadow); overflow: hidden;
+    }
+    .wd-wsc-header {
+      display: flex; align-items: center; gap: .625rem;
+      padding: .6875rem 1rem; cursor: pointer; user-select: none; -webkit-user-select: none;
+    }
+    .wd-wsc-card.open .wd-wsc-chevron { transform: rotate(90deg); }
+    .wd-wsc-chevron { color: var(--tertiary); font-size: 1.25rem; line-height: 1; transition: transform .2s; }
+    .wd-wsc-body { padding: .5rem 1rem .75rem; border-top: .5px solid var(--separator); display: none; }
+    .wd-wsc-card.open .wd-wsc-body { display: block; }
+    .wd-wsc-row {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .3125rem 0; border-bottom: .5px solid var(--separator);
+      font-size: .875rem;
+    }
+    .wd-wsc-row:last-child { border-bottom: none; }
+    .wd-wsc-name { flex: 1; color: var(--label); }
+    .wd-wsc-val  { font-weight: 700; color: var(--label); }
+    .wd-wsc-unit { font-size: .75rem; color: var(--tertiary); min-width: 2.25rem; }
+    /* exercise sections */
+    .wd-ex-section {
+      margin: .625rem var(--gutter) 0;
+      background: var(--card); border-radius: var(--radius-card);
+      box-shadow: var(--shadow); overflow: hidden;
+    }
+    .wd-ex-name {
+      font-size: .9375rem; font-weight: 600; color: var(--label);
+      padding: .6875rem 1rem .375rem;
+    }
+    .wd-sets-head {
+      display: grid; grid-template-columns: 2rem 1fr 1fr 1fr;
+      padding: .25rem 1rem; font-size: .6875rem; font-weight: 500;
+      color: var(--tertiary); text-transform: uppercase; letter-spacing: .04em;
+      border-bottom: .5px solid var(--separator);
+    }
+    .wd-set-row {
+      display: grid; grid-template-columns: 2rem 1fr 1fr 1fr;
+      padding: .4375rem 1rem; font-size: .875rem;
+      border-bottom: .5px solid var(--separator);
+      align-items: center;
+    }
+    .wd-set-row:last-child { border-bottom: none; }
+    .wd-set-num   { font-weight: 500; color: var(--tertiary); }
+    .wd-set-val   { font-weight: 600; color: var(--label); }
+    .wd-set-int   { font-size: .75rem; color: var(--tertiary); }
+    .wd-ex-total  {
+      padding: .375rem 1rem .5rem; font-size: .75rem; color: var(--tertiary);
+      font-weight: 600; border-top: .5px solid var(--separator);
+    }
     #highlights-section { display: none; }
     .highlight-card {
       background: var(--card);
@@ -2687,6 +2785,15 @@
   <div class="killer-sum-footer">
     <button class="killer-sum-btn" onclick="_killerSummaryAdd()">Add to Workout 💪</button>
   </div>
+</div>
+
+<!-- ═══════════════ WORKOUT DETAIL ═══════════════ -->
+<div id="workout-detail">
+  <div class="wd-nav">
+    <button class="wd-back-btn" onclick="closeWorkoutDetail()">← Back</button>
+    <div class="wd-nav-title">Workout Detail</div>
+  </div>
+  <div class="wd-scroll" id="wd-scroll"></div>
 </div>
 
 <!-- ═══════════════ HISTORY SCREEN ═══════════════ -->
@@ -4171,6 +4278,165 @@
   }
 
   /* ── Workout card HTML ──────────────────────────────────────────── */
+  /* ── Workout Detail overlay ─────────────────────────────────────── */
+
+  function openWorkoutDetail(workoutId) {
+    const w = workouts.find(x => x.id === workoutId);
+    if (!w) return;
+
+    const d       = new Date(w.date);
+    const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const mins    = Math.floor((w.duration || 0) / 60);
+    const secs    = (w.duration || 0) % 60;
+    const durStr  = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+
+    // Totals across all non-killer exercises
+    let totalIntensity = 0, totalReps = 0, totalVol = 0;
+    (w.exercises || []).forEach(ex => {
+      if (ex.killer) return;  // killer handled separately below
+      (ex.sets || []).forEach(s => {
+        const r = parseFloat(s.reps) || 0;
+        const k = parseFloat(s.kg)   || 0;
+        totalReps += r;
+        totalVol  += r * k;
+        totalIntensity += calcSetIntensity(ex.name, r, k);
+      });
+    });
+    // Also count killer exercises in totals
+    (w.exercises || []).filter(ex => ex.killer).forEach(ex => {
+      (ex.sets || []).forEach(s => {
+        const r = parseFloat(s.reps) || 0;
+        totalReps += r;
+        totalIntensity += calcSetIntensity(ex.name, r, 0);
+      });
+    });
+
+    const killerExercises = (w.exercises || []).filter(ex => ex.killer);
+    const regularExercises = (w.exercises || []).filter(ex => !ex.killer);
+
+    // ── Warmup card
+    const warmupHTML = (() => {
+      if (!w.warmup) return '';
+      const elapsed = w.warmup.elapsed;
+      const fmtT   = s => (Math.floor(s/60)>0 ? Math.floor(s/60)+'m ' : '') + (s%60)+'s';
+      const summary = elapsed != null ? fmtT(elapsed) + ' strength' : 'completed';
+      const uid = 'wd-wu-' + w.id;
+      const steps = (w.warmup.routine || []).map(step =>
+        `<div class="wd-wsc-row">
+          <span class="wd-wsc-name">${step.name}</span>
+          <span class="wd-wsc-val">${step.reps || ''}</span>
+        </div>`).join('');
+      return `<div class="wd-wsc-card" id="${uid}">
+        <div class="wd-wsc-header" onclick="this.closest('.wd-wsc-card').classList.toggle('open')">
+          <span class="wsc-badge warmup">🔥 Warmup</span>
+          <span class="wsc-summary-text">${summary}</span>
+          <span class="wd-wsc-chevron">›</span>
+        </div>
+        <div class="wd-wsc-body">${steps}</div>
+      </div>`;
+    })();
+
+    // ── Killer Set card
+    const killerHTML = (() => {
+      if (!killerExercises.length) return '';
+      const total = killerExercises.reduce((s, ex) => s + (parseFloat(ex.sets[0]?.reps) || 0), 0);
+      const uid = 'wd-ks-' + w.id;
+      const rows = killerExercises.map(ex => {
+        const val   = parseFloat(ex.sets[0]?.reps) || 0;
+        const label = !!getExMeta(ex.name).tb ? 'secs' : 'reps';
+        return `<div class="wd-wsc-row">
+          <span class="wd-wsc-name">${ex.name}</span>
+          <span class="wd-wsc-val">${val > 0 ? val : '—'}</span>
+          <span class="wd-wsc-unit">${val > 0 ? label : ''}</span>
+        </div>`;
+      }).join('');
+      return `<div class="wd-wsc-card" id="${uid}">
+        <div class="wd-wsc-header" onclick="this.closest('.wd-wsc-card').classList.toggle('open')">
+          <span class="wsc-badge killer">💣 Killer Set</span>
+          <span class="wsc-summary-text">${total} total reps</span>
+          <span class="wd-wsc-chevron">›</span>
+        </div>
+        <div class="wd-wsc-body">${rows}</div>
+      </div>`;
+    })();
+
+    // ── Regular exercise sections
+    const exercisesHTML = regularExercises.map(ex => {
+      const tb       = !!ex.sets[0]?.tb || !!getExMeta(ex.name).tb;
+      const kgLabel  = 'kg';
+      const repLabel = tb ? 'Secs' : 'Reps';
+      const intLabel = '⚡';
+
+      let exIntTotal = 0;
+      let totalExReps = 0;
+      const setRows = (ex.sets || []).map((s, i) => {
+        const r = parseFloat(s.reps) || 0;
+        const k = parseFloat(s.kg)   || 0;
+        const intensity = calcSetIntensity(ex.name, r, k);
+        exIntTotal += intensity;
+        totalExReps += r;
+        const kgCell   = k > 0 ? k + 'kg' : '—';
+        const repsCell = r > 0 ? r + (tb ? 's' : '') : '—';
+        const intCell  = intensity > 0 ? fmtInt(intensity) : '—';
+        return `<div class="wd-set-row">
+          <span class="wd-set-num">${i + 1}</span>
+          <span class="wd-set-val">${kgCell}</span>
+          <span class="wd-set-val">${repsCell}</span>
+          <span class="wd-set-int">${intCell}</span>
+        </div>`;
+      }).join('');
+
+      const footerParts = [];
+      if (totalExReps > 0) footerParts.push(`${totalExReps} ${tb ? 'secs' : 'reps'}`);
+      if (exIntTotal > 0)  footerParts.push(`⚡ ${fmtInt(exIntTotal)}`);
+
+      return `<div class="wd-ex-section">
+        <div class="wd-ex-name">${ex.name}</div>
+        <div class="wd-sets-head">
+          <span>#</span><span>${kgLabel}</span><span>${repLabel}</span><span>${intLabel}</span>
+        </div>
+        ${setRows}
+        ${footerParts.length ? `<div class="wd-ex-total">${footerParts.join(' · ')}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    // ── Totals chips
+    const volStr  = totalVol > 0 ? (totalVol >= 1000 ? (totalVol/1000).toFixed(1)+'t' : totalVol+'kg') : null;
+    const chips = [
+      { label: 'Intensity', val: totalIntensity > 0 ? fmtInt(totalIntensity) + ' ⚡' : '—' },
+      { label: 'Total Reps', val: totalReps > 0 ? String(totalReps) : '—' },
+      ...(volStr ? [{ label: 'Volume', val: volStr }] : []),
+    ];
+
+    const body = `
+      <div class="wd-header">
+        ${w.planName ? `<div class="wd-plan-name">📋 ${w.planName}</div>` : ''}
+        <div class="wd-date">${dateStr}</div>
+        <div class="wd-meta">
+          <span class="wd-meta-item">${timeStr}</span>
+          <span class="wd-meta-item">⏱ ${durStr}</span>
+        </div>
+      </div>
+      <div class="wd-totals">
+        ${chips.map(c => `<div class="wd-total-chip">
+          <div class="wd-total-label">${c.label}</div>
+          <div class="wd-total-val">${c.val}</div>
+        </div>`).join('')}
+      </div>
+      ${warmupHTML}
+      ${killerHTML}
+      ${exercisesHTML}
+      <div style="height:.5rem"></div>`;
+
+    document.getElementById('wd-scroll').innerHTML = body;
+    document.getElementById('workout-detail').classList.add('open');
+  }
+
+  function closeWorkoutDetail() {
+    document.getElementById('workout-detail').classList.remove('open');
+  }
+
   function workoutCard(w) {
     const d       = new Date(w.date);
     const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -4189,7 +4455,7 @@
     </svg>`;
 
     return `
-      <div class="workout-history-card">
+      <div class="workout-history-card" onclick="openWorkoutDetail(${w.id})" style="cursor:pointer">
         <div class="workout-history-head">
           <div class="workout-history-info">
             ${w.planName ? `<div class="workout-history-plan">📋 ${w.planName}</div>` : ''}
