@@ -740,6 +740,11 @@
     }
     /* flex:1 + min-width:0 — prevents date text from pushing meta off-screen at 320 px */
     .workout-history-info { flex: 1; min-width: 0; }
+    .workout-history-plan {
+      font-size: 0.75rem; font-weight: 600; color: var(--blue);
+      letter-spacing: .01em; margin-bottom: 0.125rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
     .workout-history-date {
       font-size: 0.9375rem;
       font-weight: 600;
@@ -3877,6 +3882,7 @@
     }
 
     const workout = { id: Date.now(), date: new Date().toISOString(), duration: timerSeconds, exercises,
+      ...(activePlanData?.planName && { planName: activePlanData.planName }),
       ...(_completedWarmup && { warmup: _completedWarmup }) };
     _completedWarmup = null;
     workouts.unshift(workout);
@@ -4174,6 +4180,7 @@
       <div class="workout-history-card">
         <div class="workout-history-head">
           <div class="workout-history-info">
+            ${w.planName ? `<div class="workout-history-plan">📋 ${w.planName}</div>` : ''}
             <div class="workout-history-date">${dateStr}</div>
             <div class="workout-history-time">${timeStr}</div>
           </div>
