@@ -2572,16 +2572,22 @@
     .wd-meta { display: flex; gap: 1rem; margin-top: .375rem; }
     .wd-meta-item { font-size: .8125rem; color: var(--secondary); }
     .wd-totals {
-      display: flex; gap: .75rem;
-      padding: .75rem var(--gutter);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
+      gap: .5rem;
+      padding: .625rem var(--gutter);
       border-bottom: .5px solid var(--separator);
     }
     .wd-total-chip {
-      flex: 1; background: var(--card); border-radius: .75rem;
-      padding: .625rem .75rem; text-align: center;
+      background: var(--card); border-radius: .75rem;
+      padding: .5625rem .625rem; text-align: center; min-width: 0;
     }
-    .wd-total-label { font-size: .6875rem; color: var(--tertiary); margin-bottom: .1875rem; text-transform: uppercase; letter-spacing: .04em; }
-    .wd-total-val   { font-size: 1.25rem; font-weight: 800; color: var(--label); }
+    .wd-total-label {
+      font-size: .5625rem; color: var(--tertiary); margin-bottom: .125rem;
+      text-transform: uppercase; letter-spacing: .06em;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .wd-total-val { font-size: 1.125rem; font-weight: 800; color: var(--label); line-height: 1.2; }
     /* summary cards inside detail view (warmup/killer) */
     .wd-wsc-card {
       margin: .625rem var(--gutter) 0;
@@ -2613,26 +2619,39 @@
     }
     .wd-ex-name {
       font-size: .9375rem; font-weight: 600; color: var(--label);
-      padding: .6875rem 1rem .375rem;
+      padding: .625rem .875rem .3125rem;
     }
-    .wd-sets-head {
-      display: grid; grid-template-columns: 2rem 1fr 1fr 1fr;
-      padding: .25rem 1rem; font-size: .6875rem; font-weight: 500;
-      color: var(--tertiary); text-transform: uppercase; letter-spacing: .04em;
-      border-bottom: .5px solid var(--separator);
-    }
+    /* Table: [Set#] [KG] [Reps] [⚡]
+       1.5rem fixed | 3rem fixed | 1fr flex | 2.75rem fixed
+       Fits comfortably from 320px upwards. */
+    .wd-sets-head,
     .wd-set-row {
-      display: grid; grid-template-columns: 2rem 1fr 1fr 1fr;
-      padding: .4375rem 1rem; font-size: .875rem;
-      border-bottom: .5px solid var(--separator);
+      display: grid;
+      grid-template-columns: 1.5rem 3rem 1fr 2.75rem;
+      gap: .25rem;
+      padding: .3125rem .875rem;
       align-items: center;
     }
+    .wd-sets-head {
+      font-size: .5625rem; font-weight: 600; color: var(--tertiary);
+      text-transform: uppercase; letter-spacing: .06em;
+      border-bottom: .5px solid var(--separator);
+      padding-top: .25rem; padding-bottom: .25rem;
+    }
+    .wd-set-row {
+      font-size: .875rem;
+      border-bottom: .5px solid var(--separator);
+      padding-top: .40625rem; padding-bottom: .40625rem;
+    }
     .wd-set-row:last-child { border-bottom: none; }
-    .wd-set-num   { font-weight: 500; color: var(--tertiary); }
-    .wd-set-val   { font-weight: 600; color: var(--label); }
-    .wd-set-int   { font-size: .75rem; color: var(--tertiary); }
-    .wd-ex-total  {
-      padding: .375rem 1rem .5rem; font-size: .75rem; color: var(--tertiary);
+    /* right-align numeric cells so values sit flush against each other */
+    .wd-sets-head span:nth-child(n+2),
+    .wd-set-row   span:nth-child(n+2) { text-align: right; }
+    .wd-set-num { font-weight: 500; color: var(--tertiary); }
+    .wd-set-val { font-weight: 600; color: var(--label); }
+    .wd-set-int { font-size: .75rem; color: var(--tertiary); }
+    .wd-ex-total {
+      padding: .375rem .875rem .5rem; font-size: .75rem; color: var(--tertiary);
       font-weight: 600; border-top: .5px solid var(--separator);
     }
     #highlights-section { display: none; }
