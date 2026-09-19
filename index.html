@@ -182,7 +182,9 @@
     /* ── Screens ──────────────────────────────────────────── */
     .screen { display: none; flex-direction: column; flex: 1; min-height: 0; }
     .screen.active { display: flex; }
-    .scroll-area   { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; }
+    .scroll-area   { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0;
+                     /* Extra bottom room so content doesn't hide behind the fixed tab-bar */
+                     padding-bottom: max(4.5rem, calc(3.5rem + env(safe-area-inset-bottom, 0px))); }
 
     /* ── Large-title nav bar ──────────────────────────────── */
     .nav-bar {
@@ -868,6 +870,19 @@
     #resume-banner-timer { font-size: 0.8125rem; font-weight: 500; opacity: .88; font-variant-numeric: tabular-nums; }
 
     .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      /* Respect the phone-frame max-width on desktop */
+      max-width: min(430px, 100%);
+      margin-left: auto;
+      margin-right: auto;
+      /* z-index 100: above normal content; all overlays (150+) remain above it */
+      z-index: 100;
+      /* Force own compositing layer — never repaints during layout changes */
+      transform: translateZ(0);
+      will-change: transform;
       background: var(--glass-tab);
       backdrop-filter: blur(24px) saturate(180%);
       -webkit-backdrop-filter: blur(24px) saturate(180%);
@@ -875,7 +890,6 @@
       box-shadow: 0 -1px 0 var(--separator);
       display: flex;
       padding: 0.5rem 0 max(0.75rem, env(safe-area-inset-bottom));
-      flex-shrink: 0;   /* never compressed by scrolling content */
     }
     .tab-btn {
       flex: 1;
