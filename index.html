@@ -5428,23 +5428,28 @@
 
     const items = [];
 
-    // 1. New PRs from most recent workout (highest priority)
-    findNewPRs().slice(0, 2).forEach(pr => {
-      items.push({
-        icon:  '🏆',
-        title: `New PR: ${pr.label}!`,
-        body:  pr.name,
-      });
-    });
+    // 1. New PRs — aggregate into one card
+    const prs = findNewPRs();
+    if (prs.length === 1) {
+      items.push({ icon: '🏆', title: `New PR: ${prs[0].label}!`, body: prs[0].name });
+    } else if (prs.length >= 2) {
+      const names = prs.map(p => p.name);
+      const preview = names.length <= 3
+        ? names.join(', ')
+        : names.slice(0, 2).join(', ') + ` +${names.length - 2} more`;
+      items.push({ icon: '🏆', title: `${prs.length} new PRs this session!`, body: preview });
+    }
 
-    // 2. First-time exercises
-    findFirstTimeExercises().slice(0, 2).forEach(name => {
-      items.push({
-        icon:  '✨',
-        title: `First time: ${name}`,
-        body:  'New movement unlocked! 🚪',
-      });
-    });
+    // 2. First-time exercises — aggregate into one card
+    const firsts = findFirstTimeExercises();
+    if (firsts.length === 1) {
+      items.push({ icon: '✨', title: `First time: ${firsts[0]}`, body: 'New movement unlocked! 🚪' });
+    } else if (firsts.length >= 2) {
+      const preview = firsts.length <= 3
+        ? firsts.join(', ')
+        : firsts.slice(0, 2).join(', ') + ` +${firsts.length - 2} more`;
+      items.push({ icon: '✨', title: `Tried ${firsts.length} new exercises!`, body: preview });
+    }
 
     // 3. Workout streak
     const streak = calcStreak();
@@ -5467,7 +5472,7 @@
       items.push({ icon: '💪', title: `${workouts.length} workout${workouts.length !== 1 ? 's' : ''} logged`, body: 'Every session counts. Keep going!' });
     }
 
-    list.innerHTML = items.slice(0, 4).map(it => `
+    list.innerHTML = items.slice(0, 3).map(it => `
       <div class="highlight-card">
         <div class="highlight-icon">${it.icon}</div>
         <div>
