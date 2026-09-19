@@ -557,10 +557,39 @@
       background: none; border: none; color: var(--blue);
       font-size: .9375rem; cursor: pointer; padding: .25rem .5rem .25rem 0;
     }
-    .killer-body {
+    /* ── Completed exercises list ────────────────────────── */
+    #killer-done-list {
+      flex-shrink: 0; overflow-y: auto;
+      max-height: 38vh;
+      border-bottom: 0.5px solid var(--separator);
+    }
+    #killer-done-list:empty { border-bottom: none; }
+    .killer-done-row {
+      display: flex; align-items: center; gap: .625rem;
+      padding: .5rem 1rem;
+      border-bottom: 0.5px solid var(--separator);
+    }
+    .killer-done-row:last-child { border-bottom: none; }
+    .kd-idx  { font-size: .75rem; color: var(--tertiary); width: 1.125rem; text-align: right; flex-shrink: 0; }
+    .kd-name { flex: 1; font-size: .875rem; color: var(--label); }
+    .kd-val  {
+      border: none; background: transparent;
+      font-size: .9375rem; font-weight: 700; color: var(--label);
+      font-family: inherit; text-align: right;
+      width: 3.25rem; padding: 0;
+      -moz-appearance: textfield; cursor: text;
+    }
+    .kd-val::-webkit-inner-spin-button,
+    .kd-val::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .kd-val:focus {
+      outline: none; border-bottom: 2px solid var(--red); color: var(--red);
+    }
+    .kd-unit { font-size: .75rem; color: var(--tertiary); flex-shrink: 0; }
+    /* ── Active exercise section ──────────────────────── */
+    .killer-active {
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: flex-start;
-      padding: 2.5rem var(--gutter) 1.5rem; gap: 1.5rem;
+      padding: 2rem var(--gutter) 1rem; gap: 1.5rem;
     }
     .killer-ex-name {
       font-size: 1.625rem; font-weight: 700; color: var(--label);
@@ -2486,7 +2515,8 @@
     <div class="killer-nav-title">💀 Killer Set</div>
     <div class="killer-nav-prog" id="killer-prog">1 / 9</div>
   </div>
-  <div class="killer-body">
+  <div id="killer-done-list"></div>
+  <div class="killer-active">
     <div class="killer-ex-name" id="killer-ex-name"></div>
     <div class="killer-ex-sub"  id="killer-ex-sub">Max reps · no rest</div>
     <div class="killer-input-wrap">
@@ -4310,9 +4340,7 @@
     _killerRoutine = getKillerRoutine();
     _killerResults = new Array(_killerRoutine.length).fill('');
     _killerStep    = 0;
-    const ov = document.getElementById('killer-overlay');
-    ov.scrollTop = 0;
-    ov.classList.add('open');
+    document.getElementById('killer-overlay').classList.add('open');
     _renderKillerStep();
   }
 
@@ -4320,24 +4348,61 @@
     document.getElementById('killer-overlay').classList.remove('open');
   }
 
-  function _renderKillerStep() {
+  function _renderKillerStep(skipFocus) {
     const name   = _killerRoutine[_killerStep];
     const label  = _killerLabel(name);
     const total  = _killerRoutine.length;
     const isLast = _killerStep === total - 1;
-    document.getElementById('killer-prog').textContent    = `${_killerStep + 1} / ${total}`;
+
+    // update nav
+    document.getElementById('killer-prog').textContent = `${_killerStep + 1} / ${total}`;
+    document.querySelector('.killer-back-btn').style.visibility = _killerStep === 0 ? 'hidden' : 'visible';
+
+    // render done list (all exercises before current step)
+    _renderKillerDoneList();
+
+    // update active section
     document.getElementById('killer-ex-name').textContent = name;
-    document.getElementById('killer-ex-sub').textContent  =
-      label === 'secs' ? 'Max hold · no rest' : 'Max reps · no rest';
+    document.getElementById('killer-ex-sub').textContent  = label === 'secs' ? 'Max hold · no rest' : 'Max reps · no rest';
     document.getElementById('killer-input-label').textContent = label;
     const inp = document.getElementById('killer-input');
     inp.value = _killerResults[_killerStep] ?? '';
-    // delay focus until slide-in animation completes (300ms)
-    setTimeout(() => { try { inp.focus(); } catch(e) {} }, 320);
+
     const btn = document.getElementById('killer-btn-action');
     btn.textContent = isLast ? '✓ Finish' : 'Next →';
     btn.className   = isLast ? 'killer-btn-done' : 'killer-btn-next';
-    document.querySelector('.killer-back-btn').style.visibility = _killerStep === 0 ? 'hidden' : 'visible';
+
+    // scroll done list to bottom so latest item is visible
+    const dl = document.getElementById('killer-done-list');
+    if (dl) dl.scrollTop = dl.scrollHeight;
+
+    if (!skipFocus) {
+      setTimeout(() => { try { inp.focus(); } catch(e) {} }, 320);
+    }
+  }
+
+  function _renderKillerDoneList() {
+    const dl = document.getElementById('killer-done-list');
+    if (!dl) return;
+    if (_killerStep === 0) { dl.innerHTML = ''; return; }
+    dl.innerHTML = _killerRoutine.slice(0, _killerStep).map((name, i) => {
+      const label = _killerLabel(name);
+      const val   = _killerResults[i];
+      const num   = parseFloat(val) || 0;
+      return `<div class="killer-done-row">
+        <span class="kd-idx">${i + 1}.</span>
+        <span class="kd-name">${name}</span>
+        <input class="kd-val" type="number" inputmode="numeric" min="0"
+          value="${num > 0 ? num : ''}" placeholder="—"
+          onchange="_killerSaveDone(${i}, this.value)"
+          onkeydown="if(event.key==='Enter')this.blur()" />
+        <span class="kd-unit">${label}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function _killerSaveDone(idx, val) {
+    _killerResults[idx] = val;
   }
 
   function killerSetNext() {
