@@ -1280,6 +1280,35 @@
       min-height: 1.125rem;
     }
 
+    /* ── Ghost mode hint ─────────────────────────────────── */
+    .ghost-hint {
+      font-size: 0.75rem; color: var(--tertiary);
+      padding: 0.3rem 0.75rem 0;
+      min-height: 0; display: none;
+    }
+    .ghost-hint.show { display: block; }
+    .ghost-hint.pr   { color: var(--blue); font-weight: 600; }
+
+    /* ── Settings toggle ─────────────────────────────────── */
+    .settings-toggle {
+      position: relative; width: 51px; height: 31px; flex-shrink: 0;
+    }
+    .settings-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .settings-toggle-track {
+      position: absolute; inset: 0; border-radius: 999px;
+      background: var(--fill); transition: background .2s;
+      cursor: pointer;
+    }
+    .settings-toggle-track::after {
+      content: ''; position: absolute;
+      width: 27px; height: 27px; border-radius: 50%;
+      background: #fff; top: 2px; left: 2px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.25);
+      transition: transform .2s;
+    }
+    .settings-toggle input:checked + .settings-toggle-track { background: var(--green); }
+    .settings-toggle input:checked + .settings-toggle-track::after { transform: translateX(20px); }
+
     /* ── Difficulty badge (exercises screen) ──────────────── */
     .diff-badge {
       font-size: 0.6875rem;
@@ -1290,6 +1319,54 @@
       margin-left: 0.5rem;
       flex-shrink: 0;
       letter-spacing: .2px;
+      cursor: pointer;
+      border: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .diff-badge:active { opacity: .7; }
+
+    /* ── Diff editor overlay ─────────────────────────────── */
+    #diff-editor {
+      position: absolute; inset: 0; z-index: 900;
+      background: rgba(0,0,0,.45);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .18s ease;
+    }
+    #diff-editor.open { opacity: 1; pointer-events: auto; }
+    .diff-editor-sheet {
+      background: var(--card);
+      border-radius: 1rem;
+      padding: 1.125rem 1rem 1rem;
+      width: min(320px, calc(100% - 2.5rem));
+      box-shadow: 0 8px 32px rgba(0,0,0,.28);
+    }
+    .diff-editor-title {
+      font-size: 0.875rem; font-weight: 600;
+      color: var(--label); text-align: center;
+      margin-bottom: 0.125rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .diff-editor-hint {
+      font-size: 0.75rem; color: var(--tertiary);
+      text-align: center; margin-bottom: 0.875rem;
+    }
+    .diff-editor-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem;
+      margin-bottom: 0.875rem;
+    }
+    .diff-editor-btn {
+      aspect-ratio: 1; border: none; border-radius: 0.5rem;
+      font-size: 0.9375rem; font-weight: 700; color: #fff;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      transition: opacity .1s;
+    }
+    .diff-editor-btn:active { opacity: .7; }
+    .diff-editor-btn.selected { outline: 3px solid var(--blue); outline-offset: 2px; }
+    .diff-editor-cancel {
+      width: 100%; padding: 0.625rem; border: none; border-radius: 0.625rem;
+      background: var(--fill); color: var(--label);
+      font-size: 0.9375rem; font-weight: 500; cursor: pointer;
     }
 
     /* ── Chart section divider ────────────────────────────── */
@@ -1981,6 +2058,186 @@
     }
     .btn-settings-gear:active { opacity: .55; }
 
+    /* ── Warmup strength editor ──────────────────────────── */
+    .wu-edit-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      border-bottom: 0.5px solid var(--separator);
+    }
+    .wu-edit-row:last-child { border-bottom: none; }
+    .wu-edit-idx {
+      width: 1.375rem;
+      font-size: 0.75rem;
+      color: var(--tertiary);
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+      text-align: right;
+    }
+    .wu-edit-name {
+      flex: 1;
+      background: var(--fill);
+      border: none;
+      border-radius: 7px;
+      color: var(--label);
+      font-size: 0.875rem;
+      font-family: inherit;
+      padding: 0.3125rem 0.5rem;
+      outline: none;
+    }
+    .wu-edit-name:focus { background: var(--fill-focus); }
+    .wu-edit-reps {
+      width: 3rem;
+      background: var(--fill);
+      border: none;
+      border-radius: 7px;
+      color: var(--label);
+      font-size: 0.875rem;
+      font-weight: 600;
+      font-family: inherit;
+      padding: 0.3125rem 0.375rem;
+      text-align: center;
+      outline: none;
+    }
+    .wu-edit-reps:focus { background: var(--fill-focus); }
+    .wu-edit-del {
+      background: none;
+      border: none;
+      color: var(--tertiary);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0.125rem 0.25rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .wu-edit-del:active { color: var(--red); }
+    @media (prefers-color-scheme: dark) {
+      .wu-edit-name, .wu-edit-reps { background: var(--card-inner); }
+    }
+
+    /* ── Warmup overlay ──────────────────────────────────── */
+    #warmup-overlay {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      z-index: 850;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform .3s cubic-bezier(.4,0,.2,1);
+    }
+    #warmup-overlay.open { transform: translateY(0); }
+
+    .warmup-nav {
+      display: flex;
+      align-items: center;
+      padding: calc(env(safe-area-inset-top, 0px) + 0.875rem) var(--gutter) 0.75rem;
+      background: var(--glass-nav);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 0.5px solid var(--separator);
+      flex-shrink: 0;
+      position: relative;
+    }
+    .warmup-nav-title {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.0625rem; font-weight: 600; letter-spacing: -.3px;
+      color: var(--label); pointer-events: none;
+    }
+    .warmup-skip-btn {
+      margin-left: auto;
+      background: none; border: none;
+      color: var(--tertiary); font-size: 0.9375rem;
+      cursor: pointer; font-family: inherit; padding: 0;
+    }
+
+    .warmup-body {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 2rem var(--gutter);
+      text-align: center;
+      gap: 0;
+    }
+
+    .warmup-phase-label {
+      font-size: 0.75rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .7px;
+      color: var(--blue); margin-bottom: 1.25rem;
+    }
+
+    .warmup-move-name {
+      font-size: clamp(1.75rem, 8vw, 2.25rem);
+      font-weight: 700; letter-spacing: -.5px;
+      color: var(--label); line-height: 1.1;
+      margin-bottom: 0.625rem;
+    }
+
+    .warmup-move-sub {
+      font-size: 0.9375rem; color: var(--tertiary);
+      margin-bottom: 2rem; line-height: 1.4;
+    }
+
+    /* Big countdown ring */
+    .warmup-ring-wrap {
+      position: relative; width: 9rem; height: 9rem;
+      margin-bottom: 2rem;
+    }
+    .warmup-ring-wrap svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+    .warmup-ring-track { fill: none; stroke: var(--separator); stroke-width: 6; }
+    .warmup-ring-fill  {
+      fill: none; stroke: var(--blue); stroke-width: 6;
+      stroke-linecap: round;
+      transition: stroke-dashoffset .9s linear;
+    }
+    .warmup-ring-time {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.25rem; font-weight: 200;
+      letter-spacing: .5px; font-variant-numeric: tabular-nums;
+      color: var(--label);
+    }
+
+    /* Rep-based step */
+    .warmup-rep-count {
+      font-size: 5rem; font-weight: 200;
+      letter-spacing: -2px; color: var(--label);
+      line-height: 1; margin-bottom: 0.375rem;
+    }
+    .warmup-rep-label {
+      font-size: 1rem; color: var(--tertiary); margin-bottom: 2rem;
+    }
+
+    /* Progress dots */
+    .warmup-dots {
+      display: flex; gap: 0.375rem;
+      margin-bottom: 2rem;
+    }
+    .warmup-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--separator);
+      transition: background .2s;
+    }
+    .warmup-dot.done  { background: var(--green); }
+    .warmup-dot.active{ background: var(--blue); }
+
+    .warmup-next-btn {
+      width: calc(100% - 2 * var(--gutter));
+      background: var(--blue); color: #fff;
+      border: none; border-radius: var(--radius-btn);
+      font-size: 1.0625rem; font-weight: 600;
+      padding: 1rem; cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 18px rgba(0,100,255,.35);
+      transition: opacity .12s;
+    }
+    .warmup-next-btn:active { opacity: .82; }
+    .warmup-next-btn.green  {
+      background: var(--green);
+      box-shadow: 0 4px 18px rgba(52,199,89,.35);
+    }
+
     /* ── Summary highlights ───────────────────────────────── */
     #highlights-section { display: none; }
     .highlight-card {
@@ -2136,11 +2393,30 @@
   </div>
 </div>
 
+<!-- ═══════════════ DIFF EDITOR ════════════════ -->
+<div id="diff-editor" onclick="_diffEditorBgClick(event)">
+  <div class="diff-editor-sheet">
+    <div class="diff-editor-title" id="diff-editor-name"></div>
+    <div class="diff-editor-hint">Tap a number to set difficulty</div>
+    <div class="diff-editor-grid" id="diff-editor-grid"></div>
+    <button class="diff-editor-cancel" onclick="closeDiffEditor()">Cancel</button>
+  </div>
+</div>
+
 <!-- ═══════════════ RESUME BANNER ═══════════════ -->
 <button id="resume-banner" onclick="resumeWorkout()">
   <span id="resume-banner-label">💪 Workout in progress — tap to resume</span>
   <span id="resume-banner-timer">00:00</span>
 </button>
+
+<!-- ═══════════════ WARMUP OVERLAY ═══════════════ -->
+<div id="warmup-overlay">
+  <div class="warmup-nav">
+    <div class="warmup-nav-title" id="warmup-nav-title">Warm-up</div>
+    <button class="warmup-skip-btn" onclick="warmupSkip()">Skip</button>
+  </div>
+  <div class="warmup-body" id="warmup-body"></div>
+</div>
 
 <!-- ═══════════════ TAB BAR ═══════════════ -->
 
@@ -2234,6 +2510,42 @@
         <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
       </div>
     </div>
+    <div class="settings-section-header">Warmup</div>
+    <div class="settings-card">
+      <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-warmup-edit')">
+        <div class="settings-row-icon icon-orange">🔥</div>
+        <div class="settings-row-label">Strength Warmup Routine</div>
+        <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SETTINGS — STRENGTH WARMUP EDITOR
+═══════════════════════════════════════════════════════ -->
+<div id="settings-warmup-edit" class="settings-panel sub">
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="settingsPop()">
+      <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+      Training Goals
+    </button>
+    <div class="settings-nav-title">Strength Warmup</div>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-header">Exercises &amp; Reps</div>
+    <div class="settings-card" id="wu-edit-list"></div>
+    <div style="padding:.625rem var(--gutter) 0;display:flex;gap:.5rem">
+      <button onclick="wuEditAddRow()" style="flex:1;background:var(--card);border:none;border-radius:var(--radius-btn);color:var(--blue);font-size:.9375rem;font-weight:600;padding:.75rem;cursor:pointer;font-family:inherit;box-shadow:var(--shadow)">+ Add Exercise</button>
+    </div>
+    <div style="padding:.75rem var(--gutter) 0;font-size:.8125rem;color:var(--tertiary);line-height:1.5">
+      Tap a field to edit. Changes save automatically. Saving a new routine resets your average time history.
+    </div>
+    <div style="padding:.75rem var(--gutter) 0;display:flex;gap:.5rem">
+      <button onclick="wuEditSave()" style="flex:2;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-btn);font-size:.9375rem;font-weight:600;padding:.875rem;cursor:pointer;font-family:inherit">Save Routine</button>
+      <button onclick="wuEditReset()" style="flex:1;background:none;border:1.5px solid var(--red);color:var(--red);border-radius:var(--radius-btn);font-size:.875rem;font-weight:600;padding:.875rem;cursor:pointer;font-family:inherit">Reset</button>
+    </div>
+    <div style="height:1rem"></div>
   </div>
 </div>
 
@@ -2249,19 +2561,19 @@
     <div class="settings-nav-title">Preferences</div>
   </div>
   <div class="settings-body">
-    <div class="settings-section-header">Coming Soon</div>
+    <div class="settings-section-header">Workout</div>
     <div class="settings-card">
-      <div class="settings-row" style="opacity:.5">
-        <div class="settings-row-icon icon-gray">👻</div>
-        <div class="settings-row-label">
+      <div class="settings-row">
+        <div class="settings-row-icon icon-purple">👻</div>
+        <div class="settings-row-label" style="flex:1">
           Ghost Mode
-          <div style="font-size:.75rem;color:var(--tertiary);margin-top:.1rem">Hide your data from shared devices</div>
+          <div style="font-size:.75rem;color:var(--tertiary);margin-top:.1rem">Show your personal best while logging sets</div>
         </div>
+        <label class="settings-toggle">
+          <input type="checkbox" id="ghost-mode-toggle" onchange="setGhostMode(this.checked)" />
+          <div class="settings-toggle-track"></div>
+        </label>
       </div>
-    </div>
-    <div class="settings-section-header" style="padding-top:.75rem"></div>
-    <div style="padding:0 var(--gutter);font-size:.8125rem;color:var(--tertiary);line-height:1.5">
-      More preference options will be added in future updates.
     </div>
   </div>
 </div>
@@ -2434,13 +2746,14 @@
 
   /* ── Exercise library ───────────────────────────────────── */
   const DEFAULT_EX_LIB = {
-    Push: ['Push-ups','Dips','Pike push-ups','Handstand push-ups','Diamond push-ups',
-           'Archer push-ups','Pseudo planche push-ups','One arm push-up',
+    Push: ['Push-ups','Dips','Pike push-ups','Handstand push-ups','Negative Slow Handstand Push-ups',
+           'Handstand Hold','Diamond push-ups','Archer push-ups','Pseudo planche push-ups','One arm push-up',
            'Frog stand','Tuck planche','Advanced tuck planche','Straddle planche','Full planche',
-           'Wall handstand','Freestanding handstand'],
-    Pull: ['Pull-ups','Chin-ups','Rows','Muscle-ups','Australian rows',
-           'Archer pull-ups','One arm pull-up','Commando pull-ups',
+           'Wall handstand','Freestanding handstand','L-sit to handstand'],
+    Pull: ['Pull-ups','Chin-ups','Rows','Muscle-ups','Fast Muscle-ups','Slow Transition Muscle-ups',
+           'Australian rows','Archer pull-ups','One arm pull-up','Commando pull-ups',
            'Tuck front lever','Advanced tuck front lever','Straddle front lever','Full front lever',
+           'Front Lever Hold','Front Lever Bicycles','Tucked Front Lever Rows',
            'Tuck back lever','Straddle back lever','Full back lever'],
     Core: ['Planks','Leg raises','Sit-ups','Hollow holds','Dragon flag',
            'L-sit','V-sit','Tuck L-sit','Hollow body rock','Dead bug',
@@ -2469,35 +2782,40 @@
   const EXERCISE_META = {
     /* Push — bodyweight */
     'Push-ups':{type:'bw',diff:2},'Dips':{type:'bw',diff:4},
-    'Pike push-ups':{type:'bw',diff:3},'Handstand push-ups':{type:'bw',diff:8},
-    'Diamond push-ups':{type:'bw',diff:4},'Archer push-ups':{type:'bw',diff:5},
+    'Pike push-ups':{type:'bw',diff:3},'Handstand push-ups':{type:'bw',diff:9},
+    'Negative Slow Handstand Push-ups':{type:'bw',diff:6},'Handstand Hold':{type:'bw',diff:7,tb:1},
+    'Diamond push-ups':{type:'bw',diff:3},'Archer push-ups':{type:'bw',diff:7},
     'Pseudo planche push-ups':{type:'bw',diff:5},'One arm push-up':{type:'bw',diff:7},
-    'Frog stand':{type:'bw',diff:3,tb:1},'Tuck planche':{type:'bw',diff:5,tb:1},
-    'Advanced tuck planche':{type:'bw',diff:6,tb:1},'Straddle planche':{type:'bw',diff:8,tb:1},
-    'Full planche':{type:'bw',diff:10,tb:1},'Wall handstand':{type:'bw',diff:4,tb:1},
-    'Freestanding handstand':{type:'bw',diff:7,tb:1},
+    'Frog stand':{type:'bw',diff:4,tb:1},'Tuck planche':{type:'bw',diff:4,tb:1},
+    'Advanced tuck planche':{type:'bw',diff:5,tb:1},'Straddle planche':{type:'bw',diff:9,tb:1},
+    'Full planche':{type:'bw',diff:10,tb:1},'Wall handstand':{type:'bw',diff:2,tb:1},
+    'Freestanding handstand':{type:'bw',diff:5,tb:1},
+    'L-sit to handstand':{type:'bw',diff:8,tb:1},
     /* Pull — bodyweight */
-    'Pull-ups':{type:'bw',diff:5},'Chin-ups':{type:'bw',diff:4},
-    'Rows':{type:'bw',diff:3},'Muscle-ups':{type:'bw',diff:8},
+    'Pull-ups':{type:'bw',diff:6},'Chin-ups':{type:'bw',diff:7},
+    'Rows':{type:'bw',diff:4},'Muscle-ups':{type:'bw',diff:8},
+    'Fast Muscle-ups':{type:'bw',diff:2},'Slow Transition Muscle-ups':{type:'bw',diff:9},
+    'Front Lever Hold':{type:'bw',diff:8,tb:1},'Front Lever Bicycles':{type:'bw',diff:3},
+    'Tucked Front Lever Rows':{type:'bw',diff:5},
     'Australian rows':{type:'bw',diff:2},'Archer pull-ups':{type:'bw',diff:7},
-    'One arm pull-up':{type:'bw',diff:9},'Commando pull-ups':{type:'bw',diff:6},
+    'One arm pull-up':{type:'bw',diff:9},'Commando pull-ups':{type:'bw',diff:7},
     'Tuck front lever':{type:'bw',diff:5,tb:1},'Advanced tuck front lever':{type:'bw',diff:6,tb:1},
     'Straddle front lever':{type:'bw',diff:8,tb:1},'Full front lever':{type:'bw',diff:9,tb:1},
     'Tuck back lever':{type:'bw',diff:5,tb:1},'Straddle back lever':{type:'bw',diff:7,tb:1},
-    'Full back lever':{type:'bw',diff:8,tb:1},
+    'Full back lever':{type:'bw',diff:9,tb:1},
     /* Core — bodyweight */
     'Planks':{type:'bw',diff:2,tb:1},'Leg raises':{type:'bw',diff:3},
     'Sit-ups':{type:'bw',diff:2},'Hollow holds':{type:'bw',diff:3,tb:1},
-    'Dragon flag':{type:'bw',diff:7},'L-sit':{type:'bw',diff:5,tb:1},
+    'Dragon flag':{type:'bw',diff:5},'L-sit':{type:'bw',diff:2,tb:1},
     'V-sit':{type:'bw',diff:7,tb:1},'Tuck L-sit':{type:'bw',diff:4,tb:1},
-    'Hollow body rock':{type:'bw',diff:3},'Dead bug':{type:'bw',diff:2},
-    'Ab wheel rollouts':{type:'bw',diff:5},'Hanging knee raises':{type:'bw',diff:3},
-    'Toes to bar':{type:'bw',diff:5},'Human flag':{type:'bw',diff:9,tb:1},
+    'Hollow body rock':{type:'bw',diff:1},'Dead bug':{type:'bw',diff:2},
+    'Ab wheel rollouts':{type:'bw',diff:6},'Hanging knee raises':{type:'bw',diff:3},
+    'Toes to bar':{type:'bw',diff:7},'Human flag':{type:'bw',diff:9,tb:1},
     /* Legs — bodyweight */
-    'Squats':{type:'bw',diff:2},'Lunges':{type:'bw',diff:2},
-    'Pistol squats':{type:'bw',diff:6},'Calf raises':{type:'bw',diff:1},
-    'Shrimp squats':{type:'bw',diff:7},'Sissy squats':{type:'bw',diff:5},
-    'Nordic curls':{type:'bw',diff:7},'Bulgarian split squats':{type:'bw',diff:4},
+    'Squats':{type:'bw',diff:1},'Lunges':{type:'bw',diff:2},
+    'Pistol squats':{type:'bw',diff:9},'Calf raises':{type:'bw',diff:1},
+    'Shrimp squats':{type:'bw',diff:6},'Sissy squats':{type:'bw',diff:6},
+    'Nordic curls':{type:'bw',diff:4},'Bulgarian split squats':{type:'bw',diff:4},
     'Step-ups':{type:'bw',diff:2},'Box jumps':{type:'bw',diff:3},
     'Glute bridges':{type:'bw',diff:2},'Single leg deadlift':{type:'bw',diff:4},
     /* Weighted/Gym — compounds */
@@ -2536,7 +2854,10 @@
   function getCustomMeta() { return JSON.parse(localStorage.getItem('customExMeta') || '{}'); }
   function setCustomMeta(m) { localStorage.setItem('customExMeta', JSON.stringify(m)); }
   function getExMeta(name) {
-    return EXERCISE_META[name] || getCustomMeta()[name] || { type: 'bw', diff: 3 };
+    // customExMeta overrides EXERCISE_META (supports manual diff edits on built-ins too)
+    const base   = EXERCISE_META[name] || { type: 'bw', diff: 3 };
+    const custom = getCustomMeta()[name];
+    return custom ? Object.assign({}, base, custom) : base;
   }
   /* ── Exercise detail content ────────────────────────────── */
   const EXERCISE_DETAIL = {
@@ -2561,6 +2882,14 @@
     'Chin-ups':{how:['Hang from a bar with an underhand (supinated) grip, hands shoulder-width apart.','Pull until your chin clears the bar, leading with your chest.','Lower fully to a dead hang between every rep.'],cues:['Supinated grip involves more biceps, making this slightly easier than overhand pull-ups.','Keep elbows tracking forward and in during the movement.','Squeeze both the biceps and back hard at the top.']},
     'Rows':{how:['Hang under a bar or rings at an angle, overhand grip, body straight.','Pull your chest up to the bar, driving elbows back past your torso.','Lower under control to full arm extension.'],cues:['Body angle controls difficulty: more horizontal = harder.','Hold your body rigid as a plank throughout — hips must not sag.','Squeeze shoulder blades together and pause briefly at the top of each rep.']},
     'Muscle-ups':{how:['Dead hang from a bar with a false grip (wrists hooked over the bar).','Pull explosively, aiming to bring your hips level with the bar.','As elbows pass bar height, transition by leaning forward and pressing into a dip lockout.'],cues:['Practice high-rep strict pull-ups and ring dip transitions separately before combining.','Bar path stays close to the body throughout the entire pull.','A slight forward lean at the top of the pull makes the transition significantly easier.']},
+    'Fast Muscle-ups':{how:['Use a false grip and initiate with a powerful explosive hip drive and pull.','Accelerate through the transition as quickly as possible — speed through the sticking point.','Lock out the dip aggressively and reset for the next rep.'],cues:['Maximum intent on every rep — think "attack the bar" on each pull.','Fast muscle-ups train rate of force development, not just strength.','Ensure you have solid slow muscle-ups before training the explosive variation.']},
+    'Slow Transition Muscle-ups':{how:['Pull into the transition and pause deliberately when elbows are at bar height.','Control the forward lean and press into the dip with deliberate, slow tempo.','Lower under full control — 3–5 seconds down if adding an eccentric.'],cues:['The slow transition exposes and builds the weakest point in the movement.','Full body tension throughout — no swinging or kipping to compensate.','Excellent for identifying and correcting technique flaws in the standard muscle-up.']},
+    'Handstand push-ups':{how:['Kick up to a wall handstand, hands 6–8 inches from the wall.','Lower your head toward the floor in a controlled descent, elbows tracking slightly forward.','Press back to full lockout with a tall, vertical torso.'],cues:['Stack: wrists, elbows, shoulders — keep the shoulder-to-wrist line vertical.','Tuck the chin: looking at the floor keeps the neck neutral.','Build: start with negatives (controlled lowering) before attempting the full press.']},
+    'Negative Slow Handstand Push-ups':{how:['Kick up to a wall handstand with hands 6–8 inches from the wall.','Lower your head to the floor as slowly as possible — aim for 5–10 seconds down.','Reset at the top for each rep; do not press back up (eccentric-only).'],cues:['The slower the descent, the greater the strength stimulus.','Protract scapulae slightly at the top to maintain tension before initiating the lower.','Use this as a primary progression tool before achieving the first full handstand push-up.']},
+    'Handstand Hold':{how:['Kick up to a wall handstand or free handstand, hands shoulder-width.','Stack: hands, wrists, elbows, shoulders, hips, heels in one vertical line.','Breathe steadily and hold for the target duration.'],cues:['Push the floor away — active depression of shoulders is essential.','Fingers spread and grip the floor to maintain balance.','Engage glutes and point toes to keep the lower body in line.']},
+    'Front Lever Hold':{how:['Hang from a bar, depress and retract scapulae strongly.','Pull hips up until the entire body is horizontal, arms straight.','Hold with legs together and fully extended, face down.'],cues:['Scapular depression is non-negotiable — if shoulders rise, the lever collapses.','Total body tension: squeeze glutes, quads, and core simultaneously.','Progress through tuck → advanced tuck → straddle before attempting the full hold.']},
+    'Front Lever Bicycles':{how:['Pull into a front lever position with hips horizontal and core tight.','Drive one knee toward the chest while extending the other leg fully — like pedalling a bicycle.','Alternate legs in a controlled rhythmic motion while maintaining the horizontal body position.'],cues:['The hips must stay level throughout — no rocking side to side.','Scapulae stay depressed and retracted the entire time.','Start slow and deliberate before building to a continuous rhythm.']},
+    'Tucked Front Lever Rows':{how:['Hang from a bar and pull into a tuck front lever position (knees drawn to chest, back horizontal).','Row by bending the elbows and pulling the chest toward the bar, maintaining the tuck.','Lower under control back to straight arms, keeping the tuck throughout.'],cues:['This combines an isometric lever hold with a dynamic rowing movement.','Scapular retraction and depression must precede each pull.','If hips drop during the row, reduce range of motion until you build more strength.']},
     'Australian rows':{how:['Set up under a low bar with an overhand grip, body at roughly 45° to the floor.','Keep the body straight and pull chest up to the bar.','Lower under control to full arm extension.'],cues:['Easier than horizontal rows — use to build pulling strength progressively.','Body stays completely rigid like a plank in reverse.','Focus on squeezing shoulder blades together at the top.']},
     'Archer pull-ups':{how:['Hang from a bar with a wide overhand grip.','Pull toward one hand while extending the opposite arm fully straight.','Alternate sides each rep, or complete a full set on one side.'],cues:['The extended arm stays as straight as possible throughout.','Control body rotation — this is not a side sway, it\'s a pull.','A direct progression toward the one-arm pull-up.']},
     'One arm pull-up':{how:['Hang from a bar with one hand; place the other hand on your wrist for training, or let it hang free.','Pull your body up with the single working arm until your chin clears the bar.','Lower slowly with the same arm to a full dead hang.'],cues:['Expect years of progressive training — archer pull-ups and slow negatives are the key progressions.','Keep your free hand on your wrist (not gripping the bar) to practice the real pattern.','Core must be braced to minimize rotation throughout the movement.']},
@@ -2951,25 +3280,26 @@
 
   function _renderStartChoice() {
     const el = document.getElementById('start-choice-content');
-    const plansHTML = plans.length
-      ? plans.map(p => {
-          const sub = p.exercises.slice(0, 3).join(', ') + (p.exercises.length > 3 ? '…' : '');
-          return `<button class="wizard-choice" onclick="startFromPlanChoice(${p.id})">
-            📋 ${p.name}
-            <small>${sub || `${p.exercises.length} exercise${p.exercises.length !== 1 ? 's' : ''}`}</small>
-          </button>`;
-        }).join('')
-      : `<div style="font-size:.8125rem;color:var(--tertiary);text-align:center;padding:.375rem 0 .125rem">
-           Create plans in the Library tab
-         </div>`;
     el.innerHTML = `
       <div class="wizard-step-q" style="margin-bottom:.875rem">Start Workout</div>
       <div class="wizard-choices">
+        <button class="wizard-choice" onclick="startWithWarmup(null)" style="border-color:var(--green);color:var(--green)">
+          🔥 Warmup + Blank Workout
+          <small>4 min general · strength warmup · then freestyle</small>
+        </button>
         <button class="wizard-choice" onclick="startBlankWorkout()">
           🏃 Blank Workout
           <small>Choose exercises as you go</small>
         </button>
-        ${plansHTML}
+        ${plans.length ? plans.map(p => {
+          const sub = p.exercises.slice(0, 3).join(', ') + (p.exercises.length > 3 ? '…' : '');
+          return `<div style="display:flex;gap:.375rem">
+            <button class="wizard-choice" style="flex:1" onclick="startFromPlanChoice(${p.id})">
+              📋 ${p.name}<small>${sub || `${p.exercises.length} exercise${p.exercises.length !== 1 ? 's' : ''}`}</small>
+            </button>
+            <button class="wizard-choice" style="flex:0 0 auto;min-width:4rem;font-size:.75rem;color:var(--green);border-color:var(--green)" onclick="startWithWarmup(${p.id})">🔥<br>Warmup</button>
+          </div>`;
+        }).join('') : `<div style="font-size:.8125rem;color:var(--tertiary);text-align:center;padding:.375rem 0 .125rem">Create plans in the Library tab</div>`}
       </div>
       <div class="wizard-footer" style="margin-top:.75rem">
         <button class="wizard-btn-back" onclick="closeStartChoice()">Cancel</button>
@@ -3045,7 +3375,7 @@
     div.innerHTML = `
       <div class="exercise-head">
         <input type="text" placeholder="Exercise name" value="${name.replace(/"/g, '&quot;')}"
-          oninput="updateExIntensity('${id}')" />
+          oninput="updateExIntensity('${id}'); updateGhostHint('${id}')" />
         <button class="btn-delete-ex" onclick="removeExercise('${id}')" title="Remove exercise">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.03 9.47a.75.75 0 0 1-1.06 1.06L8 9.06l-1.97 1.97a.75.75 0 0 1-1.06-1.06L6.94 8 4.97 6.03a.75.75 0 0 1 1.06-1.06L8 6.94l1.97-1.97a.75.75 0 0 1 1.06 1.06L9.06 8l1.97 1.97z"/>
@@ -3057,6 +3387,7 @@
           <span>Set</span><span>kg</span><span>${tb ? 'Secs' : 'Reps'}</span><span>⚡</span><span></span>
         </div>
         <div class="sets-body"></div>
+        <div class="ghost-hint" id="ghost-${id}"></div>
         <div class="ex-intensity-total"></div>
         <button class="btn-add-set" onclick="addSet('${id}')">
           <span class="btn-add-set-icon">+</span> Add Set
@@ -3093,10 +3424,11 @@
     body.appendChild(row);
     // wire up real-time intensity + persistence on each input
     row.querySelectorAll('.set-input').forEach(inp => {
-      inp.addEventListener('input', () => { updateExIntensity(exId); persistActiveWorkout(); });
+      inp.addEventListener('input', () => { updateExIntensity(exId); updateGhostHint(exId); persistActiveWorkout(); });
     });
     renumberSets(exId);
     updateExIntensity(exId);
+    updateGhostHint(exId);
     persistActiveWorkout();
   }
 
@@ -3104,6 +3436,7 @@
     document.getElementById(sid)?.remove();
     renumberSets(exId);
     updateExIntensity(exId);
+    updateGhostHint(exId);
     persistActiveWorkout();
   }
 
@@ -3238,6 +3571,7 @@
             <span>Set</span><span>kg</span><span>${tb ? 'Secs' : 'Reps'}</span><span>⚡</span><span></span>
           </div>
           <div class="sets-body"></div>
+          <div class="ghost-hint" id="ghost-${id}"></div>
           <div class="ex-intensity-total"></div>
           <button class="btn-add-set" onclick="addSet('${id}')">
             <span class="btn-add-set-icon">+</span> Add Set
@@ -3264,10 +3598,11 @@
           </button>`;
         body.appendChild(row);
         row.querySelectorAll('.set-input').forEach(inp => {
-          inp.addEventListener('input', () => { updateExIntensity(id); persistActiveWorkout(); });
+          inp.addEventListener('input', () => { updateExIntensity(id); updateGhostHint(id); persistActiveWorkout(); });
         });
       });
       updateExIntensity(id);
+      updateGhostHint(id);
     });
 
     /* Restore plan UI */
@@ -3720,6 +4055,86 @@
     if (el) el.textContent = total > 0 ? `⚡ ${fmtInt(total)}` : '';
   }
 
+  /* ── Ghost mode ─────────────────────────────────────────── */
+  function getGhostMode() { return localStorage.getItem('ghostMode') !== '0'; }
+  function setGhostMode(on) {
+    localStorage.setItem('ghostMode', on ? '1' : '0');
+    // refresh all visible ghost hints
+    document.querySelectorAll('#exercise-list .exercise-card').forEach(card => updateGhostHint(card.id));
+  }
+
+  function getExPR(name, tb) {
+    let best = null;
+    workouts.forEach(w => {
+      (w.exercises || []).forEach(ex => {
+        if (ex.name !== name) return;
+        (ex.sets || []).forEach(s => {
+          const rep = parseFloat(s.reps) || 0;
+          const kg  = parseFloat(s.kg)   || 0;
+          if (rep <= 0) return;
+          const vol = rep * Math.max(1, kg);
+          if (!best || vol > best.vol) best = { rep, kg, vol };
+        });
+      });
+    });
+    return best;
+  }
+
+  function updateGhostHint(exId) {
+    const hint = document.getElementById('ghost-' + exId);
+    if (!hint) return;
+    const card = document.getElementById(exId);
+    if (!card) return;
+
+    if (!getGhostMode()) { hint.className = 'ghost-hint'; return; }
+
+    const name = (card.querySelector('.exercise-head input[type="text"]')?.value || '').trim();
+    if (!name) { hint.className = 'ghost-hint'; return; }
+    const tb = !!card.dataset.tb;
+
+    // Best set currently typed in this session
+    let curBest = null;
+    card.querySelectorAll('.sets-body .set-row').forEach(row => {
+      const ins = row.querySelectorAll('.set-input');
+      const kg  = parseFloat(ins[0]?.value) || 0;
+      const rep = parseFloat(ins[1]?.value) || 0;
+      if (rep <= 0) return;
+      const vol = rep * Math.max(1, kg);
+      if (!curBest || vol > curBest.vol) curBest = { rep, kg, vol };
+    });
+
+    if (!curBest) { hint.className = 'ghost-hint'; return; }
+
+    const pr = getExPR(name, tb);
+
+    if (!pr) {
+      hint.className = 'ghost-hint show pr';
+      hint.textContent = '👻 No previous best — go for a PR!';
+      return;
+    }
+
+    if (tb) {
+      // time-based: compare seconds
+      if (curBest.rep >= pr.rep) {
+        hint.className = 'ghost-hint show pr';
+        hint.textContent = `👻 New PR! 🔥  (best was ${pr.rep} s)`;
+      } else {
+        hint.className = 'ghost-hint show';
+        hint.textContent = `👻 Best: ${pr.rep} s — now: ${curBest.rep} s`;
+      }
+    } else {
+      const prLabel  = pr.kg > 0  ? `${pr.rep} reps @ ${pr.kg} kg`      : `${pr.rep} reps`;
+      const curLabel = curBest.kg > 0 ? `${curBest.rep} reps @ ${curBest.kg} kg` : `${curBest.rep} reps`;
+      if (curBest.vol >= pr.vol) {
+        hint.className = 'ghost-hint show pr';
+        hint.textContent = `👻 New PR! 🔥  (beat ${prLabel})`;
+      } else {
+        hint.className = 'ghost-hint show';
+        hint.textContent = `👻 Best: ${prLabel} — now: ${curLabel}`;
+      }
+    }
+  }
+
   /* ── Custom exercise wizard ─────────────────────────────── */
   let _wiz = {};
 
@@ -3780,29 +4195,37 @@
 
     /* bodyweight questionnaire */
     const bwSteps = [
-      { q: 'How many limbs involved?',
-        hint: 'Single-limb movements are significantly harder.',
-        opts: [{ l: '🦾 Single limb', v: 'single' }, { l: '💪 Double limb', v: 'double' }] },
+      { q: 'Does this exercise use one limb or both?',
+        hint: 'One-limb movements are significantly harder — your full bodyweight loads a single arm or leg.',
+        opts: [{ l: '🦾 One at a time (e.g. pistol squat, one-arm push-up)', v: 'single' },
+               { l: '💪 Both together (e.g. push-ups, squats, pull-ups)', v: 'double' }] },
       { q: 'Balance or stability required?',
-        hint: 'Does the movement require active balance (e.g. handstand vs push-up)?',
+        hint: 'Does the movement require active balance (e.g. freestanding handstand vs wall handstand)?',
         opts: [{ l: '⚖️ Yes — active balance', v: 'yes' }, { l: '🧱 No — stable position', v: 'no' }] },
       { q: 'Movement type?',
-        hint: 'Isometric holds (static) tend to be harder for equivalent strength requirements.',
+        hint: 'Isometric holds require sustained max-effort tension, adding difficulty.',
         opts: [{ l: '🧊 Isometric hold (static)', v: 'iso' }, { l: '🔄 Dynamic (moving)', v: 'dyn' }] },
       { q: 'Body angle to vertical?',
-        hint: 'Horizontal and inverted positions demand extreme strength and body control.',
+        hint: 'Horizontal and inverted positions demand far greater strength and body control.',
         opts: [
           { l: '🧍 Upright — vertical or close', v: 'up' },
           { l: '↗️ Diagonal — roughly 45°', v: '45' },
           { l: '➡️ Horizontal — parallel to ground', v: 'h' },
           { l: '🙃 Inverted — upside down', v: 'inv' },
         ] },
+      { q: 'Technical & strength prerequisites?',
+        hint: 'How much dedicated training does this movement typically require before it can be performed?',
+        opts: [
+          { l: '🟢 Low — beginner accessible', v: 'low' },
+          { l: '🟡 Moderate — requires consistent training', v: 'mod' },
+          { l: '🔴 High — advanced prerequisites needed', v: 'high' },
+        ] },
     ];
     const qi = step - 1;
     if (qi < bwSteps.length) {
       const s = bwSteps[qi];
       el.innerHTML = `${nameHTML}
-        <div class="wizard-step-hint">Step ${step}/4</div>
+        <div class="wizard-step-hint">Step ${step}/5</div>
         <div class="wizard-step-q">${s.q}</div>
         <div class="wizard-step-hint">${s.hint}</div>
         <div class="wizard-choices">
@@ -3819,7 +4242,7 @@
   function _wizType(t) { _wiz.type = t; _wiz.step = 1; _renderWizStep(); }
 
   function _wizBWAnswer(v) {
-    const keys = ['limbs','balance','movement','angle'];
+    const keys = ['limbs','balance','movement','angle','tech'];
     _wiz.answers[keys[_wiz.step - 1]] = v;
     _wiz.step++;
     _renderWizStep();
@@ -3832,13 +4255,21 @@
   function _wizBack() { _wiz.step = Math.max(0, _wiz.step - 1); _renderWizStep(); }
 
   function _calcBWDiff(a) {
-    let d = 2;
+    // Base score
+    let d = 1;
+    // Unilateral limb demand
     if (a.limbs    === 'single') d += 2;
-    if (a.balance  === 'yes')    d += 2;
+    // Active balance requirement
+    if (a.balance  === 'yes')    d += 1;
+    // Isometric vs dynamic
     if (a.movement === 'iso')    d += 1;
-    if (a.angle    === '45')     d += 2;
-    if (a.angle    === 'h')      d += 4;
-    if (a.angle    === 'inv')    d += 6;
+    // Body angle (positional strength demand)
+    if (a.angle    === '45')     d += 1;
+    if (a.angle    === 'h')      d += 2;
+    if (a.angle    === 'inv')    d += 2;
+    // Technical & strength prerequisites (largest driver)
+    if (a.tech     === 'mod')    d += 3;
+    if (a.tech     === 'high')   d += 5;
     return Math.min(10, Math.max(1, Math.round(d)));
   }
 
@@ -3906,7 +4337,7 @@
         row.className = 'ex-screen-item';
         row.innerHTML = `
           <button class="ex-screen-item-btn" onclick="showExDetail(${qs(name)})">${name}</button>
-          <span class="diff-badge" style="background:${bkgd}" title="Difficulty ${diff}/10">${diff}</span>
+          <button class="diff-badge" style="background:${bkgd}" title="Edit difficulty" onclick="editExDiff(${qs(name)})">${diff}</button>
           <button class="ex-item-del"
             onclick="delFromLib(${qs(cat)},${qs(name)})"
             title="Remove">
@@ -3932,6 +4363,47 @@
       card.appendChild(body);
       container.appendChild(card);
     });
+  }
+
+  /* ── Manual difficulty editor ───────────────────────────── */
+  let _diffEditName = null;
+
+  function editExDiff(name) {
+    _diffEditName = name;
+    const current = getExMeta(name).diff;
+    document.getElementById('diff-editor-name').textContent = name;
+    const grid = document.getElementById('diff-editor-grid');
+    grid.innerHTML = '';
+    for (let i = 1; i <= 10; i++) {
+      const color = i <= 3 ? '#34C759' : i <= 6 ? '#FF9500' : '#FF3B30';
+      const btn   = document.createElement('button');
+      btn.className = 'diff-editor-btn' + (i === current ? ' selected' : '');
+      btn.style.background = color;
+      btn.textContent = i;
+      btn.onclick = () => _setExDiff(name, i);
+      grid.appendChild(btn);
+    }
+    document.getElementById('diff-editor').classList.add('open');
+  }
+
+  function _setExDiff(name, diff) {
+    const meta = getCustomMeta();
+    // Preserve existing custom meta (type, tb) and update only diff
+    const existing = meta[name] || {};
+    const base = EXERCISE_META[name] || {};
+    meta[name] = Object.assign({}, base, existing, { diff });
+    setCustomMeta(meta);
+    closeDiffEditor();
+    renderExScreen();
+  }
+
+  function closeDiffEditor() {
+    document.getElementById('diff-editor').classList.remove('open');
+    _diffEditName = null;
+  }
+
+  function _diffEditorBgClick(e) {
+    if (e.target === document.getElementById('diff-editor')) closeDiffEditor();
   }
 
   function showExScreenInput(cat) {
@@ -4288,7 +4760,14 @@
     if (!panel) return;
     _settingsStack.push(id);
     /* small rAF delay so the push starts after the tap-active state clears */
-    requestAnimationFrame(() => panel.classList.add('open'));
+    requestAnimationFrame(() => {
+      panel.classList.add('open');
+      if (id === 'settings-warmup-edit') wuEditRender();
+      if (id === 'settings-prefs') {
+        const tog = document.getElementById('ghost-mode-toggle');
+        if (tog) tog.checked = getGhostMode();
+      }
+    });
   }
 
   function settingsPop() {
@@ -4498,6 +4977,381 @@
     updateSettingsFreqDisplay();
   }
 
+  /* ══════════════════════════════════════════════════════════
+     WARMUP ROUTINE
+     ══════════════════════════════════════════════════════════ */
+
+  /* ── Data ────────────────────────────────────────────────── */
+  /* ── Data ────────────────────────────────────────────────── */
+  const WARMUP_GENERAL = [
+    { name: 'Arm Circles',    secs: 30, hint: 'Forward & backward, full range',          cue: "Let's go — arm circles! Big, full range of motion!" },
+    { name: 'Jumping Jacks',  secs: 30, hint: 'Keep a steady rhythm',                    cue: "Jumping jacks — get that heart pumping!" },
+    { name: 'Hip Circles',    secs: 30, hint: 'Hands on hips, large circles each way',   cue: "Hip circles — open up those hips, you're doing great!" },
+    { name: 'Leg Swings',     secs: 30, hint: 'Forward/back then side-to-side, each leg',cue: "Leg swings — loosen up those hamstrings, keep swinging!" },
+    { name: 'Torso Twists',   secs: 30, hint: 'Arms out wide, rotate through the core',  cue: "Torso twists — feel the core activate, stay tall!" },
+    { name: 'High Knees',     secs: 30, hint: 'Drive knees to hip height, quick pace',   cue: "High knees — drive hard, you're halfway there!" },
+    { name: 'Shoulder Rolls', secs: 30, hint: 'Slow deliberate rolls, forward then back',cue: "Shoulder rolls — almost done, keep it loose!" },
+    { name: 'Inchworms',      secs: 30, hint: 'Walk hands out to plank, walk back',      cue: "Last one — inchworms! Make every rep count!" },
+  ]; /* 8 × 30 s = 4 min */
+
+  const WARMUP_STRENGTH_DEFAULT = [
+    { name: 'Pull-ups',      reps: 2 },
+    { name: 'Push-ups',      reps: 2 },
+    { name: 'Chin-ups',      reps: 4 },
+    { name: 'Push-ups',      reps: 4 },
+    { name: 'Wide Pull-ups', reps: 6 },
+    { name: 'Push-ups',      reps: 6 },
+    { name: 'Chin-ups',      reps: 4 },
+    { name: 'Push-ups',      reps: 4 },
+    { name: 'Pull-ups',      reps: 2 },
+    { name: 'Push-ups',      reps: 2 },
+  ];
+  /* Live variable — loaded from localStorage, falls back to default */
+  let WARMUP_STRENGTH = (function() {
+    try {
+      const s = JSON.parse(localStorage.getItem('warmupStrengthRoutine') || 'null');
+      return Array.isArray(s) && s.length ? s : WARMUP_STRENGTH_DEFAULT.map(x => ({...x}));
+    } catch { return WARMUP_STRENGTH_DEFAULT.map(x => ({...x})); }
+  })();
+
+  /* ── State ───────────────────────────────────────────────── */
+  let _warmupPhase      = 'general';
+  let _warmupIdx        = 0;
+  let _warmupTimer      = null;
+  let _warmupSecsLeft   = 0;
+  let _warmupPostPlanId = null;   /* planId or null — set before warmup starts */
+  let _warmupStrStart   = null;   /* timestamp when strength sequence began    */
+  const RING_R = 52, RING_C = 327.43;
+
+  /* ── localStorage helpers ────────────────────────────────── */
+  function _getStrengthTimes() {
+    try { return JSON.parse(localStorage.getItem('warmupStrengthTimes') || '[]'); }
+    catch { return []; }
+  }
+  function _saveStrengthTime(secs) {
+    const arr = _getStrengthTimes();
+    arr.push({ date: new Date().toISOString(), secs });
+    localStorage.setItem('warmupStrengthTimes', JSON.stringify(arr));
+  }
+
+  /* ── Entry ───────────────────────────────────────────────── */
+  function startWithWarmup(planId) {
+    closeStartChoice();
+    _warmupPostPlanId = planId;
+    _warmupPhase = 'general';
+    _warmupIdx   = 0;
+    _warmupStrStart = null;
+    document.getElementById('warmup-nav-title').textContent = 'General Warm-up';
+    document.getElementById('warmup-overlay').classList.add('open');
+    _warmupRenderGeneral();
+  }
+
+  function warmupSkip() {
+    _warmupCleanup();
+    _warmupShowPostChoice();
+  }
+
+  function _warmupCleanup() {
+    clearInterval(_warmupTimer);
+    _warmupTimer = null;
+    window.speechSynthesis?.cancel();
+  }
+
+  /* ── Post-warmup: choose workout ─────────────────────────── */
+  function _warmupShowPostChoice() {
+    document.getElementById('warmup-overlay').classList.remove('open');
+    /* If a plan was pre-selected, go straight to it */
+    if (_warmupPostPlanId !== null) {
+      startWorkoutFromPlan(_warmupPostPlanId);
+      return;
+    }
+    /* Otherwise open the start-choice modal so user can pick plan or blank */
+    _renderStartChoice();
+    /* Swap the warmup buttons out so user gets a clean choice */
+    const el = document.getElementById('start-choice-content');
+    el.innerHTML = `
+      <div class="wizard-step-q" style="margin-bottom:.875rem">Choose Workout</div>
+      <div class="wizard-step-hint" style="margin-bottom:.875rem">Warm-up done — now pick your session 💪</div>
+      <div class="wizard-choices">
+        <button class="wizard-choice" onclick="closeStartChoice();startBlankWorkout()">
+          🏃 Blank Workout<small>Choose exercises as you go</small>
+        </button>
+        ${plans.length ? plans.map(p => {
+          const sub = p.exercises.slice(0,3).join(', ') + (p.exercises.length > 3 ? '…' : '');
+          return `<button class="wizard-choice" onclick="closeStartChoice();startWorkoutFromPlan(${p.id})">
+            📋 ${p.name}<small>${sub || p.exercises.length + ' exercises'}</small>
+          </button>`;
+        }).join('') : ''}
+      </div>
+      <div class="wizard-footer" style="margin-top:.75rem">
+        <button class="wizard-btn-back" onclick="closeStartChoice()">Close</button>
+      </div>`;
+    document.getElementById('start-choice').classList.add('open');
+  }
+
+  /* ── General phase (timed) ───────────────────────────────── */
+  function _warmupRenderGeneral() {
+    if (_warmupIdx >= WARMUP_GENERAL.length) {
+      _warmupPhase = 'strength';
+      _warmupIdx   = 0;
+      document.getElementById('warmup-nav-title').textContent = 'Strength Warm-up';
+      _warmupSpeak("General warmup done — amazing work! Now let's hit the strength sequence!");
+      setTimeout(_warmupRenderStrengthIntro, 1400);
+      return;
+    }
+
+    const step = WARMUP_GENERAL[_warmupIdx];
+    const totalSteps = WARMUP_GENERAL.length;
+    const dotsHTML = WARMUP_GENERAL.map((_, i) =>
+      `<div class="warmup-dot ${i < _warmupIdx ? 'done' : i === _warmupIdx ? 'active' : ''}"></div>`
+    ).join('');
+
+    document.getElementById('warmup-body').innerHTML = `
+      <div class="warmup-phase-label">General Warm-up — Step ${_warmupIdx + 1} of ${totalSteps}</div>
+      <div class="warmup-move-name">${step.name}</div>
+      <div class="warmup-move-sub">${step.hint}</div>
+      <div class="warmup-ring-wrap">
+        <svg viewBox="0 0 120 120" width="144" height="144">
+          <circle class="warmup-ring-track" cx="60" cy="60" r="${RING_R}"/>
+          <circle class="warmup-ring-fill" id="wu-ring" cx="60" cy="60" r="${RING_R}"
+            stroke-dasharray="${RING_C}" stroke-dashoffset="0"/>
+        </svg>
+        <div class="warmup-ring-time" id="wu-secs">${step.secs}</div>
+      </div>
+      <div class="warmup-dots">${dotsHTML}</div>
+      <button class="warmup-next-btn" onclick="_warmupAdvanceGeneral()">Next →</button>`;
+
+    _warmupSpeak(step.cue);
+    _warmupStartCountdown(step.secs, () => _warmupAdvanceGeneral());
+  }
+
+  function _warmupStartCountdown(secs, onDone) {
+    clearInterval(_warmupTimer);
+    _warmupSecsLeft = secs;
+    _warmupUpdateRing(secs, secs);
+    _warmupTimer = setInterval(() => {
+      _warmupSecsLeft--;
+      _warmupUpdateRing(_warmupSecsLeft, secs);
+      const el = document.getElementById('wu-secs');
+      if (el) el.textContent = _warmupSecsLeft;
+      if (_warmupSecsLeft <= 0) {
+        clearInterval(_warmupTimer);
+        _warmupTimer = null;
+        onDone();
+      }
+    }, 1000);
+  }
+
+  function _warmupUpdateRing(remaining, total) {
+    const ring = document.getElementById('wu-ring');
+    if (!ring) return;
+    ring.style.strokeDashoffset = RING_C * (1 - remaining / total);
+  }
+
+  function _warmupAdvanceGeneral() {
+    _warmupCleanup();
+    _warmupIdx++;
+    _warmupRenderGeneral();
+  }
+
+  /* ── Strength intro screen ───────────────────────────────── */
+  function _warmupRenderStrengthIntro() {
+    const seqHTML = WARMUP_STRENGTH.map(s =>
+      `<span style="font-size:.875rem;color:var(--label)">${s.reps} ${s.name}</span>`
+    ).join('<span style="color:var(--tertiary);margin:0 .25rem">→</span>');
+
+    document.getElementById('warmup-body').innerHTML = `
+      <div class="warmup-phase-label">Strength Warm-up</div>
+      <div class="warmup-move-name" style="margin-bottom:.75rem">Ready?</div>
+      <div style="font-size:.875rem;color:var(--tertiary);margin-bottom:1.25rem;line-height:1.5;text-align:center">
+        Complete the full sequence back-to-back.<br>No rest between exercises.<br>Press Start when you're set.
+      </div>
+      <div style="background:var(--card);border-radius:var(--radius-card);box-shadow:var(--shadow);padding:.875rem 1rem;width:100%;margin-bottom:1.5rem;display:flex;flex-wrap:wrap;gap:.375rem;justify-content:center">
+        ${seqHTML}
+      </div>
+      <button class="warmup-next-btn" onclick="_warmupStrengthStart()">Start →</button>`;
+  }
+
+  /* ── Strength running screen ─────────────────────────────── */
+  function _warmupStrengthStart() {
+    _warmupStrStart = Date.now();
+    _warmupSpeak("Here we go — full sequence, no stopping! Let's crush it!");
+    _warmupRenderStrengthRunning();
+  }
+
+  function _warmupRenderStrengthRunning() {
+    const seqHTML = WARMUP_STRENGTH.map((s, i) => {
+      const cls = i % 2 === 0 ? 'color:var(--blue)' : 'color:var(--label)';
+      return `<div style="font-size:.9375rem;${cls};padding:.25rem 0">${s.reps}× ${s.name}</div>`;
+    }).join('');
+
+    document.getElementById('warmup-body').innerHTML = `
+      <div class="warmup-phase-label">Go! Back-to-back, no rest</div>
+      <div style="background:var(--card);border-radius:var(--radius-card);box-shadow:var(--shadow);padding:.875rem 1rem;width:100%;margin-bottom:1.5rem;text-align:left">
+        ${seqHTML}
+      </div>
+      <div style="font-size:.8125rem;color:var(--tertiary);margin-bottom:1.5rem">Timer running…</div>
+      <button class="warmup-next-btn green" onclick="_warmupStrengthFinish()">✓ Finished!</button>`;
+  }
+
+  function _warmupStrengthFinish() {
+    const elapsed = Math.round((Date.now() - _warmupStrStart) / 1000);
+    _saveStrengthTime(elapsed);
+    _warmupRenderComplete(elapsed);
+    _warmupSpeak("Incredible — strength warmup done! You are absolutely ready to train!");
+  }
+
+  /* ── Complete screen ─────────────────────────────────────── */
+  function _warmupRenderComplete(elapsedSecs) {
+    const times  = _getStrengthTimes();
+    const past   = times.slice(0, -1); /* exclude the one we just saved */
+    let compareHTML = '';
+    if (past.length >= 1) {
+      const avg   = Math.round(past.reduce((a, t) => a + t.secs, 0) / past.length);
+      const diff  = avg - elapsedSecs;
+      const fmtT  = s => `${Math.floor(s/60) > 0 ? Math.floor(s/60) + 'm ' : ''}${s%60}s`;
+      if (diff > 0) {
+        compareHTML = `<div class="warmup-move-sub" style="color:var(--green)">⚡ ${diff}s faster than your average of ${fmtT(avg)}!</div>`;
+      } else if (diff < 0) {
+        compareHTML = `<div class="warmup-move-sub">Your average is ${fmtT(avg)} — ${Math.abs(diff)}s off today, you'll get it!</div>`;
+      } else {
+        compareHTML = `<div class="warmup-move-sub">Right on your average of ${fmtT(avg)} — consistent!</div>`;
+      }
+    } else {
+      compareHTML = `<div class="warmup-move-sub" style="color:var(--tertiary)">First time recorded — this is your benchmark!</div>`;
+    }
+
+    const fmtElapsed = elapsedSecs != null
+      ? `<div class="warmup-rep-count" style="font-size:2.5rem;margin-bottom:.25rem">${Math.floor(elapsedSecs/60) > 0 ? Math.floor(elapsedSecs/60)+'m ' : ''}${elapsedSecs%60}s</div>
+         <div class="warmup-rep-label" style="margin-bottom:.5rem">Strength sequence time</div>
+         ${compareHTML}`
+      : '';
+
+    document.getElementById('warmup-body').innerHTML = `
+      <div class="warmup-phase-label">All done 🎉</div>
+      <div class="warmup-move-name" style="margin-bottom:.5rem">Warm-up Complete!</div>
+      ${fmtElapsed}
+      <button class="warmup-next-btn green" onclick="_warmupShowPostChoice()" style="margin-top:1.5rem">
+        Choose Workout →
+      </button>`;
+  }
+
+  /* ── TTS helper ──────────────────────────────────────────── */
+  function _warmupSpeak(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utt  = new SpeechSynthesisUtterance(text);
+    utt.rate   = 1.05;
+    utt.pitch  = 1.05;
+    utt.volume = 1;
+    window.speechSynthesis.speak(utt);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     STRENGTH WARMUP ROUTINE EDITOR
+     ══════════════════════════════════════════════════════════ */
+
+  /* Called when the user navigates into the editor panel */
+  function wuEditOpen() {
+    wuEditRender();
+  }
+
+  function wuEditRender() {
+    const list = document.getElementById('wu-edit-list');
+    if (!list) return;
+    list.innerHTML = WARMUP_STRENGTH.map((s, i) => `
+      <div class="wu-edit-row">
+        <span class="wu-edit-idx">${i + 1}.</span>
+        <input class="wu-edit-name" type="text" value="${s.name.replace(/"/g, '&quot;')}"
+          placeholder="Exercise name" data-idx="${i}" oninput="wuEditUpdate()" />
+        <input class="wu-edit-reps" type="number" value="${s.reps}" min="1" max="99"
+          inputmode="numeric" data-idx="${i}" oninput="wuEditUpdate()" />
+        <span style="font-size:.75rem;color:var(--tertiary)">reps</span>
+        <button class="wu-edit-del" onclick="wuEditDeleteRow(${i})" title="Remove">✕</button>
+      </div>`).join('');
+  }
+
+  /* Read current form values back into a temporary array */
+  function wuEditRead() {
+    const rows = document.querySelectorAll('#wu-edit-list .wu-edit-row');
+    return Array.from(rows).map(row => ({
+      name: row.querySelector('.wu-edit-name').value.trim() || 'Exercise',
+      reps: Math.max(1, parseInt(row.querySelector('.wu-edit-reps').value, 10) || 1),
+    }));
+  }
+
+  function wuEditUpdate() { /* live read — no-op; wuEditRead() is called on save */ }
+
+  function wuEditAddRow() {
+    WARMUP_STRENGTH = wuEditRead();
+    WARMUP_STRENGTH.push({ name: 'Push-ups', reps: 5 });
+    wuEditRender();
+    /* Scroll to bottom so new row is visible */
+    const list = document.getElementById('wu-edit-list');
+    list?.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function wuEditDeleteRow(idx) {
+    WARMUP_STRENGTH = wuEditRead();
+    if (WARMUP_STRENGTH.length <= 1) { showToast('Must have at least 1 exercise'); return; }
+    WARMUP_STRENGTH.splice(idx, 1);
+    wuEditRender();
+  }
+
+  function wuEditSave() {
+    const newRoutine = wuEditRead();
+    if (!newRoutine.length) { showToast('Add at least one exercise'); return; }
+
+    /* Check if anything actually changed */
+    const oldJSON = JSON.stringify(WARMUP_STRENGTH);
+    const newJSON = JSON.stringify(newRoutine);
+    const changed = oldJSON !== newJSON;
+
+    WARMUP_STRENGTH = newRoutine;
+    localStorage.setItem('warmupStrengthRoutine', newJSON);
+
+    if (changed) {
+      /* Reset history — past times used a different routine */
+      localStorage.removeItem('warmupStrengthTimes');
+      showToast('Routine updated — average reset to fresh start');
+    } else {
+      showToast('Routine saved');
+    }
+    settingsPop();
+  }
+
+  function wuEditReset() {
+    if (!confirm('Reset to the default Pull-up/Push-up sequence? Your custom routine will be lost.')) return;
+    WARMUP_STRENGTH = WARMUP_STRENGTH_DEFAULT.map(x => ({...x}));
+    localStorage.removeItem('warmupStrengthRoutine');
+    localStorage.removeItem('warmupStrengthTimes');
+    wuEditRender();
+    showToast('Routine reset — average cleared');
+  }
+
+  /* ── Seed built-in plans (once) ────────────────────────── */
+  (function seedPlans() {
+    const PLAN_NAME = 'Advanced Upper Body';
+    if (!plans.some(p => p.name === PLAN_NAME)) {
+      plans.unshift({
+        id: 9000000001,   /* fixed ID so it's never re-seeded */
+        name: PLAN_NAME,
+        exercises: [
+          'Muscle-ups',
+          'Fast Muscle-ups',
+          'Slow Transition Muscle-ups',
+          'Handstand push-ups',
+          'Negative Slow Handstand Push-ups',
+          'Handstand Hold',
+          'Front Lever Hold',
+          'Front Lever Bicycles',
+          'Tucked Front Lever Rows',
+        ],
+      });
+      persistPlans();
+    }
+  })();
+
   /* ── Init ───────────────────────────────────────────────── */
   renderRecent();    /* also calls updateRepeatBtn() */
   renderFreqGoal();
@@ -4536,7 +5390,7 @@
     function swipeBackAction() {
       /* 1. Settings sub-panel open? */
       const subPanels = ['settings-personal','settings-goals','settings-prefs',
-                         'settings-data','settings-about'];
+                         'settings-data','settings-about','settings-warmup-edit'];
       for (const id of subPanels) {
         if (document.getElementById(id)?.classList.contains('open')) {
           return () => settingsPop();
