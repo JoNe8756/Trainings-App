@@ -257,6 +257,29 @@
     }
     .btn-start:active { opacity: .85; box-shadow: 0 2px 8px rgba(0,100,255,.22), inset 0 1px 0 rgba(255,255,255,.15); }
 
+    /* ── Data Management action buttons ──────────────────── */
+    .btn-data-action {
+      display: block;
+      width: 100%;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      font-size: .9375rem;
+      font-weight: 600;
+      letter-spacing: -.2px;
+      padding: .8125rem 1rem;
+      cursor: pointer;
+      text-align: left;
+      box-shadow: 0 4px 14px rgba(0,100,255,.28), inset 0 1px 0 rgba(255,255,255,.22);
+      transition: opacity .12s, box-shadow .12s;
+      font-family: inherit;
+    }
+    .btn-data-action:active {
+      opacity: .82;
+      box-shadow: 0 2px 6px rgba(0,100,255,.18), inset 0 1px 0 rgba(255,255,255,.12);
+    }
+
     /* ── Repeat Last Workout button ──────────────────────── */
     .btn-repeat {
       display: none;           /* shown via JS when history exists */
@@ -3135,8 +3158,7 @@
             <input type="checkbox" id="exp-chk-settings" checked style="width:1.125rem;height:1.125rem;accent-color:var(--blue)">
             <span style="font-size:.9375rem;color:var(--label)">Settings &amp; Goals</span>
           </label>
-          <button onclick="exportData()" style="margin-top:.375rem;padding:.5rem .875rem;background:var(--blue);color:#fff;
-                  border:none;border-radius:.625rem;font-size:.9375rem;font-weight:600;cursor:pointer;text-align:left">
+          <button class="btn-data-action" onclick="exportData()" style="margin-top:.5rem">
             📤 Export Selected
           </button>
         </div>
@@ -3146,8 +3168,7 @@
     <div class="settings-section-header" style="margin-top:1rem">Import</div>
     <div class="settings-card">
       <div class="settings-row" style="padding:.75rem var(--gutter)">
-        <button onclick="triggerImport()" style="width:100%;padding:.5rem .875rem;background:var(--green);color:#fff;
-                border:none;border-radius:.625rem;font-size:.9375rem;font-weight:600;cursor:pointer;text-align:left">
+        <button class="btn-data-action" onclick="triggerImport()">
           📥 Import from File
         </button>
       </div>
