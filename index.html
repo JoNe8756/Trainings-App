@@ -4279,10 +4279,13 @@
   function deleteWorkout(id) {
     workouts = workouts.filter(w => w.id !== id);
     persist();
-    const homeActive    = document.getElementById('home-screen').classList.contains('active');
-    const historyActive = document.getElementById('history-screen').classList.contains('active');
-    if (homeActive)    { renderRecent(); renderFreqGoal(); }
-    if (historyActive) renderHistory();
+    const homeActive     = document.getElementById('home-screen').classList.contains('active');
+    const historyActive  = document.getElementById('history-screen').classList.contains('active');
+    const progressActive = document.getElementById('progress-screen')?.classList.contains('active');
+    /* Always recalculate every derived stat from the updated workouts array */
+    if (homeActive)     { renderRecent(); renderFreqGoal(); renderHighlights(); }
+    if (historyActive)  renderHistory();
+    if (progressActive) renderProgress();
   }
 
   /* ── Persist to localStorage ────────────────────────────── */
