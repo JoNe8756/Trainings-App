@@ -4374,7 +4374,7 @@
       `<div class="wh-killer-detail-row">
          <span class="wh-killer-detail-name">${s.name}</span>
          <span class="wh-killer-detail-val">${s.reps}</span>
-         <span class="wh-killer-detail-unit">reps</span>
+         <span class="wh-killer-detail-unit" style="color:var(--tertiary)">target</span>
        </div>`).join('');
     return `
       <div class="workout-history-ex wh-warmup-row" onclick="_whKillerToggle(this)" id="${uid}">
@@ -4434,7 +4434,7 @@
       const steps = (w.warmup.routine || []).map(step =>
         `<div class="wd-wsc-row">
           <span class="wd-wsc-name">${step.name}</span>
-          <span class="wd-wsc-val">${step.reps || ''}</span>
+          <span class="wd-wsc-val" style="color:var(--tertiary);font-size:.8125rem">${step.reps != null ? step.reps + ' target' : ''}</span>
         </div>`).join('');
       return `<div class="wd-wsc-card" id="${uid}">
         <div class="wd-wsc-header" onclick="this.closest('.wd-wsc-card').classList.toggle('open')">
@@ -5211,7 +5211,7 @@
       body.innerHTML = _completedWarmup.routine.map(step =>
         `<div class="wsc-ex-row">
           <span class="wsc-ex-name">${step.name}</span>
-          <span class="wsc-ex-val">${step.reps || ''}</span>
+          <span class="wsc-ex-val" style="color:var(--tertiary);font-size:.8125rem">${step.reps != null ? step.reps + ' target' : ''}</span>
         </div>`
       ).join('');
     }
