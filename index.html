@@ -6332,19 +6332,30 @@
     /* Swap the warmup buttons out so user gets a clean choice */
     const el = document.getElementById('start-choice-content');
     el.innerHTML = `
-      <div class="wizard-step-q" style="margin-bottom:.875rem">Choose Workout</div>
-      <div class="wizard-step-hint" style="margin-bottom:.875rem">Warm-up done — now pick your session 💪</div>
-      <div class="wizard-choices">
+      <div class="wizard-step-q" style="margin-bottom:.25rem">Choose Workout</div>
+      <div class="wizard-step-hint" style="margin-bottom:1rem">Warm-up done — now pick your session 💪</div>
+
+      <div style="font-size:.625rem;font-weight:700;letter-spacing:.08em;color:var(--tertiary);
+                  text-transform:uppercase;margin-bottom:.375rem;padding-left:.125rem">Freeform</div>
+      <div class="wizard-choices" style="margin-bottom:1rem">
         <button class="wizard-choice" onclick="closeStartChoice();startBlankWorkout()">
           🏃 Blank Workout<small>Choose exercises as you go</small>
         </button>
-        ${plans.length ? plans.map(p => {
-          const sub = p.exercises.slice(0,3).join(', ') + (p.exercises.length > 3 ? '…' : '');
-          return `<button class="wizard-choice" onclick="closeStartChoice();startWorkoutFromPlan(${p.id})">
-            📋 ${p.name}<small>${sub || p.exercises.length + ' exercises'}</small>
-          </button>`;
-        }).join('') : ''}
       </div>
+
+      ${plans.length ? `
+        <div style="font-size:.625rem;font-weight:700;letter-spacing:.08em;color:var(--tertiary);
+                    text-transform:uppercase;margin-bottom:.375rem;padding-left:.125rem">Training Plans</div>
+        <div class="wizard-choices">
+          ${plans.map(p => {
+            const sub = p.exercises.slice(0,3).join(', ') + (p.exercises.length > 3 ? '…' : '');
+            return `<button class="wizard-choice" onclick="closeStartChoice();startWorkoutFromPlan(${p.id})">
+              📋 ${p.name}<small>${sub || p.exercises.length + ' exercises'}</small>
+            </button>`;
+          }).join('')}
+        </div>
+      ` : ''}
+
       <div class="wizard-footer" style="margin-top:.75rem">
         <button class="wizard-btn-back" onclick="closeStartChoice()">Close</button>
       </div>`;
