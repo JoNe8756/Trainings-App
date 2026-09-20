@@ -5378,17 +5378,24 @@
     if (!list) return;
     const n = _ksEditNames.length;
     list.innerHTML = _ksEditNames.map((name, idx) => `
-      <div style="display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border-bottom:${idx<n-1?'0.5px solid var(--separator)':'none'}">
-        <div style="display:flex;flex-direction:column;gap:2px;margin-right:.25rem">
-          <button onclick="ksEditMove(${idx},-1)" style="background:none;border:none;color:var(--blue);font-size:.875rem;cursor:pointer;padding:0;line-height:1;opacity:${idx===0?'.3':'1'}" ${idx===0?'disabled':''}>▲</button>
-          <button onclick="ksEditMove(${idx},1)"  style="background:none;border:none;color:var(--blue);font-size:.875rem;cursor:pointer;padding:0;line-height:1;opacity:${idx===n-1?'.3':'1'}" ${idx===n-1?'disabled':''}>▼</button>
-        </div>
+      <div class="ks-edit-row" data-idx="${idx}"
+           style="display:flex;align-items:center;gap:.5rem;padding:.625rem 1rem;
+                  border-bottom:${idx<n-1?'0.5px solid var(--separator)':'none'};
+                  transition:background .15s;touch-action:none">
+        <span class="ks-drag-handle" title="Drag to reorder"
+              style="color:var(--tertiary);font-size:1.125rem;cursor:grab;
+                     padding:.25rem .125rem;flex-shrink:0;user-select:none;
+                     -webkit-user-select:none">⠿</span>
         <input id="ks-name-${idx}" value="${name.replace(/"/g,'&quot;')}"
-          style="flex:1;background:var(--fill);border:none;border-radius:.5rem;padding:.5rem .75rem;font-size:.9375rem;color:var(--label);font-family:inherit"
+          style="flex:1;background:var(--fill);border:none;border-radius:.5rem;
+                 padding:.5rem .75rem;font-size:.9375rem;color:var(--label);font-family:inherit"
           oninput="_ksEditNames[${idx}]=this.value" />
-        <button onclick="ksEditDelete(${idx})" style="background:none;border:none;color:var(--red);font-size:1.25rem;cursor:pointer;padding:.25rem .375rem;line-height:1" title="Remove">✕</button>
+        <button onclick="ksEditDelete(${idx})"
+          style="background:none;border:none;color:var(--red);font-size:1.25rem;
+                 cursor:pointer;padding:.25rem .375rem;line-height:1" title="Remove">✕</button>
       </div>
     `).join('');
+    _ksInitDrag(list);
   }
 
   function _ksFlushDOM() {
@@ -5398,13 +5405,103 @@
     });
   }
 
-  function ksEditMove(idx, dir) {
-    const newIdx = idx + dir;
-    if (newIdx < 0 || newIdx >= _ksEditNames.length) return;
-    _ksFlushDOM();
-    [_ksEditNames[idx], _ksEditNames[newIdx]] = [_ksEditNames[newIdx], _ksEditNames[idx]];
-    _ksEditDraw();
+  /* ── Touch drag-and-drop for Killer Set row reordering ─────── */
+  function _ksInitDrag(list) {
+    let dragRow = null, dragIdx = -1, startY = 0, currentY = 0;
+    let ghost = null, rowH = 0, rows = [];
+
+    function getRows() { return Array.from(list.querySelectorAll('.ks-edit-row')); }
+
+    function rowAtY(y) {
+      rows = getRows();
+      for (let r of rows) {
+        const rect = r.getBoundingClientRect();
+        if (y >= rect.top && y <= rect.bottom) return r;
+      }
+      return null;
+    }
+
+    list.addEventListener('touchstart', e => {
+      const handle = e.target.closest('.ks-drag-handle');
+      if (!handle) return;
+      dragRow = handle.closest('.ks-edit-row');
+      if (!dragRow) return;
+
+      dragIdx = parseInt(dragRow.dataset.idx, 10);
+      startY  = e.touches[0].clientY;
+      currentY = startY;
+      rowH = dragRow.getBoundingClientRect().height;
+      rows = getRows();
+
+      /* Create a floating ghost clone */
+      const rect = dragRow.getBoundingClientRect();
+      ghost = dragRow.cloneNode(true);
+      Object.assign(ghost.style, {
+        position:  'fixed',
+        left:      rect.left  + 'px',
+        top:       rect.top   + 'px',
+        width:     rect.width + 'px',
+        margin:    '0',
+        zIndex:    '9999',
+        opacity:   '0.92',
+        boxShadow: '0 8px 24px rgba(0,0,0,.22)',
+        background:'var(--card)',
+        borderRadius: 'var(--radius-card)',
+        pointerEvents: 'none',
+        transition: 'none',
+      });
+      document.body.appendChild(ghost);
+
+      dragRow.style.opacity = '0.35';
+      e.preventDefault();
+    }, { passive: false });
+
+    list.addEventListener('touchmove', e => {
+      if (!dragRow || !ghost) return;
+      currentY = e.touches[0].clientY;
+      ghost.style.top = (parseFloat(ghost.style.top) + (currentY - startY)) + 'px';
+      startY = currentY;
+
+      /* Find target row */
+      const target = rowAtY(currentY);
+      if (target && target !== dragRow) {
+        const targetIdx = parseInt(target.dataset.idx, 10);
+        const rect = target.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        if ((targetIdx < dragIdx && currentY < midY) ||
+            (targetIdx > dragIdx && currentY > midY)) {
+          /* Swap in data array and re-render in place */
+          _ksFlushDOM();
+          [_ksEditNames[dragIdx], _ksEditNames[targetIdx]] = [_ksEditNames[targetIdx], _ksEditNames[dragIdx]];
+          dragIdx = targetIdx;
+          /* Redraw rows without re-initialising drag */
+          const n = _ksEditNames.length;
+          rows = getRows();
+          rows.forEach((r, i) => {
+            r.dataset.idx = i;
+            r.style.borderBottom = i < n-1 ? '0.5px solid var(--separator)' : 'none';
+            const inp = r.querySelector('input');
+            if (inp) { inp.id = 'ks-name-' + i; inp.value = _ksEditNames[i]; inp.setAttribute('oninput', `_ksEditNames[${i}]=this.value`); }
+            const del = r.querySelector('button');
+            if (del) del.setAttribute('onclick', `ksEditDelete(${i})`);
+            r.style.opacity = i === dragIdx ? '0.35' : '1';
+          });
+        }
+      }
+      e.preventDefault();
+    }, { passive: false });
+
+    function endDrag() {
+      if (!dragRow) return;
+      dragRow.style.opacity = '1';
+      ghost && ghost.remove();
+      ghost = null; dragRow = null; dragIdx = -1;
+    }
+    list.addEventListener('touchend',    endDrag);
+    list.addEventListener('touchcancel', endDrag);
   }
+
+  /* ksEditMove removed — replaced by drag-and-drop */
 
   function ksEditDelete(idx) {
     if (_ksEditNames.length <= 1) { alert('Must have at least one exercise.'); return; }
