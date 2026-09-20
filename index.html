@@ -2548,7 +2548,9 @@
       margin-right: auto;
       z-index: 1100;
       background: var(--bg);
-      transform: translateX(100%);
+      /* calc(50vw + 50%) pushes the left edge exactly to the right viewport edge
+         regardless of whether the element is narrower than the viewport (desktop). */
+      transform: translateX(calc(50vw + 50%));
       transition: transform .28s cubic-bezier(.4,0,.2,1);
       display: flex; flex-direction: column;
       overflow: hidden;
@@ -6063,6 +6065,9 @@
   let _settingsStack = [];  /* stack of sub-panel IDs currently open */
 
   function openSettings() {
+    /* Ensure workout-detail is closed — it sits at z-index 1100 and would
+       bleed over settings panels (z-index 800-810) if left open */
+    closeWorkoutDetail();
     /* Sync live values before showing */
     const bwEl = document.getElementById('settings-bw-input');
     if (bwEl) bwEl.value = getUserBW();
