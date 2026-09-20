@@ -3813,27 +3813,38 @@
 
   function _renderStartChoice() {
     const el = document.getElementById('start-choice-content');
+    const sectionLabel = txt =>
+      `<div style="font-size:.625rem;font-weight:700;letter-spacing:.08em;color:var(--tertiary);
+                   text-transform:uppercase;margin-bottom:.375rem;padding-left:.125rem">${txt}</div>`;
     el.innerHTML = `
-      <div class="wizard-step-q" style="margin-bottom:.875rem">Start Workout</div>
-      <div class="wizard-choices">
+      <div class="wizard-step-q" style="margin-bottom:1rem">Start Workout</div>
+
+      <div class="wizard-choices" style="margin-bottom:1rem">
         <button class="wizard-choice" onclick="startWithWarmup(null)" style="border-color:var(--green);color:var(--green)">
           🔥 Warmup + Blank Workout
           <small>4 min general · strength warmup · then freestyle</small>
         </button>
-        <button class="wizard-choice" onclick="startBlankWorkout()">
-          🏃 Blank Workout
-          <small>Choose exercises as you go</small>
-        </button>
-        ${plans.length ? plans.map(p => {
-          const sub = p.exercises.slice(0, 3).join(', ') + (p.exercises.length > 3 ? '…' : '');
-          return `<div style="display:flex;gap:.375rem">
-            <button class="wizard-choice" style="flex:1" onclick="startFromPlanChoice(${p.id})">
-              📋 ${p.name}<small>${sub || `${p.exercises.length} exercise${p.exercises.length !== 1 ? 's' : ''}`}</small>
-            </button>
-            <button class="wizard-choice" style="flex:0 0 auto;min-width:4rem;font-size:.75rem;color:var(--green);border-color:var(--green)" onclick="startWithWarmup(${p.id})">🔥<br>Warmup</button>
-          </div>`;
-        }).join('') : `<div style="font-size:.8125rem;color:var(--tertiary);text-align:center;padding:.375rem 0 .125rem">Create plans in the Library tab</div>`}
       </div>
+
+      ${sectionLabel('Freeform')}
+      <div class="wizard-choices"${plans.length ? ' style="margin-bottom:1rem"' : ''}>
+        <button class="wizard-choice" onclick="startBlankWorkout()">
+          🏃 Blank Workout<small>Choose exercises as you go</small>
+        </button>
+      </div>
+
+      ${plans.length ? `
+        ${sectionLabel('Training Plans')}
+        <div class="wizard-choices">
+          ${plans.map(p => {
+            const sub = p.exercises.slice(0, 3).join(', ') + (p.exercises.length > 3 ? '…' : '');
+            return `<button class="wizard-choice" onclick="startFromPlanChoice(${p.id})">
+              📋 ${p.name}<small>${sub || `${p.exercises.length} exercise${p.exercises.length !== 1 ? 's' : ''}`}</small>
+            </button>`;
+          }).join('')}
+        </div>
+      ` : `<div style="font-size:.8125rem;color:var(--tertiary);text-align:center;padding:.375rem 0 .125rem">Create plans in the Library tab</div>`}
+
       <div class="wizard-footer" style="margin-top:.75rem">
         <button class="wizard-btn-back" onclick="closeStartChoice()">Cancel</button>
       </div>`;
