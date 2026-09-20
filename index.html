@@ -2240,7 +2240,7 @@
       flex-shrink: 0;
     }
     .settings-back-btn {
-      /* column 1: auto-sized, truncates if unusually long */
+      /* column 1: auto — takes natural content width, grid prevents overlap */
       display: flex;
       align-items: center;
       gap: 0.25rem;
@@ -2253,17 +2253,8 @@
       font-family: inherit;
       padding: 0;
       line-height: 1;
-      -webkit-tap-highlight-color: transparent;
-      max-width: 44%;          /* hard cap so even a long label can't eat into the title */
-      min-width: 0;
-      overflow: hidden;
-    }
-    .settings-back-btn svg { flex-shrink: 0; }  /* chevron always visible */
-    .settings-back-btn span {                    /* label text: truncate with ellipsis */
-      overflow: hidden;
-      text-overflow: ellipsis;
       white-space: nowrap;
-      min-width: 0;
+      -webkit-tap-highlight-color: transparent;
     }
     .settings-nav-title {
       /* column 2: 1fr — centered within its remaining space */
@@ -5406,99 +5397,84 @@
   }
 
   /* ── Touch drag-and-drop for Killer Set row reordering ─────── */
+  /* ── Touch drag-and-drop for Killer Set row reordering ─────── *
+   * Uses document-level touchmove/touchend (added on drag-start,
+   * removed on drag-end) so scroll containers cannot intercept.   */
   function _ksInitDrag(list) {
-    let dragRow = null, dragIdx = -1, startY = 0, currentY = 0;
-    let ghost = null, rowH = 0, rows = [];
-
-    function getRows() { return Array.from(list.querySelectorAll('.ks-edit-row')); }
-
-    function rowAtY(y) {
-      rows = getRows();
-      for (let r of rows) {
-        const rect = r.getBoundingClientRect();
-        if (y >= rect.top && y <= rect.bottom) return r;
-      }
-      return null;
-    }
-
-    list.addEventListener('touchstart', e => {
+    list.addEventListener('touchstart', function(e) {
       const handle = e.target.closest('.ks-drag-handle');
       if (!handle) return;
-      dragRow = handle.closest('.ks-edit-row');
+      const dragRow = handle.closest('.ks-edit-row');
       if (!dragRow) return;
+      e.preventDefault();   /* must call before first touchmove fires */
 
-      dragIdx = parseInt(dragRow.dataset.idx, 10);
-      startY  = e.touches[0].clientY;
-      currentY = startY;
-      rowH = dragRow.getBoundingClientRect().height;
-      rows = getRows();
+      let dragIdx = parseInt(dragRow.dataset.idx, 10);
+      let lastY   = e.touches[0].clientY;
 
-      /* Create a floating ghost clone */
-      const rect = dragRow.getBoundingClientRect();
-      ghost = dragRow.cloneNode(true);
+      /* Ghost: fixed clone that floats under the finger */
+      const rect  = dragRow.getBoundingClientRect();
+      const ghost = dragRow.cloneNode(true);
       Object.assign(ghost.style, {
-        position:  'fixed',
-        left:      rect.left  + 'px',
-        top:       rect.top   + 'px',
-        width:     rect.width + 'px',
-        margin:    '0',
-        zIndex:    '9999',
-        opacity:   '0.92',
-        boxShadow: '0 8px 24px rgba(0,0,0,.22)',
-        background:'var(--card)',
-        borderRadius: 'var(--radius-card)',
-        pointerEvents: 'none',
-        transition: 'none',
+        position: 'fixed', left: rect.left + 'px', top: rect.top + 'px',
+        width: rect.width + 'px', margin: '0', zIndex: '9999',
+        opacity: '0.92', boxShadow: '0 8px 28px rgba(0,0,0,.30)',
+        background: 'var(--card)', borderRadius: 'var(--radius-card)',
+        pointerEvents: 'none', transition: 'none',
       });
       document.body.appendChild(ghost);
+      dragRow.style.opacity = '0.3';
 
-      dragRow.style.opacity = '0.35';
-      e.preventDefault();
-    }, { passive: false });
+      function onMove(e) {
+        e.preventDefault();
+        const clientY = e.touches[0].clientY;
+        ghost.style.top = (parseFloat(ghost.style.top) + (clientY - lastY)) + 'px';
+        lastY = clientY;
 
-    list.addEventListener('touchmove', e => {
-      if (!dragRow || !ghost) return;
-      currentY = e.touches[0].clientY;
-      ghost.style.top = (parseFloat(ghost.style.top) + (currentY - startY)) + 'px';
-      startY = currentY;
+        /* Swap when finger crosses a sibling row's midpoint */
+        for (const row of list.querySelectorAll('.ks-edit-row')) {
+          if (row === dragRow) continue;
+          const r   = row.getBoundingClientRect();
+          const mid = r.top + r.height / 2;
+          const rowIdx = parseInt(row.dataset.idx, 10);
+          const shouldSwap = (rowIdx > dragIdx && clientY > mid) ||
+                             (rowIdx < dragIdx && clientY < mid);
+          if (!shouldSwap) continue;
 
-      /* Find target row */
-      const target = rowAtY(currentY);
-      if (target && target !== dragRow) {
-        const targetIdx = parseInt(target.dataset.idx, 10);
-        const rect = target.getBoundingClientRect();
-        const midY = rect.top + rect.height / 2;
-        if ((targetIdx < dragIdx && currentY < midY) ||
-            (targetIdx > dragIdx && currentY > midY)) {
-          /* Swap in data array and re-render in place */
+          /* Swap in data */
           _ksFlushDOM();
-          [_ksEditNames[dragIdx], _ksEditNames[targetIdx]] = [_ksEditNames[targetIdx], _ksEditNames[dragIdx]];
-          dragIdx = targetIdx;
-          /* Redraw rows without re-initialising drag */
+          [_ksEditNames[dragIdx], _ksEditNames[rowIdx]] =
+            [_ksEditNames[rowIdx], _ksEditNames[dragIdx]];
+          dragIdx = rowIdx;
+
+          /* Update DOM in-place (no full re-render — keeps drag live) */
           const n = _ksEditNames.length;
-          rows = getRows();
-          rows.forEach((r, i) => {
+          list.querySelectorAll('.ks-edit-row').forEach((r, i) => {
             r.dataset.idx = i;
             r.style.borderBottom = i < n-1 ? '0.5px solid var(--separator)' : 'none';
             const inp = r.querySelector('input');
-            if (inp) { inp.id = 'ks-name-' + i; inp.value = _ksEditNames[i]; inp.setAttribute('oninput', `_ksEditNames[${i}]=this.value`); }
+            if (inp) { inp.id = 'ks-name-'+i; inp.value = _ksEditNames[i];
+                       inp.setAttribute('oninput', `_ksEditNames[${i}]=this.value`); }
             const del = r.querySelector('button');
             if (del) del.setAttribute('onclick', `ksEditDelete(${i})`);
-            r.style.opacity = i === dragIdx ? '0.35' : '1';
+            r.style.opacity = i === dragIdx ? '0.3' : '1';
           });
+          break;  /* one swap per touchmove tick */
         }
       }
-      e.preventDefault();
-    }, { passive: false });
 
-    function endDrag() {
-      if (!dragRow) return;
-      dragRow.style.opacity = '1';
-      ghost && ghost.remove();
-      ghost = null; dragRow = null; dragIdx = -1;
-    }
-    list.addEventListener('touchend',    endDrag);
-    list.addEventListener('touchcancel', endDrag);
+      function onEnd() {
+        dragRow.style.opacity = '1';
+        ghost.remove();
+        document.removeEventListener('touchmove',   onMove);
+        document.removeEventListener('touchend',    onEnd);
+        document.removeEventListener('touchcancel', onEnd);
+      }
+
+      document.addEventListener('touchmove',   onMove,  { passive: false });
+      document.addEventListener('touchend',    onEnd);
+      document.addEventListener('touchcancel', onEnd);
+
+    }, { passive: false });
   }
 
   /* ksEditMove removed — replaced by drag-and-drop */
