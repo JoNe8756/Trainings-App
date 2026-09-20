@@ -3085,8 +3085,7 @@
       </div>
     </div>
     <div style="padding:.5rem var(--gutter) 0;font-size:.75rem;color:var(--tertiary);line-height:1.5">
-      <strong style="color:var(--secondary)">Bodyweight</strong> is used to scale intensity for bodyweight exercises — added weight is expressed as a fraction of your BW, so heavier loads register proportionally harder.<br><br>
-      <strong style="color:var(--secondary)">Height</strong> adjusts intensity for leverage-dependent skills (front/back lever, planche, human flag) — taller athletes work against a longer lever arm.
+      Both values fine-tune your <strong style="color:var(--secondary)">Intensity Index</strong> — bodyweight scales loaded exercises, height adjusts lever-based skills like front lever and planche.
     </div>
   </div>
 </div>
@@ -6206,9 +6205,9 @@
     closeWorkoutDetail();
     /* Sync live values before showing */
     const bwEl = document.getElementById('settings-bw-input');
-    if (bwEl) bwEl.value = getUserBW();
+    if (bwEl) bwEl.value = localStorage.getItem('userBW') ?? '';
     const htEl = document.getElementById('settings-height-input');
-    if (htEl) htEl.value = getUserHeight();
+    if (htEl) htEl.value = localStorage.getItem('userHeight') ?? '';
     updateSettingsFreqDisplay();
     _settingsStack = [];
     document.getElementById('settings-root').classList.add('open');
@@ -6241,8 +6240,19 @@
     if (id) document.getElementById(id)?.classList.remove('open');
   }
 
-  function settingsBWChanged(val)     { setUserBW(val); }
-  function settingsHeightChanged(val) { setUserHeight(val); }
+  function settingsBWChanged(val) {
+    const v = parseFloat(val);
+    if (!isNaN(v) && v >= 30 && v <= 300) { setUserBW(v); return; }
+    /* Invalid / empty — restore the stored value (or blank if never set) */
+    const el = document.getElementById('settings-bw-input');
+    if (el) el.value = localStorage.getItem('userBW') ?? '';
+  }
+  function settingsHeightChanged(val) {
+    const v = parseFloat(val);
+    if (!isNaN(v) && v >= 100 && v <= 250) { setUserHeight(v); return; }
+    const el = document.getElementById('settings-height-input');
+    if (el) el.value = localStorage.getItem('userHeight') ?? '';
+  }
 
   function updateSettingsFreqDisplay() {
     const goal = getFreqGoal();
@@ -6913,11 +6923,11 @@
     if (!bwMissing && !htMissing) return;           /* both set — never show */
     const el = document.getElementById('onboarding-prompt');
     if (!el) return;
-    /* Pre-fill whatever is already saved */
+    /* Pre-fill whatever is already saved (raw stored value, no fallback defaults) */
     const bwIn = document.getElementById('onb-bw');
     const htIn = document.getElementById('onb-ht');
-    if (bwIn && !bwMissing) bwIn.value = getUserBW();
-    if (htIn && !htMissing) htIn.value = getUserHeight();
+    if (bwIn && !bwMissing) bwIn.value = localStorage.getItem('userBW');
+    if (htIn && !htMissing) htIn.value = localStorage.getItem('userHeight');
     requestAnimationFrame(() => el.classList.add('visible'));
   }
 
