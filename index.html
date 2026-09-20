@@ -5477,7 +5477,9 @@
 
       function onEnd(e) {
         if (!e.isPrimary) return;
-        dragRow.style.opacity = '1';
+        /* Reset ALL rows — the in-place swap loop dims rows by DOM position
+           (not by dragRow reference), so any row may have been left at 0.3. */
+        list.querySelectorAll('.ks-edit-row').forEach(r => r.style.opacity = '1');
         ghost.remove();
         list.removeEventListener('pointermove',   onMove);
         list.removeEventListener('pointerup',     onEnd);
