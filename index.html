@@ -6357,7 +6357,12 @@
       _warmupPhase = 'strength';
       _warmupIdx   = 0;
       document.getElementById('warmup-nav-title').textContent = 'Strength Warm-up';
-      _warmupSpeak("General warmup done — amazing work! Now let's hit the strength sequence!");
+      // Replace body immediately — removes the old "Next →" button so it
+      // cannot be tapped again during the 1400 ms voice + transition delay.
+      document.getElementById('warmup-body').innerHTML =
+        `<div class="warmup-move-name" style="margin-top:2.5rem">🎉 General warmup done!</div>
+         <div class="warmup-move-sub" style="margin-top:.625rem">Preparing strength sequence…</div>`;
+      _warmupSpeak("General warmup done — amazing work! Now let’s hit the strength sequence!");
       setTimeout(_warmupRenderStrengthIntro, 1400);
       return;
     }
@@ -6411,6 +6416,9 @@
   }
 
   function _warmupAdvanceGeneral() {
+    // Disable the button immediately to block any second tap or countdown race
+    const btn = document.querySelector('#warmup-body .warmup-next-btn');
+    if (btn) btn.disabled = true;
     _warmupCleanup();
     _warmupIdx++;
     _warmupRenderGeneral();
