@@ -2224,19 +2224,23 @@
     .settings-panel.sub { z-index: 810; }
     .settings-panel.open { transform: translateX(0); }
 
-    /* Nav bar — mirrors .nav-bar-compact exactly */
+    /* Nav bar — 3-column grid: [back-btn] [title] [right-action]
+       This guarantees the title and back button never overlap,
+       regardless of text length. */
     .settings-nav {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
+      gap: .375rem;
       padding: calc(env(safe-area-inset-top, 0px) + 0.875rem) var(--gutter) 0.75rem;
       background: var(--glass-nav);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
       border-bottom: 0.5px solid var(--separator);
       flex-shrink: 0;
-      position: relative;
     }
     .settings-back-btn {
+      /* column 1: auto-sized, truncates if unusually long */
       display: flex;
       align-items: center;
       gap: 0.25rem;
@@ -2250,19 +2254,30 @@
       padding: 0;
       line-height: 1;
       -webkit-tap-highlight-color: transparent;
-      z-index: 1;
+      max-width: 44%;          /* hard cap so even a long label can't eat into the title */
+      min-width: 0;
+      overflow: hidden;
+    }
+    .settings-back-btn svg { flex-shrink: 0; }  /* chevron always visible */
+    .settings-back-btn span {                    /* label text: truncate with ellipsis */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
     }
     .settings-nav-title {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      /* column 2: 1fr — centered within its remaining space */
+      text-align: center;
       font-size: 1.0625rem;
       font-weight: 600;
       letter-spacing: -.3px;
       color: var(--label);
       pointer-events: none;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      /* No longer position:absolute — lives in grid flow, can't overlap */
     }
 
     .settings-body {
@@ -3016,7 +3031,7 @@
   <div class="settings-nav">
     <button class="settings-back-btn" onclick="closeSettings()">
       <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
-      Back
+      <span>Back</span>
     </button>
     <div class="settings-nav-title">Settings</div>
   </div>
@@ -3059,7 +3074,7 @@
   <div class="settings-nav">
     <button class="settings-back-btn" onclick="settingsPop()">
       <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
-      Settings
+      <span>Settings</span>
     </button>
     <div class="settings-nav-title">Personal Info</div>
   </div>
@@ -3097,7 +3112,7 @@
   <div class="settings-nav">
     <button class="settings-back-btn" onclick="settingsPop()">
       <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
-      Settings
+      <span>Settings</span>
     </button>
     <div class="settings-nav-title">Training Goals</div>
   </div>
@@ -3137,7 +3152,7 @@
   <div class="settings-nav">
     <button class="settings-back-btn" onclick="settingsPop()">
       <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
-      Training Goals
+      <span>Training Goals</span>
     </button>
     <div class="settings-nav-title">Strength Warmup</div>
   </div>
@@ -3165,7 +3180,7 @@
   <div class="settings-nav">
     <button class="settings-back-btn" onclick="settingsPop()">
       <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
-      Training Goals
+      <span>Training Goals</span>
     </button>
     <div class="settings-nav-title">Killer Set Routine</div>
   </div>
@@ -3193,7 +3208,7 @@
   <div class="settings-nav">
     <button class="settings-back-btn" onclick="settingsPop()">
       <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
-      Settings
+      <span>Settings</span>
     </button>
     <div class="settings-nav-title">Preferences</div>
   </div>
@@ -3222,7 +3237,7 @@
   <div class="settings-nav">
     <button class="settings-back-btn" onclick="settingsPop()">
       <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
-      Settings
+      <span>Settings</span>
     </button>
     <div class="settings-nav-title">Data Management</div>
   </div>
@@ -3278,7 +3293,7 @@
   <div class="settings-nav">
     <button class="settings-back-btn" onclick="settingsPop()">
       <svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
-      Settings
+      <span>Settings</span>
     </button>
     <div class="settings-nav-title">About</div>
   </div>
