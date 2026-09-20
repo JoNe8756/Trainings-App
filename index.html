@@ -261,8 +261,8 @@
     .btn-data-action {
       display: block;
       width: 100%;
-      background: var(--blue);
-      color: #fff;
+      background: rgba(0,122,255,.15);
+      color: var(--blue);
       border: none;
       border-radius: var(--radius-btn);
       font-size: .9375rem;
@@ -271,14 +271,11 @@
       padding: .8125rem 1rem;
       cursor: pointer;
       text-align: left;
-      box-shadow: 0 4px 14px rgba(0,100,255,.28), inset 0 1px 0 rgba(255,255,255,.22);
-      transition: opacity .12s, box-shadow .12s;
+      box-shadow: none;
+      transition: opacity .12s;
       font-family: inherit;
     }
-    .btn-data-action:active {
-      opacity: .82;
-      box-shadow: 0 2px 6px rgba(0,100,255,.18), inset 0 1px 0 rgba(255,255,255,.12);
-    }
+    .btn-data-action:active { opacity: .55; }
 
     /* ── Repeat Last Workout button ──────────────────────── */
     .btn-repeat {
