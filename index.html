@@ -4367,7 +4367,7 @@
     const wm      = w.warmup;
     const elapsed = wm.elapsed;
     const fmtT    = s => (Math.floor(s/60) > 0 ? Math.floor(s/60) + 'm ' : '') + (s % 60) + 's';
-    const summary = elapsed != null ? fmtT(elapsed) + ' strength' : 'completed';
+    const summary = elapsed != null ? fmtT(elapsed) + ' strength' : 'general only';
     const uid     = 'wh-wu-' + w.id;
     const genLine = '<div class="wh-killer-detail-row"><span class="wh-killer-detail-name">General warm-up</span><span class="wh-killer-detail-val" style="color:var(--tertiary)">4 min</span></div>';
     const seqLines = (wm.routine || []).map(s =>
@@ -4429,7 +4429,7 @@
       if (!w.warmup) return '';
       const elapsed = w.warmup.elapsed;
       const fmtT   = s => (Math.floor(s/60)>0 ? Math.floor(s/60)+'m ' : '') + (s%60)+'s';
-      const summary = elapsed != null ? fmtT(elapsed) + ' strength' : 'completed';
+      const summary = elapsed != null ? fmtT(elapsed) + ' strength' : 'general only';
       const uid = 'wd-wu-' + w.id;
       const steps = (w.warmup.routine || []).map(step =>
         `<div class="wd-wsc-row">
@@ -5206,7 +5206,7 @@
     const elapsed = _completedWarmup.elapsed;
     const summary = document.getElementById('wsc-warmup-summary');
     const body    = document.getElementById('wsc-warmup-body');
-    if (summary) summary.textContent = elapsed != null ? fmtT(elapsed) + ' strength' : 'completed';
+    if (summary) summary.textContent = elapsed != null ? fmtT(elapsed) + ' strength' : 'general only';
     if (body && _completedWarmup.routine) {
       body.innerHTML = _completedWarmup.routine.map(step =>
         `<div class="wsc-ex-row">
@@ -6565,7 +6565,20 @@
       <div style="background:var(--card);border-radius:var(--radius-card);box-shadow:var(--shadow);padding:.875rem 1rem;width:100%;margin-bottom:1.5rem;display:flex;flex-wrap:wrap;gap:.375rem;justify-content:center">
         ${seqHTML}
       </div>
-      <button class="warmup-next-btn" onclick="_warmupStrengthStart()">Start →</button>`;
+      <button class="warmup-next-btn" onclick="_warmupStrengthStart()">Start →</button>
+      <button onclick="_warmupSkipStrength()"
+        style="margin-top:.75rem;background:none;border:none;color:var(--tertiary);
+               font-size:.875rem;cursor:pointer;font-family:inherit;padding:.375rem .5rem">
+        Skip strength warmup
+      </button>`;
+  }
+
+  /* Skip the strength sequence — records general warmup only, does NOT
+     save a strength time so the running average is unaffected. */
+  function _warmupSkipStrength() {
+    _warmupCleanup();
+    _completedWarmup = { elapsed: null, routine: [], generalOnly: true };
+    _warmupShowPostChoice();
   }
 
   /* ── Strength running screen ─────────────────────────────── */
