@@ -5101,12 +5101,18 @@
     _killerRoutine = getKillerRoutine();
     _killerResults = new Array(_killerRoutine.length).fill('');
     _killerStep    = 0;
-    document.getElementById('killer-overlay').classList.add('open');
+    /* Lock overlay height to current full-screen height (before keyboard opens)
+       so iOS keyboard collapse can't shrink the flex container */
+    const overlay = document.getElementById('killer-overlay');
+    overlay.style.height = document.documentElement.clientHeight + 'px';
+    overlay.classList.add('open');
     _renderKillerStep();
   }
 
   function closeKillerSet() {
-    document.getElementById('killer-overlay').classList.remove('open');
+    const overlay = document.getElementById('killer-overlay');
+    overlay.classList.remove('open');
+    overlay.style.height = ''; /* reset for next open */
   }
 
   function _renderKillerStep(skipFocus) {
@@ -5250,7 +5256,7 @@
     localStorage.setItem('killerSetHistory', JSON.stringify(history.slice(0, 20)));
 
     document.getElementById('killer-summary').classList.remove('open');
-    document.getElementById('killer-overlay').classList.remove('open');  // close overlay that was kept open
+    closeKillerSet();  // removes open + resets height
     showTab('workout');
 
     // Show as single compact card above exercises (no individual cards)
@@ -5262,7 +5268,7 @@
   function _killerSummaryDiscard() {
     if (!confirm('Discard this Killer Set? Results will not be saved to your workout.')) return;
     document.getElementById('killer-summary').classList.remove('open');
-    document.getElementById('killer-overlay').classList.remove('open');  // close overlay that was kept open
+    closeKillerSet();  // removes open + resets height
     showTab('workout');
   }
 
@@ -7104,10 +7110,23 @@
     }, { passive: true });
   })();
 
-  /* ── Bug 1 fix: prevent page-shift when keyboard opens on iOS ──────
-     iOS Safari scrolls the layout viewport when an input is focused,
-     pushing fixed nav elements off-screen. Snap back to (0,0) on every
-     visualViewport resize so fixed UI stays in place.                 */
+  /* ── iOS keyboard layout-shift prevention ──────────────────────────
+     Bug 1: iOS Safari scrolls the window when any input is focused,
+     displacing fixed nav elements. We snap back on focusin (immediate)
+     and on every visualViewport resize (catches the keyboard animation).
+
+     Bug 2: Killer overlay height is locked at open time (see openKillerSet).
+     The visualViewport resize handler does NOT update that locked height
+     so the flex container can't collapse while the keyboard is open.    */
+
+  /* Snap window scroll on input focus (catches iOS auto-scroll-to-input) */
+  document.addEventListener('focusin', (e) => {
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') return;
+    requestAnimationFrame(() => window.scrollTo(0, 0));
+    setTimeout(() => window.scrollTo(0, 0), 80);
+  });
+
+  /* Snap again whenever the visual viewport resizes (keyboard open/close) */
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
       window.scrollTo(0, 0);
