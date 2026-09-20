@@ -3112,20 +3112,44 @@
     <div class="settings-nav-title">Data Management</div>
   </div>
   <div class="settings-body">
-    <div class="settings-section-header">Backup</div>
+    <div class="settings-section-header">Export</div>
     <div class="settings-card">
-      <div class="settings-row settings-row-tappable" onclick="exportData()">
-        <div class="settings-row-icon icon-blue">📤</div>
-        <div class="settings-row-label">Export Data</div>
-        <span class="settings-row-value">JSON</span>
+      <div class="settings-row" style="align-items:flex-start;padding:.75rem var(--gutter)">
+        <div style="flex:1;display:flex;flex-direction:column;gap:.5rem">
+          <div style="font-size:.8125rem;color:var(--tertiary);margin-bottom:.125rem">Select categories to include:</div>
+          <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer">
+            <input type="checkbox" id="exp-chk-history" checked style="width:1.125rem;height:1.125rem;accent-color:var(--blue)">
+            <span style="font-size:.9375rem;color:var(--label)">Training History</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer">
+            <input type="checkbox" id="exp-chk-plans" checked style="width:1.125rem;height:1.125rem;accent-color:var(--blue)">
+            <span style="font-size:.9375rem;color:var(--label)">Training Plans</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer">
+            <input type="checkbox" id="exp-chk-exlib" checked style="width:1.125rem;height:1.125rem;accent-color:var(--blue)">
+            <span style="font-size:.9375rem;color:var(--label)">Exercise Library</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer">
+            <input type="checkbox" id="exp-chk-settings" checked style="width:1.125rem;height:1.125rem;accent-color:var(--blue)">
+            <span style="font-size:.9375rem;color:var(--label)">Settings &amp; Goals</span>
+          </label>
+          <button onclick="exportData()" style="margin-top:.375rem;padding:.5rem .875rem;background:var(--blue);color:#fff;
+                  border:none;border-radius:.625rem;font-size:.9375rem;font-weight:600;cursor:pointer;text-align:left">
+            📤 Export Selected
+          </button>
+        </div>
       </div>
+    </div>
+
+    <div class="settings-section-header" style="margin-top:1rem">Import</div>
+    <div class="settings-card">
       <div class="settings-row settings-row-tappable" onclick="triggerImport()">
         <div class="settings-row-icon icon-green">📥</div>
-        <div class="settings-row-label">Import Data</div>
+        <div class="settings-row-label">Import from File</div>
       </div>
     </div>
     <div style="padding:.625rem var(--gutter) 0;font-size:.8125rem;color:var(--tertiary);line-height:1.5">
-      Export saves all your workouts, plans, exercises, goals, and settings to a JSON file. Import replaces all current data with a previously exported file.
+      Import auto-detects which categories are in the file and only overwrites those — everything else stays untouched.
     </div>
     <!-- hidden file input for import -->
     <input type="file" id="import-file-input" accept=".json,application/json" style="display:none" onchange="importData(event)" />
@@ -6100,22 +6124,37 @@
 
   /* ── Export ─────────────────────────────────────────────── */
   function exportData() {
-    const payload = {
-      exportedAt: new Date().toISOString(),
-      version:    1,
-      workouts:   JSON.parse(localStorage.getItem('workouts')     || '[]'),
-      plans:      JSON.parse(localStorage.getItem('plans')        || '[]'),
-      exLib:      JSON.parse(localStorage.getItem('exLib')        || 'null'),
-      customExMeta: JSON.parse(localStorage.getItem('customExMeta') || '{}'),
-      freqGoal:   JSON.parse(localStorage.getItem('freqGoal')     || 'null'),
-      userBW:     localStorage.getItem('userBW') || null,
+    const incl = {
+      history:  document.getElementById('exp-chk-history')?.checked  ?? true,
+      plans:    document.getElementById('exp-chk-plans')?.checked    ?? true,
+      exlib:    document.getElementById('exp-chk-exlib')?.checked    ?? true,
+      settings: document.getElementById('exp-chk-settings')?.checked ?? true,
     };
+    if (!incl.history && !incl.plans && !incl.exlib && !incl.settings) {
+      showToast('Select at least one category'); return;
+    }
+    const payload = {
+      exportedAt:  new Date().toISOString(),
+      version:     1,
+      categories:  Object.keys(incl).filter(k => incl[k]),
+    };
+    if (incl.history)  payload.workouts    = JSON.parse(localStorage.getItem('workouts')      || '[]');
+    if (incl.plans)    payload.plans       = JSON.parse(localStorage.getItem('plans')         || '[]');
+    if (incl.exlib) {
+      payload.exLib       = JSON.parse(localStorage.getItem('exLib')       || 'null');
+      payload.customExMeta= JSON.parse(localStorage.getItem('customExMeta')|| '{}');
+    }
+    if (incl.settings) {
+      payload.freqGoal    = JSON.parse(localStorage.getItem('freqGoal')    || 'null');
+      payload.userBW      = localStorage.getItem('userBW') || null;
+    }
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
+    const cats = payload.categories.join('-');
     const date = new Date().toISOString().slice(0, 10);
     a.href     = url;
-    a.download = `workout-logger-backup-${date}.json`;
+    a.download = `workout-backup-${cats}-${date}.json`;
     a.click();
     URL.revokeObjectURL(url);
     showToast('Data exported ✓');
@@ -6135,31 +6174,45 @@
       try { payload = JSON.parse(e.target.result); }
       catch { showToast('Invalid file — import failed'); return; }
 
-      if (!payload.version || !Array.isArray(payload.workouts)) {
-        showToast('Unrecognised format — import failed');
-        return;
+      if (!payload.version) { showToast('Unrecognised format — import failed'); return; }
+
+      /* Detect which categories are present */
+      const detected = [];
+      if (Array.isArray(payload.workouts))                                        detected.push('Training History');
+      if (Array.isArray(payload.plans))                                           detected.push('Training Plans');
+      if (payload.exLib !== undefined || payload.customExMeta !== undefined)      detected.push('Exercise Library');
+      if (payload.freqGoal !== undefined || payload.userBW !== undefined)         detected.push('Settings & Goals');
+
+      if (!detected.length) { showToast('No recognisable data in file'); return; }
+
+      const catList = detected.map(c => `  • ${c}`).join('\n');
+      const msg = `Import will overwrite:\n${catList}\n\nCategories not in this file stay untouched.\n\nProceed?`;
+      if (!confirm(msg)) return;
+
+      /* Restore detected categories */
+      if (Array.isArray(payload.workouts)) {
+        localStorage.setItem('workouts', JSON.stringify(payload.workouts));
+        workouts = payload.workouts;
       }
-
-      if (!confirm('Replace all current data with the imported backup? This cannot be undone.')) return;
-
-      /* Restore each key */
-      localStorage.setItem('workouts',     JSON.stringify(payload.workouts   || []));
-      localStorage.setItem('plans',        JSON.stringify(payload.plans      || []));
-      if (payload.exLib)        localStorage.setItem('exLib',        JSON.stringify(payload.exLib));
-      if (payload.customExMeta) localStorage.setItem('customExMeta', JSON.stringify(payload.customExMeta));
-      if (payload.freqGoal)     localStorage.setItem('freqGoal',     JSON.stringify(payload.freqGoal));
-      if (payload.userBW)       localStorage.setItem('userBW',       payload.userBW);
-
-      /* Reload in-memory state */
-      workouts = payload.workouts || [];
-      plans    = payload.plans    || [];
+      if (Array.isArray(payload.plans)) {
+        localStorage.setItem('plans', JSON.stringify(payload.plans));
+        plans = payload.plans;
+      }
+      if (payload.exLib !== undefined)
+        localStorage.setItem('exLib', JSON.stringify(payload.exLib));
+      if (payload.customExMeta !== undefined)
+        localStorage.setItem('customExMeta', JSON.stringify(payload.customExMeta));
+      if (payload.freqGoal !== undefined)
+        localStorage.setItem('freqGoal', JSON.stringify(payload.freqGoal));
+      if (payload.userBW !== undefined)
+        localStorage.setItem('userBW', payload.userBW ?? '');
 
       /* Refresh UI */
       closeSettings();
       renderRecent();
       renderFreqGoal();
       renderHighlights();
-      showToast('Data imported ✓');
+      showToast(`Imported: ${detected.join(', ')} ✓`);
     };
     reader.readAsText(file);
   }
