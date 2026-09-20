@@ -2993,6 +2993,18 @@
           onchange="settingsBWChanged(this.value)" />
         <span class="settings-unit">kg</span>
       </div>
+      <div class="settings-row-separator"></div>
+      <div class="settings-row">
+        <div class="settings-row-icon icon-blue">📏</div>
+        <div class="settings-row-label">Height</div>
+        <input type="number" id="settings-height-input" class="settings-num-input"
+          min="100" max="250" step="1" inputmode="decimal" placeholder="175"
+          onchange="settingsHeightChanged(this.value)" />
+        <span class="settings-unit">cm</span>
+      </div>
+    </div>
+    <div style="padding:.5rem var(--gutter) 0;font-size:.75rem;color:var(--tertiary);line-height:1.5">
+      Height adjusts intensity for leverage-dependent skills (front/back lever, planche, human flag) — taller athletes work against a longer lever arm.
     </div>
   </div>
 </div>
@@ -3617,16 +3629,38 @@
     showLibSeg(_libSeg);
   }
 
-  function getUserBW()  { return parseFloat(localStorage.getItem('userBW') || '75'); }
-  function setUserBW(v) { localStorage.setItem('userBW', String(parseFloat(v) || 75)); }
+  function getUserBW()      { return parseFloat(localStorage.getItem('userBW')     || '75'); }
+  function setUserBW(v)     { localStorage.setItem('userBW',     String(parseFloat(v) || 75)); }
+  function getUserHeight()  { return parseFloat(localStorage.getItem('userHeight') || '175'); }
+  function setUserHeight(v) { localStorage.setItem('userHeight', String(parseFloat(v) || 175)); }
+
+  /* Exercises where body length meaningfully extends the lever arm.
+     Height scaling: +/- 0.2% per cm from 175 cm reference, capped at ±10%. */
+  const LEVER_EXERCISES = new Set([
+    'Tuck front lever','Advanced tuck front lever','Straddle front lever','Full front lever',
+    'Front Lever Hold','Front Lever Bicycles','Tucked Front Lever Rows',
+    'Tuck back lever','Straddle back lever','Full back lever',
+    'Tuck planche','Advanced tuck planche','Straddle planche','Full planche',
+    'Human flag','Dragon flag',
+  ]);
+
+  /* Returns a multiplicative height factor for lever-dependent exercises only.
+     Factor = 1.0 at 175 cm; ±0.002 per cm; clamped to [0.90, 1.10]. */
+  function heightLeverFactor(name) {
+    if (!LEVER_EXERCISES.has(name)) return 1;
+    const delta = getUserHeight() - 175;
+    return Math.min(1.10, Math.max(0.90, 1 + delta * 0.002));
+  }
 
   function calcSetIntensity(name, reps, kg) {
     const meta = getExMeta(name);
     const r = parseFloat(reps) || 0;
     const w = parseFloat(kg)   || 0;
     if (!r) return 0;
-    if (meta.type === 'w') return Math.round(meta.diff * r * (w || 1));
-    return Math.round(meta.diff * r * (1 + w / getUserBW()));
+    const base = meta.type === 'w'
+      ? meta.diff * r * (w || 1)
+      : meta.diff * r * (1 + w / getUserBW());
+    return Math.round(base * heightLeverFactor(name));
   }
   function calcSessionIntensity(name, sets) {
     return sets.reduce((s, st) =>
@@ -6091,6 +6125,8 @@
     /* Sync live values before showing */
     const bwEl = document.getElementById('settings-bw-input');
     if (bwEl) bwEl.value = getUserBW();
+    const htEl = document.getElementById('settings-height-input');
+    if (htEl) htEl.value = getUserHeight();
     updateSettingsFreqDisplay();
     _settingsStack = [];
     document.getElementById('settings-root').classList.add('open');
@@ -6123,9 +6159,8 @@
     if (id) document.getElementById(id)?.classList.remove('open');
   }
 
-  function settingsBWChanged(val) {
-    setUserBW(val);
-  }
+  function settingsBWChanged(val)     { setUserBW(val); }
+  function settingsHeightChanged(val) { setUserHeight(val); }
 
   function updateSettingsFreqDisplay() {
     const goal = getFreqGoal();
@@ -6171,7 +6206,8 @@
     }
     if (incl.settings) {
       payload.freqGoal    = JSON.parse(localStorage.getItem('freqGoal')    || 'null');
-      payload.userBW      = localStorage.getItem('userBW') || null;
+      payload.userBW      = localStorage.getItem('userBW')     || null;
+      payload.userHeight  = localStorage.getItem('userHeight') || null;
     }
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
@@ -6206,7 +6242,7 @@
       if (Array.isArray(payload.workouts))                                        detected.push('Training History');
       if (Array.isArray(payload.plans))                                           detected.push('Training Plans');
       if (payload.exLib !== undefined || payload.customExMeta !== undefined)      detected.push('Exercise Library');
-      if (payload.freqGoal !== undefined || payload.userBW !== undefined)         detected.push('Settings & Goals');
+      if (payload.freqGoal !== undefined || payload.userBW !== undefined || payload.userHeight !== undefined) detected.push('Settings & Goals');
 
       if (!detected.length) { showToast('No recognisable data in file'); return; }
 
@@ -6230,7 +6266,9 @@
       if (payload.freqGoal !== undefined)
         localStorage.setItem('freqGoal', JSON.stringify(payload.freqGoal));
       if (payload.userBW !== undefined)
-        localStorage.setItem('userBW', payload.userBW ?? '');
+        localStorage.setItem('userBW',     payload.userBW     ?? '');
+      if (payload.userHeight !== undefined)
+        localStorage.setItem('userHeight', payload.userHeight ?? '');
 
       /* Refresh UI */
       closeSettings();
