@@ -4151,6 +4151,8 @@
     document.getElementById('exercise-list').appendChild(div);
     addSet(id);
     persistActiveWorkout();
+    /* Scroll the new card into view within the .scroll-area — never touches the window */
+    setTimeout(() => div.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
   }
 
   function removeExercise(id) {
@@ -6181,9 +6183,9 @@
     updateNextExBtn();
     updatePlanBanner();
     persistActiveWorkout();
-    /* scroll new card into view */
+    /* Scroll new card into view within the .scroll-area — block:nearest avoids layout shift */
     const last = document.getElementById('exercise-list').lastElementChild;
-    if (last) setTimeout(() => last.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    if (last) setTimeout(() => last.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
   }
 
   function updatePlanBanner() {
