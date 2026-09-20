@@ -1783,6 +1783,62 @@
       transition: opacity .45s ease;
     }
     #splash.fade-out { opacity: 0; pointer-events: none; }
+
+    /* ── Onboarding prompt ───────────────────────────────── */
+    #onboarding-prompt {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .35s ease;
+      padding: var(--gutter);
+    }
+    #onboarding-prompt.visible { opacity: 1; pointer-events: auto; }
+    .onb-card {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: 0 16px 48px rgba(0,0,0,.35);
+      border: 0.5px solid var(--separator);
+      padding: 1.5rem var(--gutter);
+      width: 100%;
+      max-width: min(360px, calc(100% - 2*var(--gutter)));
+      display: flex;
+      flex-direction: column;
+      gap: .875rem;
+    }
+    .onb-icon  { font-size: 2.25rem; text-align: center; margin-bottom: -.125rem; }
+    .onb-title { font-size: 1.0625rem; font-weight: 700; color: var(--label); text-align: center; }
+    .onb-body  { font-size: .875rem; color: var(--secondary); line-height: 1.55; text-align: center; }
+    .onb-fields { display: flex; flex-direction: column; gap: .625rem; }
+    .onb-field  { display: flex; align-items: center; gap: .625rem;
+                  background: var(--fill); border-radius: .75rem; padding: .625rem .875rem; }
+    .onb-field-label { flex: 1; font-size: .9375rem; color: var(--label); font-weight: 500; }
+    .onb-field input { width: 4.5rem; text-align: right; background: none; border: none;
+                       font-size: .9375rem; color: var(--label); font-family: inherit;
+                       outline: none; -moz-appearance: textfield; }
+    .onb-field input::-webkit-inner-spin-button,
+    .onb-field input::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .onb-field-unit { font-size: .875rem; color: var(--tertiary); min-width: 1.75rem; }
+    .onb-actions { display: flex; flex-direction: column; gap: .5rem; }
+    .onb-btn-primary {
+      background: var(--blue); color: #fff; border: none;
+      border-radius: var(--radius-btn); font-size: .9375rem; font-weight: 600;
+      padding: .75rem; cursor: pointer; font-family: inherit;
+      transition: opacity .12s;
+    }
+    .onb-btn-primary:active { opacity: .82; }
+    .onb-btn-skip {
+      background: none; border: none; color: var(--tertiary);
+      font-size: .875rem; cursor: pointer; font-family: inherit;
+      padding: .25rem; text-align: center;
+    }
     .splash-content {
       text-align: center;
       padding: 2.75rem 3rem;
@@ -2707,6 +2763,31 @@
     <div class="splash-icon">🏋️</div>
     <div class="splash-app-name">Workout Logger</div>
     <div class="splash-tagline">Track every rep, own every session</div>
+  </div>
+</div>
+
+<!-- ── Onboarding: bodyweight + height ── -->
+<div id="onboarding-prompt">
+  <div class="onb-card">
+    <div class="onb-icon">📊</div>
+    <div class="onb-title">Quick setup</div>
+    <div class="onb-body">Setting your bodyweight and height helps calculate a more accurate <strong>Intensity Index</strong> for your exercises — especially leverage skills like front levers and planche.</div>
+    <div class="onb-fields">
+      <div class="onb-field">
+        <span class="onb-field-label">⚖️ Bodyweight</span>
+        <input type="number" id="onb-bw" inputmode="decimal" min="30" max="300" step="0.5" placeholder="75">
+        <span class="onb-field-unit">kg</span>
+      </div>
+      <div class="onb-field">
+        <span class="onb-field-label">📏 Height</span>
+        <input type="number" id="onb-ht" inputmode="decimal" min="100" max="250" step="1" placeholder="175">
+        <span class="onb-field-unit">cm</span>
+      </div>
+    </div>
+    <div class="onb-actions">
+      <button class="onb-btn-primary" onclick="_onbSave()">Save &amp; continue</button>
+      <button class="onb-btn-skip"    onclick="_onbDismiss()">Set later in Settings</button>
+    </div>
   </div>
 </div>
 
@@ -6817,9 +6898,47 @@
     if (!splash) return;
     setTimeout(() => {
       splash.classList.add('fade-out');
-      setTimeout(() => splash.remove(), 480);
+      setTimeout(() => {
+        splash.remove();
+        _onbMaybeShow();
+      }, 480);
     }, 1800);
   })();
+
+  /* ── Onboarding prompt ─────────────────────────────────── */
+  function _onbMaybeShow() {
+    const bwMissing = !localStorage.getItem('userBW');
+    const htMissing = !localStorage.getItem('userHeight');
+    if (!bwMissing && !htMissing) return;           /* both set — never show */
+    const el = document.getElementById('onboarding-prompt');
+    if (!el) return;
+    /* Pre-fill whatever is already saved */
+    const bwIn = document.getElementById('onb-bw');
+    const htIn = document.getElementById('onb-ht');
+    if (bwIn && !bwMissing) bwIn.value = getUserBW();
+    if (htIn && !htMissing) htIn.value = getUserHeight();
+    requestAnimationFrame(() => el.classList.add('visible'));
+  }
+
+  function _onbDismiss() {
+    const el = document.getElementById('onboarding-prompt');
+    if (!el) return;
+    el.classList.remove('visible');
+    setTimeout(() => el.remove(), 380);
+  }
+
+  function _onbSave() {
+    const bwVal = parseFloat(document.getElementById('onb-bw')?.value);
+    const htVal = parseFloat(document.getElementById('onb-ht')?.value);
+    if (bwVal >= 30 && bwVal <= 300) setUserBW(bwVal);
+    if (htVal >= 100 && htVal <= 250) setUserHeight(htVal);
+    /* Sync settings panel inputs if already rendered */
+    const bwEl = document.getElementById('settings-bw-input');
+    const htEl = document.getElementById('settings-height-input');
+    if (bwEl) bwEl.value = getUserBW();
+    if (htEl) htEl.value = getUserHeight();
+    _onbDismiss();
+  }
 
   /* ══════════════════════════════════════════════════════════
      SWIPE-BACK GESTURE
