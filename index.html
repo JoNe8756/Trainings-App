@@ -3145,9 +3145,11 @@
 
     <div class="settings-section-header" style="margin-top:1rem">Import</div>
     <div class="settings-card">
-      <div class="settings-row settings-row-tappable" onclick="triggerImport()">
-        <div class="settings-row-icon icon-green">📥</div>
-        <div class="settings-row-label">Import from File</div>
+      <div class="settings-row" style="padding:.75rem var(--gutter)">
+        <button onclick="triggerImport()" style="width:100%;padding:.5rem .875rem;background:var(--green);color:#fff;
+                border:none;border-radius:.625rem;font-size:.9375rem;font-weight:600;cursor:pointer;text-align:left">
+          📥 Import from File
+        </button>
       </div>
     </div>
     <div style="padding:.625rem var(--gutter) 0;font-size:.8125rem;color:var(--tertiary);line-height:1.5">
