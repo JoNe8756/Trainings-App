@@ -2032,6 +2032,18 @@
       flex-shrink: 0;
     }
     .plan-ex-del:hover { color: var(--red); background: var(--del-hover); }
+    .plan-ex-handle {
+      display: flex; align-items: center; justify-content: center;
+      width: 1.75rem; height: 1.75rem;
+      flex-shrink: 0;
+      color: var(--tertiary);
+      font-size: 1rem;
+      cursor: grab;
+      touch-action: none;       /* prevent scroll hijack during drag */
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .plan-ex-item.dragging { opacity: 0.3; }
     .btn-plan-add-ex {
       background: none;
       border: none;
@@ -5962,7 +5974,8 @@
 
   function _renderPlanEditor(el) {
     const exItems = (_planDraft.exercises || []).map((name, i) => `
-      <div class="plan-ex-item">
+      <div class="plan-ex-item" data-idx="${i}">
+        <span class="plan-ex-handle" title="Drag to reorder">≡</span>
         <span class="plan-ex-num">${i + 1}</span>
         <span class="plan-ex-name-lbl">${name}</span>
         <button class="plan-ex-del" onclick="planEditorRemoveEx(${i})" title="Remove">×</button>
@@ -5975,7 +5988,7 @@
         placeholder="Plan name (e.g. Push Day)"
         value="${(_planDraft.name || '').replace(/"/g, '&quot;')}"
         oninput="_planDraft.name = this.value" />
-      <div class="plan-ex-list">${exItems}</div>
+      <div class="plan-ex-list" id="plan-ex-list">${exItems}</div>
       <button class="btn-plan-add-ex" onclick="planEditorAddEx()">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
           <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5a.75.75 0 0 1 1.5 0z"/>
@@ -5987,6 +6000,9 @@
         <button class="wizard-btn-confirm" style="flex:2" onclick="savePlan()">Save Plan</button>
       </div>
     </div>`;
+    /* Wire drag-and-drop after DOM is written */
+    const planList = document.getElementById('plan-ex-list');
+    if (planList) _planInitDrag(planList);
   }
 
   /* ── Plan editor actions ─────────────────────────────────── */
@@ -6016,6 +6032,95 @@
   function planEditorRemoveEx(idx) {
     _planDraft.exercises.splice(idx, 1);
     renderLibPlans();
+  }
+
+  /* ── Plan editor drag-and-drop (Pointer Events — works on iOS) ───── */
+  function _planInitDrag(list) {
+    list.style.touchAction = 'none';
+
+    list.addEventListener('pointerdown', function(e) {
+      if (!e.isPrimary) return;
+      const handle = e.target.closest('.plan-ex-handle');
+      if (!handle) return;
+      const dragRow = handle.closest('.plan-ex-item');
+      if (!dragRow) return;
+
+      list.setPointerCapture(e.pointerId);
+      e.preventDefault();
+
+      let dragIdx = parseInt(dragRow.dataset.idx, 10);
+      let lastY   = e.clientY;
+
+      /* Ghost: fixed-position clone that follows the finger */
+      const rect  = dragRow.getBoundingClientRect();
+      const ghost = dragRow.cloneNode(true);
+      Object.assign(ghost.style, {
+        position: 'fixed', left: rect.left + 'px', top: rect.top + 'px',
+        width: rect.width + 'px', margin: '0', zIndex: '9999',
+        opacity: '0.95', pointerEvents: 'none',
+        background: 'var(--card)',
+        boxShadow: '0 6px 24px rgba(0,0,0,.28)',
+        borderRadius: '0.5rem',
+      });
+      document.body.appendChild(ghost);
+      dragRow.classList.add('dragging');
+
+      function _refreshRows() {
+        list.querySelectorAll('.plan-ex-item').forEach((r, i) => {
+          r.dataset.idx = i;
+          const num = r.querySelector('.plan-ex-num');
+          if (num) num.textContent = i + 1;
+          const del = r.querySelector('.plan-ex-del');
+          if (del) del.setAttribute('onclick', `planEditorRemoveEx(${i})`);
+          r.classList.toggle('dragging', i === dragIdx);
+        });
+      }
+
+      function onMove(e) {
+        if (!e.isPrimary) return;
+        ghost.style.top = (parseFloat(ghost.style.top) + (e.clientY - lastY)) + 'px';
+        lastY = e.clientY;
+
+        for (const row of list.querySelectorAll('.plan-ex-item')) {
+          if (row === dragRow) continue;
+          const r      = row.getBoundingClientRect();
+          const mid    = r.top + r.height / 2;
+          const rowIdx = parseInt(row.dataset.idx, 10);
+          const shouldSwap = (rowIdx > dragIdx && e.clientY > mid) ||
+                             (rowIdx < dragIdx && e.clientY < mid);
+          if (!shouldSwap) continue;
+
+          /* Swap in data array and reinsert DOM node */
+          [_planDraft.exercises[dragIdx], _planDraft.exercises[rowIdx]] =
+            [_planDraft.exercises[rowIdx], _planDraft.exercises[dragIdx]];
+
+          /* Move DOM: insert dragRow before or after the target row */
+          if (rowIdx < dragIdx) {
+            list.insertBefore(dragRow, row);
+          } else {
+            list.insertBefore(dragRow, row.nextSibling);
+          }
+          dragIdx = rowIdx;
+          _refreshRows();
+          break;
+        }
+      }
+
+      function onEnd(e) {
+        if (!e.isPrimary) return;
+        ghost.remove();
+        list.querySelectorAll('.plan-ex-item').forEach(r => r.classList.remove('dragging'));
+        list.removeEventListener('pointermove',   onMove);
+        list.removeEventListener('pointerup',     onEnd);
+        list.removeEventListener('pointercancel', onEnd);
+        /* Persist the reordered exercises immediately */
+        localStorage.setItem('plans', JSON.stringify(plans));
+      }
+
+      list.addEventListener('pointermove',   onMove);
+      list.addEventListener('pointerup',     onEnd);
+      list.addEventListener('pointercancel', onEnd);
+    });
   }
 
   function savePlan() {
