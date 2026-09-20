@@ -159,9 +159,12 @@
     }
 
     /* ── Layout shell ─────────────────────────────────────── */
-    html, body { height: 100%; }
-    @supports (height: 100dvh) {
-      html, body { height: 100dvh; }
+    /* svh = "small viewport height" — iOS does NOT recalculate it when the
+       keyboard opens, so the layout stays stable. vh fallback for older browsers. */
+    html, body {
+      height: 100vh;           /* fallback */
+      height: 100svh;          /* stable: ignores keyboard on iOS 16+ / Safari 15.4+ */
+      overflow: hidden;        /* the window must never scroll — only .scroll-area does */
     }
 
     body {
@@ -173,7 +176,6 @@
       width: 100%;
       max-width: min(430px, 100%);
       margin: 0 auto;
-      overflow: hidden;          /* scroll lives inside .scroll-area only   */
       position: relative;        /* contain absolute overlays within the frame */
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -4155,7 +4157,7 @@
     row.innerHTML = `
       <div class="set-badge">${setNum}</div>
       <input class="set-input" type="number" placeholder="—" min="0" step="0.5" inputmode="decimal" />
-      <input class="set-input" type="number" placeholder="—" min="0" step="1"   inputmode="numeric" />
+      <input class="set-input" type="number" placeholder="—" min="0" step="1"   inputmode="decimal" />
       <span class="set-intensity-badge"></span>
       <button class="btn-delete-set" onclick="removeSet('${sid}','${exId}')" title="Remove set">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
@@ -4370,7 +4372,7 @@
         row.innerHTML = `
           <div class="set-badge">${idx + 1}</div>
           <input class="set-input" type="number" placeholder="—" min="0" step="0.5" inputmode="decimal" value="${setData.kg || ''}" />
-          <input class="set-input" type="number" placeholder="—" min="0" step="1" inputmode="numeric" value="${setData.reps || ''}" />
+          <input class="set-input" type="number" placeholder="—" min="0" step="1" inputmode="decimal" value="${setData.reps || ''}" />
           <span class="set-intensity-badge"></span>
           <button class="btn-delete-set" onclick="removeSet('${sid}','${id}')" title="Remove set">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
@@ -7110,28 +7112,16 @@
     }, { passive: true });
   })();
 
-  /* ── iOS keyboard layout-shift prevention ──────────────────────────
-     Bug 1: iOS Safari scrolls the window when any input is focused,
-     displacing fixed nav elements. We snap back on focusin (immediate)
-     and on every visualViewport resize (catches the keyboard animation).
-
-     Bug 2: Killer overlay height is locked at open time (see openKillerSet).
-     The visualViewport resize handler does NOT update that locked height
-     so the flex container can't collapse while the keyboard is open.    */
-
-  /* Snap window scroll on input focus (catches iOS auto-scroll-to-input) */
+  /* ── iOS keyboard: scroll only the content area, not the window ────
+     The window is locked (html,body overflow:hidden + 100svh).
+     When a set-input is focused and may be hidden behind the keyboard,
+     scrollIntoView on the nearest scroll container (.scroll-area) brings
+     it into view without moving anything else.                          */
   document.addEventListener('focusin', (e) => {
-    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') return;
-    requestAnimationFrame(() => window.scrollTo(0, 0));
-    setTimeout(() => window.scrollTo(0, 0), 80);
+    if (!e.target.classList.contains('set-input')) return;
+    const el = e.target;
+    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
   });
-
-  /* Snap again whenever the visual viewport resizes (keyboard open/close) */
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', () => {
-      window.scrollTo(0, 0);
-    });
-  }
 </script>
 </body>
 </html>
