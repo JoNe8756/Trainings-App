@@ -980,6 +980,92 @@
     .chart-wrap          { padding: 0.5rem 0 0; }
     canvas.chart-canvas  { display: block; }
 
+    /* ── Sticky progress nav bar ─────────────────────────── */
+    #progress-screen .nav-bar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--glass-nav);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      padding-bottom: 0.625rem;
+    }
+
+    /* ── Global progress mode bar ────────────────────────── */
+    #progress-mode-bar {
+      position: sticky;
+      top: 0; /* updated by JS after nav renders */
+      z-index: 15;
+      background: var(--glass-nav);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      padding: 0.5rem var(--gutter);
+      display: flex;
+      justify-content: center;
+    }
+    #progress-mode-bar .chart-mode-seg { width: 100%; max-width: 22rem; }
+
+    /* ── Sticky progress category headers ────────────────── */
+    .prog-cat-header {
+      position: sticky;
+      top: 0; /* updated by JS */
+      z-index: 10;
+      background: var(--bg);
+    }
+
+    /* ── Chart mode toggle ────────────────────────────────── */
+    .chart-mode-seg {
+      display: flex;
+      background: var(--fill);
+      border-radius: 0.5rem;
+      padding: 0.125rem;
+      flex-shrink: 0;
+    }
+    .chart-mode-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      border-radius: 0.375rem;
+      padding: 0.3125rem 0.625rem;
+      font-size: 0.75rem;
+      font-family: inherit;
+      font-weight: 500;
+      color: var(--tertiary);
+      cursor: pointer;
+      transition: background .15s, color .15s, box-shadow .15s;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .chart-mode-btn.active {
+      background: var(--card);
+      color: #007AFF;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,.12);
+    }
+
+    /* ── Progress category folders ───────────────────────── */
+    .prog-cat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.375rem var(--gutter) 0.5rem;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .prog-cat-name {
+      font-size: 0.8125rem;
+      font-weight: 400;
+      color: var(--tertiary);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+    }
+    .prog-cat-chevron {
+      font-size: 0.75rem;
+      color: var(--tertiary);
+      line-height: 1;
+    }
+
     /* ── Toast ────────────────────────────────────────────── */
     .toast {
       position: absolute;
@@ -2826,7 +2912,7 @@
         <div class="freq-goal-label" id="freq-goal-period-label">Weekly Goal</div>
         <button class="freq-goal-edit-btn" onclick="openFreqGoalEditor()">Edit</button>
       </div>
-      <div class="freq-goal-count"><span id="freq-goal-done">0</span><span> / <span id="freq-goal-target">4</span> workouts</span></div>
+      <div class="freq-goal-count"><span id="freq-goal-done">0</span><span> / <span id="freq-goal-target">4</span> <span id="freq-goal-period-suffix">this week</span></span></div>
       <div class="freq-goal-bar-track"><div class="freq-goal-bar-fill" id="freq-goal-bar" style="width:0%"></div></div>
       <div class="freq-goal-msg" id="freq-goal-msg"></div>
     </div>
@@ -2961,7 +3047,12 @@
     <div class="nav-bar">
       <div class="nav-bar-title">Progress</div>
     </div>
-    <div class="section-header">Exercise Trends</div>
+    <div id="progress-mode-bar" style="display:none">
+      <div class="chart-mode-seg">
+        <button class="chart-mode-btn active" data-mode="reps" onclick="_setProgressMode('reps')">Reps</button>
+        <button class="chart-mode-btn" data-mode="int" onclick="_setProgressMode('int')">Intensity ⚡</button>
+      </div>
+    </div>
     <div id="progress-charts"></div>
     <div style="height:1.5rem"></div>
   </div>
@@ -4763,6 +4854,32 @@
     return map;
   }
 
+  /* ── Pending chart draws per category (populated by renderProgress, consumed on expand) */
+  let _progCatPending = new Map();
+  let _progressMode   = 'reps'; /* resets to 'reps' on every renderProgress call */
+
+  /* ── Build one chart card element (no canvas yet) ───────── */
+  function _buildChartCard(name, sessions) {
+    const maxSets  = Math.max(...sessions.map(s => s.sets.length));
+    const subtitle = sessions.length === 1
+      ? 'Log another session to see your trend'
+      : `${sessions.length} sessions`;
+
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.innerHTML = `
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">${name}</div>
+          <div class="chart-card-subtitle">${subtitle}</div>
+        </div>
+      </div>
+      <div class="chart-wrap" id="wrap-${CSS.escape(name)}"></div>`;
+
+    card._chartData = { name, sessions, maxSets };
+    return { card, maxSets };
+  }
+
   /* ── Render progress screen ─────────────────────────────── */
   function renderProgress() {
     const container = document.getElementById('progress-charts');
@@ -4771,45 +4888,167 @@
 
     if (!names.length) {
       container.innerHTML = emptyState('📈', 'No Data Yet', 'Complete more workouts to see your progress.');
+      const mb = document.getElementById('progress-mode-bar');
+      if (mb) mb.style.display = 'none';
       return;
     }
 
     container.innerHTML = '';
+    _progCatPending = new Map();
+    _progressMode   = 'reps';
+    const modeBar = document.getElementById('progress-mode-bar');
+    if (modeBar) {
+      modeBar.style.display = '';
+      modeBar.querySelectorAll('.chart-mode-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.mode === 'reps'));
+    }
 
+    /* Build exercise→category reverse map from the library */
+    const lib = getExLib();
+    const nameTocat = {};
+    EX_CATS.forEach(cat => (lib[cat] || []).forEach(n => { nameTocat[n] = cat; }));
+
+    /* Group exercises by category, recording last session date */
+    const catGroups = {}; /* cat → [{name, lastDate}] */
     names.forEach(name => {
       const sessions = data[name];
-      const maxSets  = Math.max(...sessions.map(s => s.sets.length));
+      const lastDate = sessions[sessions.length - 1]?.date || '';
+      const cat = nameTocat[name] || 'Other';
+      if (!catGroups[cat]) catGroups[cat] = [];
+      catGroups[cat].push({ name, lastDate });
+    });
 
-      const legendHTML = maxSets > 1
-        ? Array.from({ length: maxSets }, (_, i) =>
-            `<span class="legend-item">
-               <span class="legend-swatch" style="background:${setColor(i)}"></span>Set ${i + 1}
-             </span>`).join('')
-        : '';
+    /* Sort each category: most-recently-performed first, never-performed alpha at bottom */
+    Object.values(catGroups).forEach(arr =>
+      arr.sort((a, b) => {
+        if (!a.lastDate && !b.lastDate) return a.name.localeCompare(b.name);
+        if (!a.lastDate) return 1;
+        if (!b.lastDate) return -1;
+        return new Date(b.lastDate) - new Date(a.lastDate);
+      })
+    );
 
-      const subtitle = sessions.length === 1
-        ? 'Log another session to see your trend'
-        : `${sessions.length} sessions`;
+    /* Find the category with the globally most-recent exercise */
+    let mostRecentCat = null, mostRecentDate = '';
+    [...EX_CATS, 'Other'].forEach(cat => {
+      if (!catGroups[cat]) return;
+      const d = catGroups[cat][0]?.lastDate || '';
+      if (d > mostRecentDate) { mostRecentDate = d; mostRecentCat = cat; }
+    });
 
-      const card = document.createElement('div');
-      card.className = 'chart-card';
-      card.innerHTML = `
-        <div class="chart-card-header">
-          <div>
-            <div class="chart-card-title">${name}</div>
-            <div class="chart-card-subtitle">${subtitle}</div>
-          </div>
-          <div class="chart-legend">${legendHTML}</div>
-        </div>
-        <div class="chart-wrap" id="wrap-${CSS.escape(name)}"></div>
-        <div class="chart-section-label">⚡ Intensity Index</div>
-        <div class="chart-wrap" id="int-wrap-${CSS.escape(name)}"></div>`;
-      container.appendChild(card);
+    /* Load persisted collapse state; first visit → only mostRecentCat open */
+    let savedCollapsed;
+    try { savedCollapsed = JSON.parse(localStorage.getItem('progCatCollapsed') || 'null'); } catch(e) {}
+    const getCollapsed = cat =>
+      savedCollapsed ? (savedCollapsed[cat] !== undefined ? savedCollapsed[cat] : true)
+                     : cat !== mostRecentCat;
 
-      requestAnimationFrame(() => {
-        drawChart(name, sessions, maxSets);
-        drawIntensityChart(name, sessions);
+    /* Render one folder per category that has data */
+    [...EX_CATS, 'Other'].forEach(cat => {
+      const group = catGroups[cat];
+      if (!group || !group.length) return;
+
+      const isCollapsed = getCollapsed(cat);
+
+      const folder = document.createElement('div');
+      folder.className = 'prog-cat-folder';
+
+      const header = document.createElement('div');
+      header.className = 'prog-cat-header';
+      header.innerHTML = `<span class="prog-cat-name">${cat}</span><span class="prog-cat-chevron">${isCollapsed ? '▸' : '▾'}</span>`;
+      header.addEventListener('click', () => _toggleProgCat(cat));
+      folder.appendChild(header);
+
+      const body = document.createElement('div');
+      body.className = 'prog-cat-body';
+      body.id = 'prog-cat-body-' + cat;
+      if (isCollapsed) body.style.display = 'none';
+      folder.appendChild(body);
+      container.appendChild(folder);
+
+      /* Build card elements and record pending draws */
+      const pending = [];
+      group.forEach(({ name }) => {
+        const sessions       = data[name];
+        const { card, maxSets } = _buildChartCard(name, sessions);
+        body.appendChild(card);
+        pending.push({ name, sessions, maxSets });
       });
+      _progCatPending.set(cat, pending);
+
+      /* Draw charts immediately for the expanded folder */
+      if (!isCollapsed) {
+        requestAnimationFrame(() => {
+          pending.forEach(({ name, sessions, maxSets }) => {
+            _drawChartForMode(name, sessions, maxSets);
+          });
+          _progCatPending.delete(cat);
+        });
+      }
+    });
+
+    /* Set sticky top offsets after layout */
+    requestAnimationFrame(() => {
+      const nav     = document.querySelector('#progress-screen .nav-bar');
+      const modeBar = document.getElementById('progress-mode-bar');
+      const navH    = nav ? nav.offsetHeight : 0;
+      const modeH   = modeBar ? modeBar.offsetHeight : 0;
+      if (modeBar) modeBar.style.top = navH + 'px';
+      const catTop = navH + modeH;
+      document.querySelectorAll('#progress-charts .prog-cat-header').forEach(h => {
+        h.style.top = catTop + 'px';
+      });
+    });
+  }
+
+  /* ── Toggle a progress category folder ─────────────────── */
+  function _toggleProgCat(cat) {
+    const body   = document.getElementById('prog-cat-body-' + cat);
+    const folder = body?.closest('.prog-cat-folder');
+    if (!body || !folder) return;
+
+    const expanding = body.style.display === 'none';
+    body.style.display = expanding ? '' : 'none';
+
+    const chevron = folder.querySelector('.prog-cat-chevron');
+    if (chevron) chevron.textContent = expanding ? '▾' : '▸';
+
+    /* Persist */
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem('progCatCollapsed') || '{}'); } catch(e) {}
+    saved[cat] = !expanding;
+    localStorage.setItem('progCatCollapsed', JSON.stringify(saved));
+
+    /* Draw charts lazily on first expand */
+    if (expanding && _progCatPending.has(cat)) {
+      const pending = _progCatPending.get(cat);
+      _progCatPending.delete(cat);
+      requestAnimationFrame(() => {
+        pending.forEach(({ name, sessions, maxSets }) => {
+          _drawChartForMode(name, sessions, maxSets);
+        });
+      });
+    }
+  }
+
+  /* ── Dispatch to the currently-active mode ─────────────── */
+  function _drawChartForMode(name, sessions, maxSets) {
+    if (_progressMode === 'int') drawIntensityWithPR(name, sessions);
+    else                         drawChart(name, sessions, maxSets);
+  }
+
+  /* ── Global mode toggle — redraws all visible cards ─────── */
+  function _setProgressMode(mode) {
+    if (_progressMode === mode) return;
+    _progressMode = mode;
+    document.querySelectorAll('#progress-mode-bar .chart-mode-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.mode === mode));
+    document.querySelectorAll('#progress-charts .chart-card').forEach(card => {
+      const d    = card._chartData;
+      const wrap = card.querySelector('.chart-wrap');
+      if (!d || !wrap || !wrap.clientWidth) return; /* skip collapsed/invisible */
+      wrap.innerHTML = '';
+      _drawChartForMode(d.name, d.sessions, d.maxSets);
     });
   }
 
@@ -4838,8 +5077,10 @@
     const cW  = W - PAD.left - PAD.right;
     const cH  = H - PAD.top  - PAD.bottom;
 
-    const allReps = sessions.flatMap(s => s.sets.map(st => st.reps));
-    const yTicks  = niceYTicks(0, Math.max(...allReps, 1), 4);
+    /* Best set per session: highest-rep set from each session */
+    const bestReps = sessions.map(s => Math.max(0, ...s.sets.map(st => st.reps)));
+
+    const yTicks  = niceYTicks(0, Math.max(...bestReps, 1), 4);
     const yMin    = yTicks[0];
     const yMax    = yTicks[yTicks.length - 1];
 
@@ -4847,10 +5088,12 @@
       ? PAD.left + cW / 2
       : PAD.left + (i / (sessions.length - 1)) * cW;
     const yOf = r => PAD.top + (1 - (r - yMin) / (yMax - yMin)) * cH;
+    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
     const labelColor = dark ? 'rgba(160,160,168,0.85)' : 'rgba(60,60,67,0.50)';
     const gridColor  = dark ? 'rgba(255,255,255,0.10)' : 'rgba(60,60,67,0.08)';
     const dotFill    = dark ? '#242426' : '#FFFFFF';
+    const color      = setColor(0);
 
     /* grid */
     ctx.save();
@@ -4885,44 +5128,228 @@
     });
     ctx.restore();
 
-    /* lines + fills + dots per set */
-    for (let si = 0; si < maxSets; si++) {
-      const color = setColor(si);
-      const pts   = sessions
-        .map((s, di) => s.sets[si] !== undefined ? { x: xOf(di), y: yOf(s.sets[si].reps) } : null)
-        .filter(Boolean);
+    const pts = bestReps.map((r, i) => ({ x: xOf(i), y: yOf(r) }));
 
-      if (!pts.length) continue;
+    /* area fill + data line */
+    if (pts.length > 1) {
+      const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
+      grad.addColorStop(0, hexAlpha(color, 0.14));
+      grad.addColorStop(1, hexAlpha(color, 0));
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, yOf(yMin));
+      pts.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(pts[pts.length - 1].x, yOf(yMin));
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
 
-      if (pts.length > 1) {
-        const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
-        grad.addColorStop(0, hexAlpha(color, 0.14));
-        grad.addColorStop(1, hexAlpha(color, 0));
-        ctx.beginPath();
-        ctx.moveTo(pts[0].x, yOf(yMin));
-        pts.forEach(p => ctx.lineTo(p.x, p.y));
-        ctx.lineTo(pts[pts.length - 1].x, yOf(yMin));
-        ctx.closePath();
-        ctx.fillStyle = grad;
-        ctx.fill();
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 2;
+      ctx.lineJoin    = 'round';
+      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    }
 
-        ctx.beginPath();
-        ctx.strokeStyle = color;
-        ctx.lineWidth   = 2;
-        ctx.lineJoin    = 'round';
-        pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-        ctx.stroke();
-      }
-
-      pts.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
-        ctx.fillStyle   = dotFill;
-        ctx.fill();
-        ctx.strokeStyle = color;
-        ctx.lineWidth   = 2.5;
-        ctx.stroke();
+    /* trend line: 5-session rolling average */
+    if (pts.length > 1) {
+      const trendColor = dark ? 'rgba(255,255,255,0.30)' : 'rgba(60,60,67,0.22)';
+      ctx.save();
+      ctx.strokeStyle = trendColor;
+      ctx.lineWidth   = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.lineJoin    = 'round';
+      ctx.beginPath();
+      bestReps.forEach((_, i) => {
+        const window = bestReps.slice(Math.max(0, i - 6), i + 1);
+        const avg = window.reduce((s, v) => s + v, 0) / window.length;
+        i === 0 ? ctx.moveTo(xOf(i), yOf(clamp(avg, yMin, yMax)))
+                : ctx.lineTo(xOf(i), yOf(clamp(avg, yMin, yMax)));
       });
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* dots */
+    pts.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle   = dotFill;
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 2.5;
+      ctx.stroke();
+    });
+
+    /* PR marker: gold dot + label on the all-time best session */
+    const prVal = Math.max(...bestReps);
+    if (prVal > 0) {
+      const prIdx = bestReps.lastIndexOf(prVal);
+      const px = xOf(prIdx);
+      const py = yOf(prVal);
+      ctx.beginPath();
+      ctx.arc(px, py, 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFD700';
+      ctx.fill();
+      ctx.save();
+      ctx.fillStyle    = '#FFD700';
+      ctx.font         = '700 9px -apple-system, sans-serif';
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('PR', px, py - 7);
+      ctx.restore();
+    }
+  }
+
+  /* ── Intensity chart with PR + trend (toggle mode) ─────── */
+  function drawIntensityWithPR(name, sessions) {
+    const wrap = document.getElementById('wrap-' + CSS.escape(name));
+    if (!wrap) return;
+
+    const values = sessions.map(s => calcSessionIntensity(name, s.sets));
+    if (values.every(v => v === 0)) {
+      wrap.innerHTML = '<div style="text-align:center;padding:1.5rem 0;font-size:.8125rem;color:var(--tertiary)">Log weight or reps to see intensity</div>';
+      return;
+    }
+
+    const dark = isDark();
+    const dpr  = window.devicePixelRatio || 1;
+    const W    = wrap.clientWidth;
+    const H    = Math.min(220, Math.max(140, Math.round(W * 0.48)));
+
+    const canvas = document.createElement('canvas');
+    canvas.className    = 'chart-canvas';
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width        = W * dpr;
+    canvas.height       = H * dpr;
+    wrap.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const PAD = { top: 14, right: 20, bottom: 38, left: 44 };
+    const cW  = W - PAD.left - PAD.right;
+    const cH  = H - PAD.top  - PAD.bottom;
+
+    const yTicks = niceYTicks(0, Math.max(...values, 1), 4);
+    const yMin   = yTicks[0];
+    const yMax   = yTicks[yTicks.length - 1];
+
+    const xOf = i => sessions.length === 1
+      ? PAD.left + cW / 2
+      : PAD.left + (i / (sessions.length - 1)) * cW;
+    const yOf = v => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * cH;
+    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+    const color      = dark ? '#0A84FF' : '#007AFF';
+    const labelColor = dark ? 'rgba(160,160,168,0.85)' : 'rgba(60,60,67,0.50)';
+    const gridColor  = dark ? 'rgba(255,255,255,0.10)' : 'rgba(60,60,67,0.08)';
+    const dotFill    = dark ? '#242426' : '#FFFFFF';
+
+    /* grid */
+    ctx.save();
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth   = 0.5;
+    yTicks.forEach(t => {
+      ctx.beginPath();
+      ctx.moveTo(PAD.left, yOf(t));
+      ctx.lineTo(PAD.left + cW, yOf(t));
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    /* y-axis labels */
+    ctx.save();
+    ctx.fillStyle    = labelColor;
+    ctx.font         = '400 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    yTicks.forEach(t => ctx.fillText(fmtInt(t), PAD.left - 7, yOf(t)));
+    ctx.restore();
+
+    /* x-axis labels */
+    ctx.save();
+    ctx.fillStyle    = labelColor;
+    ctx.font         = '400 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    const xIdxs = pickLabelIdxs(sessions.length, 5);
+    sessions.forEach((s, i) => {
+      if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9);
+    });
+    ctx.restore();
+
+    const pts = values.map((v, i) => ({ x: xOf(i), y: yOf(v) }));
+
+    /* area fill + data line */
+    if (pts.length > 1) {
+      const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
+      grad.addColorStop(0, hexAlpha(color, 0.14));
+      grad.addColorStop(1, hexAlpha(color, 0));
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, yOf(yMin));
+      pts.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(pts[pts.length - 1].x, yOf(yMin));
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 2;
+      ctx.lineJoin    = 'round';
+      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    }
+
+    /* trend line: 7-session rolling average */
+    if (pts.length > 1) {
+      const trendColor = dark ? 'rgba(255,255,255,0.30)' : 'rgba(60,60,67,0.22)';
+      ctx.save();
+      ctx.strokeStyle = trendColor;
+      ctx.lineWidth   = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.lineJoin    = 'round';
+      ctx.beginPath();
+      values.forEach((_, i) => {
+        const win = values.slice(Math.max(0, i - 6), i + 1);
+        const avg = win.reduce((s, v) => s + v, 0) / win.length;
+        i === 0 ? ctx.moveTo(xOf(i), yOf(clamp(avg, yMin, yMax)))
+                : ctx.lineTo(xOf(i), yOf(clamp(avg, yMin, yMax)));
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* dots */
+    pts.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle   = dotFill;
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 2.5;
+      ctx.stroke();
+    });
+
+    /* PR marker */
+    const prVal = Math.max(...values);
+    if (prVal > 0) {
+      const prIdx = values.lastIndexOf(prVal);
+      const px = xOf(prIdx);
+      const py = yOf(prVal);
+      ctx.beginPath();
+      ctx.arc(px, py, 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFD700';
+      ctx.fill();
+      ctx.save();
+      ctx.fillStyle    = '#FFD700';
+      ctx.font         = '700 9px -apple-system, sans-serif';
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('PR', px, py - 7);
+      ctx.restore();
     }
   }
 
@@ -6588,22 +7015,28 @@
     else       localStorage.removeItem('freqGoal');
   }
 
-  /* Count workouts within the current period window */
+  /* Count workouts within the current period window.
+     Always derived fresh from workout history — never from a stored counter.
+     Uses new Date(y, m, d) to construct local midnight precisely (no setHours ambiguity),
+     then compares epoch ms so timezone handling is unambiguous. */
   function countWorkoutsInPeriod(period) {
-    const now  = new Date();
-    let start;
+    const now = new Date();
+    let startMs;
     if (period === 'week') {
-      /* Monday of the current week */
-      const day = now.getDay();           /* 0=Sun … 6=Sat */
-      const diff = (day === 0 ? -6 : 1 - day);
-      start = new Date(now);
-      start.setDate(now.getDate() + diff);
-      start.setHours(0, 0, 0, 0);
+      /* Walk back to the most recent Monday (ISO week) */
+      const day = now.getDay(); /* 0=Sun … 6=Sat */
+      const daysBack = day === 0 ? 6 : day - 1;
+      const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysBack);
+      startMs = monday.getTime();
     } else {
-      /* 1st of the current month */
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      /* 1st of the current calendar month, local midnight */
+      startMs = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     }
-    return workouts.filter(w => new Date(w.date) >= start).length;
+    return workouts.filter(w => {
+      if (!w.date) return false;
+      const t = new Date(w.date).getTime();
+      return !isNaN(t) && t >= startMs;
+    }).length;
   }
 
   function freqGoalMsg(done, target) {
@@ -6628,11 +7061,13 @@
     const target = goal.count;
     const pct    = Math.min(100, Math.round(done / target * 100));
     const label  = goal.period === 'week' ? 'Weekly Goal' : 'Monthly Goal';
+    const suffix = goal.period === 'week' ? 'this week'   : 'this month';
 
-    document.getElementById('freq-goal-period-label').textContent = label;
-    document.getElementById('freq-goal-done').textContent         = done;
-    document.getElementById('freq-goal-target').textContent       = target;
-    document.getElementById('freq-goal-msg').textContent          = freqGoalMsg(done, target);
+    document.getElementById('freq-goal-period-label').textContent  = label;
+    document.getElementById('freq-goal-done').textContent          = done;
+    document.getElementById('freq-goal-target').textContent        = target;
+    document.getElementById('freq-goal-period-suffix').textContent = suffix;
+    document.getElementById('freq-goal-msg').textContent           = freqGoalMsg(done, target);
 
     const bar = document.getElementById('freq-goal-bar');
     bar.style.width = pct + '%';
