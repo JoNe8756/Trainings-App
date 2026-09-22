@@ -340,6 +340,67 @@
     }
     .btn-finish:active { opacity: .82; box-shadow: 0 2px 6px rgba(50,200,100,.20), inset 0 1px 0 rgba(255,255,255,.15); }
 
+    /* ── Pause button ─────────────────────────────────────── */
+    .btn-pause {
+      background: none;
+      border: none;
+      font-size: 1.125rem;
+      line-height: 1;
+      color: var(--tertiary);
+      cursor: pointer;
+      padding: 0.25rem 0.375rem;
+      margin-left: auto;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      transition: color .15s;
+    }
+    .btn-pause:active { color: var(--label); }
+
+    /* ── Pause overlay ────────────────────────────────────── */
+    #pause-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1500;
+      background: rgba(0,0,0,.75);
+      backdrop-filter: blur(12px) saturate(150%);
+      -webkit-backdrop-filter: blur(12px) saturate(150%);
+      align-items: center;
+      justify-content: center;
+    }
+    #pause-overlay.open { display: flex; }
+    .pause-card {
+      text-align: center;
+      padding: 2rem;
+    }
+    .pause-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -.4px;
+      color: #fff;
+      margin-bottom: 0.375rem;
+    }
+    .pause-sub {
+      font-size: 0.9375rem;
+      color: rgba(255,255,255,.55);
+      margin-bottom: 2.5rem;
+    }
+    .pause-resume-btn {
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 1.5rem;
+      font-size: 1.125rem;
+      font-family: inherit;
+      font-weight: 700;
+      padding: 0.875rem 2.5rem;
+      cursor: pointer;
+      letter-spacing: -.2px;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity .15s;
+    }
+    .pause-resume-btn:active { opacity: .75; }
+
     /* ── Timer ────────────────────────────────────────────── */
     .timer-block {
       margin: 0.625rem var(--gutter) 0.75rem;
@@ -359,7 +420,6 @@
       background: var(--red);
       animation: blink 1.6s ease-in-out infinite;
       flex-shrink: 0;
-      margin-left: auto;
     }
     @keyframes blink {
       0%,100% { opacity: 1; transform: scale(1); }
@@ -3119,6 +3179,7 @@
       <div id="timer">00:00</div>
     </div>
     <div class="timer-dot"></div>
+    <button class="btn-pause" id="btn-pause" onclick="togglePauseWorkout()" title="Pause workout">⏸</button>
   </div>
   <div class="scroll-area">
     <div class="section-header">Exercises</div>
@@ -3677,8 +3738,11 @@
   let workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
   let plans    = JSON.parse(localStorage.getItem('plans')    || '[]');
   let activePlanData = null;   /* { planName, exercises[], nextIndex } when plan workout running */
-  let timerInterval  = null;
-  let timerSeconds   = 0;
+  let timerInterval    = null;
+  let timerSeconds     = 0; /* kept in sync for display; source of truth is timestamps */
+  let _workoutStartTs  = 0; /* Date.now() when workout started (or restored) */
+  let _workoutPausedMs = 0; /* total ms spent paused */
+  let _workoutPausedAt = 0; /* Date.now() when last pause began, 0 = not paused */
   let exerciseCount  = 0;
   let _workoutActive = false;  /* true while a workout is in progress */
 
@@ -4094,27 +4158,78 @@
     }
   }
 
-  /* ── Timer ──────────────────────────────────────────────── */
+  /* ── Timer (timestamp-based, drift-free) ───────────────── */
+  let _workoutPaused = false;
+
+  function _calcElapsedSeconds() {
+    const pausedAt = _workoutPausedAt || (_workoutPaused ? Date.now() : 0);
+    const extraPaused = pausedAt ? (Date.now() - pausedAt) : 0;
+    return Math.floor((Date.now() - _workoutStartTs - _workoutPausedMs - extraPaused) / 1000);
+  }
+
   function startTimer(fromSeconds) {
-    timerSeconds = fromSeconds || 0;
+    _workoutPaused   = false;
+    _workoutPausedAt = 0;
+    /* back-calculate startTs so elapsed equals fromSeconds right now */
+    _workoutStartTs  = Date.now() - (fromSeconds || 0) * 1000;
+    _workoutPausedMs = 0;
+    document.getElementById('pause-overlay')?.classList.remove('open');
+    const btn = document.getElementById('btn-pause');
+    if (btn) btn.textContent = '⏸';
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
-      timerSeconds++;
       _tickTimer();
-      /* auto-save timer every 5 seconds so a refresh restores close to correct time */
       if (timerSeconds % 5 === 0) persistActiveWorkout();
     }, 1000);
     _tickTimer();
   }
 
   function _tickTimer() {
-    const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
-    const s = String(timerSeconds % 60).padStart(2, '0');
+    timerSeconds = _calcElapsedSeconds();
+    const m   = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+    const s   = String(timerSeconds % 60).padStart(2, '0');
     const txt = m + ':' + s;
     const timerEl = document.getElementById('timer');
     if (timerEl) timerEl.textContent = txt;
     const bannerTimer = document.getElementById('resume-banner-timer');
     if (bannerTimer) bannerTimer.textContent = txt;
+  }
+
+  /* Recalculate immediately when page becomes visible again */
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && _workoutActive && !_workoutPaused) _tickTimer();
+  });
+
+  /* ── Pause / resume ─────────────────────────────────────── */
+  function togglePauseWorkout() {
+    _workoutPaused ? _resumeWorkoutTimer() : _pauseWorkoutTimer();
+  }
+
+  function _pauseWorkoutTimer() {
+    _workoutPaused   = true;
+    _workoutPausedAt = Date.now();
+    clearInterval(timerInterval);
+    timerInterval = null;
+    document.getElementById('pause-overlay').classList.add('open');
+    const btn = document.getElementById('btn-pause');
+    if (btn) btn.textContent = '▶';
+  }
+
+  function _resumeWorkoutTimer() {
+    if (_workoutPausedAt) {
+      _workoutPausedMs += Date.now() - _workoutPausedAt;
+      _workoutPausedAt = 0;
+    }
+    _workoutPaused = false;
+    document.getElementById('pause-overlay').classList.remove('open');
+    const btn = document.getElementById('btn-pause');
+    if (btn) btn.textContent = '⏸';
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      _tickTimer();
+      if (timerSeconds % 5 === 0) persistActiveWorkout();
+    }, 1000);
+    _tickTimer();
   }
 
   /* ── Exercise picker ────────────────────────────────────── */
@@ -4501,6 +4616,8 @@
   }
 
   function _doFinishWorkout() {
+    _workoutPaused   = false;
+    document.getElementById('pause-overlay')?.classList.remove('open');
     clearInterval(timerInterval);
     const exercises = [];
 
@@ -4532,7 +4649,8 @@
       });
     }
 
-    const workout = { id: Date.now(), date: new Date().toISOString(), duration: timerSeconds, exercises,
+    const finalSeconds = _workoutStartTs ? _calcElapsedSeconds() : timerSeconds;
+    const workout = { id: Date.now(), date: new Date().toISOString(), duration: finalSeconds, exercises,
       ...(activePlanData?.planName && { planName: activePlanData.planName }),
       ...(_completedWarmup && { warmup: _completedWarmup }) };
     _completedWarmup = null;
@@ -4568,6 +4686,11 @@
   }
 
   function _doDiscardWorkout() {
+    _workoutPaused   = false;
+    _workoutStartTs  = 0;
+    _workoutPausedMs = 0;
+    _workoutPausedAt = 0;
+    document.getElementById('pause-overlay')?.classList.remove('open');
     clearInterval(timerInterval);
     _workoutActive = false;
     activePlanData = null;
@@ -4625,6 +4748,9 @@
     }
     const snap = {
       timerSeconds,
+      workoutStartTs:  _workoutStartTs,
+      workoutPausedMs: _workoutPausedMs,
+      workoutPausedAt: _workoutPausedAt,
       exercises,
       activePlanData:  activePlanData ? JSON.parse(JSON.stringify(activePlanData)) : null,
       killerRoutine:   killerVisible ? [..._killerRoutine]  : null,
@@ -4727,8 +4853,24 @@
     /* Restore plan UI */
     if (activePlanData) { updatePlanBanner(); updateNextExBtn(); }
 
-    /* Resume timer from where we left off */
-    startTimer(snap.timerSeconds || 0);
+    /* Resume timer — use saved timestamps if available, fall back to timerSeconds */
+    if (snap.workoutStartTs) {
+      _workoutStartTs  = snap.workoutStartTs;
+      _workoutPausedMs = snap.workoutPausedMs || 0;
+      _workoutPausedAt = snap.workoutPausedAt || 0;
+      _workoutPaused   = false;
+      document.getElementById('pause-overlay')?.classList.remove('open');
+      const btn = document.getElementById('btn-pause');
+      if (btn) btn.textContent = '⏸';
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        _tickTimer();
+        if (timerSeconds % 5 === 0) persistActiveWorkout();
+      }, 1000);
+      _tickTimer();
+    } else {
+      startTimer(snap.timerSeconds || 0);
+    }
 
     /* Don't auto-navigate to workout — show the banner on whatever tab is active */
     updateResumeBanner();
@@ -7994,6 +8136,15 @@
     setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
   });
 </script>
+
+<!-- ═══════════════ PAUSE OVERLAY ═══════════════ -->
+<div id="pause-overlay">
+  <div class="pause-card">
+    <div class="pause-title">Workout Paused</div>
+    <div class="pause-sub">Timer stopped</div>
+    <button class="pause-resume-btn" onclick="togglePauseWorkout()">▶ Resume</button>
+  </div>
+</div>
 
 <!-- ═══════════════ WORKOUT CONFIRM OVERLAY ═══════════════ -->
 <div id="wc-overlay">
