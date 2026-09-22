@@ -4140,6 +4140,10 @@
 
   /* ── Tab navigation ─────────────────────────────────────── */
   function showTab(tab) {
+    /* Close any floating overlays that could persist across tab switches */
+    document.getElementById('warmup-overlay')?.classList.remove('open');
+    document.getElementById('start-choice')?.classList.remove('open');
+
     ['home', 'progress', 'history', 'exercises'].forEach(t => {
       document.getElementById(t + '-screen').classList.remove('active');
       document.getElementById('tab-' + t).classList.remove('active');
