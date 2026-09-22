@@ -342,19 +342,24 @@
 
     /* ── Pause button ─────────────────────────────────────── */
     .btn-pause {
-      background: none;
+      background: var(--fill);
       border: none;
-      font-size: 1.125rem;
+      border-radius: 50%;
+      font-size: 1.375rem;
       line-height: 1;
-      color: var(--tertiary);
+      color: var(--label);
       cursor: pointer;
-      padding: 0.25rem 0.375rem;
+      width: 2.75rem;
+      height: 2.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       margin-left: auto;
       flex-shrink: 0;
       -webkit-tap-highlight-color: transparent;
-      transition: color .15s;
+      transition: background .15s, transform .1s;
     }
-    .btn-pause:active { color: var(--label); }
+    .btn-pause:active { background: var(--fill-focus); transform: scale(0.93); }
 
     /* ── Pause overlay ────────────────────────────────────── */
     #pause-overlay {
@@ -1040,10 +1045,14 @@
     .legend-item         { display: flex; align-items: center; gap: 0.25rem; font-size: 0.6875rem; color: var(--tertiary); font-weight: 500; white-space: nowrap; }
     .legend-swatch       { width: 0.5rem; height: 0.5rem; border-radius: 50%; flex-shrink: 0; }
     .chart-wrap          { padding: 0.5rem 0 0; }
+    .chart-graph-label   { font-size: .6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--tertiary); padding: .375rem var(--gutter) 0; }
     canvas.chart-canvas  { display: block; }
 
     /* ── Sticky progress nav bar ─────────────────────────── */
-    #progress-screen .nav-bar {
+    #progress-screen .nav-bar,
+    #home-screen .nav-bar,
+    #history-screen .nav-bar,
+    #exercises-screen .nav-bar {
       position: sticky;
       top: 0;
       z-index: 20;
@@ -2736,7 +2745,7 @@
 
     /* ── Warmup overlay ──────────────────────────────────── */
     #warmup-overlay {
-      position: absolute;
+      position: fixed;
       inset: 0;
       background: var(--bg);
       z-index: 850;
@@ -3477,9 +3486,15 @@
     </div>
     <div class="settings-section-header">Warmup</div>
     <div class="settings-card">
+      <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-warmup-general')">
+        <div class="settings-row-icon icon-orange">🔥</div>
+        <div class="settings-row-label">General Warm-up</div>
+        <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
+      </div>
+      <div class="settings-row-separator"></div>
       <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-warmup-edit')">
         <div class="settings-row-icon icon-orange">🔥</div>
-        <div class="settings-row-label">Strength Warmup Routine</div>
+        <div class="settings-row-label">Strength Warm-up</div>
         <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
       </div>
     </div>
@@ -3495,6 +3510,47 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════
+     SETTINGS — GENERAL WARMUP EDITOR
+═══════════════════════════════════════════════════════ -->
+<div id="settings-warmup-general" class="settings-panel sub">
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="settingsPop()">
+      <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+    </button>
+    <div class="settings-nav-title">General Warm-up</div>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-header">Enable</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div class="settings-row-icon icon-orange">🔥</div>
+        <div class="settings-row-label" style="flex:1">
+          General Warm-up
+          <div style="font-size:.75rem;color:var(--tertiary);margin-top:.1rem">Mobility &amp; cardio before every session</div>
+        </div>
+        <label class="settings-toggle">
+          <input type="checkbox" id="wu-gen-toggle" onchange="wuGenToggleChanged(this.checked)" />
+          <div class="settings-toggle-track"></div>
+        </label>
+      </div>
+    </div>
+    <div class="settings-section-header">Exercises &amp; Duration</div>
+    <div class="settings-card" id="wu-gen-list"></div>
+    <div style="padding:.625rem var(--gutter) 0;display:flex;gap:.5rem">
+      <button onclick="wuGenEditAddRow()" style="flex:1;background:var(--card);border:none;border-radius:var(--radius-btn);color:var(--blue);font-size:.9375rem;font-weight:600;padding:.75rem;cursor:pointer;font-family:inherit;box-shadow:var(--shadow)">+ Add Exercise</button>
+    </div>
+    <div style="padding:.75rem var(--gutter) 0;font-size:.8125rem;color:var(--tertiary);line-height:1.5">
+      Tap a field to edit. Changes save automatically when you tap Save.
+    </div>
+    <div style="padding:.75rem var(--gutter) 0;display:flex;gap:.5rem">
+      <button onclick="wuGenEditSave()" style="flex:2;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-btn);font-size:.9375rem;font-weight:600;padding:.875rem;cursor:pointer;font-family:inherit">Save Routine</button>
+      <button onclick="wuGenEditReset()" style="flex:1;background:none;border:1.5px solid var(--red);color:var(--red);border-radius:var(--radius-btn);font-size:.875rem;font-weight:600;padding:.875rem;cursor:pointer;font-family:inherit">Reset</button>
+    </div>
+    <div style="height:1rem"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
      SETTINGS — STRENGTH WARMUP EDITOR
 ═══════════════════════════════════════════════════════ -->
 <div id="settings-warmup-edit" class="settings-panel sub">
@@ -3502,9 +3558,23 @@
     <button class="settings-back-btn" onclick="settingsPop()">
       <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
     </button>
-    <div class="settings-nav-title">Strength Warmup</div>
+    <div class="settings-nav-title">Strength Warm-up</div>
   </div>
   <div class="settings-body">
+    <div class="settings-section-header">Enable</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div class="settings-row-icon icon-orange">🔥</div>
+        <div class="settings-row-label" style="flex:1">
+          Strength Warm-up
+          <div style="font-size:.75rem;color:var(--tertiary);margin-top:.1rem">Pyramid sets before strength training</div>
+        </div>
+        <label class="settings-toggle">
+          <input type="checkbox" id="wu-str-toggle" onchange="wuStrToggleChanged(this.checked)" />
+          <div class="settings-toggle-track"></div>
+        </label>
+      </div>
+    </div>
     <div class="settings-section-header">Exercises &amp; Reps</div>
     <div class="settings-card" id="wu-edit-list"></div>
     <div style="padding:.625rem var(--gutter) 0;display:flex;gap:.5rem">
@@ -3832,7 +3902,7 @@
     /* Pull — bodyweight */
     'Pull-ups':{type:'bw',diff:6},'Chin-ups':{type:'bw',diff:7},
     'Rows':{type:'bw',diff:4},'Muscle-ups':{type:'bw',diff:8},
-    'Fast Muscle-ups':{type:'bw',diff:2},'Slow Transition Muscle-ups':{type:'bw',diff:9},
+    'Fast Muscle-ups':{type:'bw',diff:9},'Slow Transition Muscle-ups':{type:'bw',diff:9},
     'Front Lever Hold':{type:'bw',diff:8,tb:1},'Front Lever Bicycles':{type:'bw',diff:3},
     'Tucked Front Lever Rows':{type:'bw',diff:5},
     'Australian rows':{type:'bw',diff:2},'Archer pull-ups':{type:'bw',diff:7},
@@ -4106,9 +4176,10 @@
 
   function calcSetIntensity(name, reps, kg) {
     const meta = getExMeta(name);
-    const r = parseFloat(reps) || 0;
-    const w = parseFloat(kg)   || 0;
-    if (!r) return 0;
+    const raw  = parseFloat(reps) || 0;
+    const w    = parseFloat(kg)   || 0;
+    if (!raw) return 0;
+    const r = meta.tb ? raw / 6 : raw;  /* isometric: 6 s ≈ 1 dynamic rep */
     const base = meta.type === 'w'
       ? meta.diff * r * (w || 1)
       : meta.diff * r * (1 + w / getUserBW());
@@ -4380,16 +4451,22 @@
   }
 
   function delFromLib(cat, name) {
-    const lib = getExLib();
-    lib[cat] = lib[cat].filter(n => n !== name);
-    setExLib(lib);
-    // Re-render whichever surface is visible
-    if (document.getElementById('exercise-picker').classList.contains('open')) {
-      renderExList(document.getElementById('ex-search').value);
-    }
-    if (document.getElementById('exercises-screen').classList.contains('active')) {
-      renderExScreen();
-    }
+    _wConfirm({
+      title: 'Remove Exercise?',
+      msg: `"${name}" will be removed from the library.`,
+      okLabel: 'Remove', okColor: 'red',
+      onOk: () => {
+        const lib = getExLib();
+        lib[cat] = lib[cat].filter(n => n !== name);
+        setExLib(lib);
+        if (document.getElementById('exercise-picker').classList.contains('open')) {
+          renderExList(document.getElementById('ex-search').value);
+        }
+        if (document.getElementById('exercises-screen').classList.contains('active')) {
+          renderExScreen();
+        }
+      }
+    });
   }
 
   /* ── Start workout — show choice modal ──────────────────── */
@@ -4570,8 +4647,14 @@
   }
 
   function removeExercise(id) {
-    document.getElementById(id)?.remove();
-    persistActiveWorkout();
+    const card = document.getElementById(id);
+    const name = card?.querySelector('.exercise-head input')?.value || 'this exercise';
+    _wConfirm({
+      title: 'Remove Exercise?',
+      msg: `"${name}" and all its sets will be removed.`,
+      okLabel: 'Remove', okColor: 'red',
+      onOk: () => { document.getElementById(id)?.remove(); persistActiveWorkout(); }
+    });
   }
 
   /* ── Add / remove set ───────────────────────────────────── */
@@ -4743,15 +4826,23 @@
 
   /* ── Delete a saved workout ─────────────────────────────── */
   function deleteWorkout(id) {
-    workouts = workouts.filter(w => w.id !== id);
-    persist();
-    const homeActive     = document.getElementById('home-screen').classList.contains('active');
-    const historyActive  = document.getElementById('history-screen').classList.contains('active');
-    const progressActive = document.getElementById('progress-screen')?.classList.contains('active');
-    /* Always recalculate every derived stat from the updated workouts array */
-    if (homeActive)     { renderRecent(); renderFreqGoal(); renderHighlights(); }
-    if (historyActive)  renderHistory();
-    if (progressActive) renderProgress();
+    const w = workouts.find(x => x.id === id);
+    const label = w ? new Date(w.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + (w.planName ? ` · ${w.planName}` : '') : 'this workout';
+    _wConfirm({
+      title: 'Delete Workout?',
+      msg: `"${label}" will be permanently deleted.`,
+      okLabel: 'Delete', okColor: 'red',
+      onOk: () => {
+        workouts = workouts.filter(x => x.id !== id);
+        persist();
+        const homeActive     = document.getElementById('home-screen').classList.contains('active');
+        const historyActive  = document.getElementById('history-screen').classList.contains('active');
+        const progressActive = document.getElementById('progress-screen')?.classList.contains('active');
+        if (homeActive)     { renderRecent(); renderFreqGoal(); renderHighlights(); }
+        if (historyActive)  renderHistory();
+        if (progressActive) renderProgress();
+      }
+    });
   }
 
   /* ── Persist to localStorage ────────────────────────────── */
@@ -5266,7 +5357,10 @@
           <div class="chart-card-subtitle">${subtitle}</div>
         </div>
       </div>
-      <div class="chart-wrap" id="wrap-${CSS.escape(name)}"></div>`;
+      <div class="chart-graph-label">Best Set</div>
+      <div class="chart-wrap" id="wrap-${CSS.escape(name)}"></div>
+      <div class="chart-graph-label" style="margin-top:.5rem">Session Total</div>
+      <div class="chart-wrap" id="int-wrap-${CSS.escape(name)}"></div>`;
 
     card._chartData = { name, sessions, maxSets };
     return { card, maxSets };
@@ -5534,10 +5628,10 @@
     }
   }
 
-  /* ── Dispatch to the currently-active mode ─────────────── */
+  /* ── Dispatch: always draw both stacked graphs ─────────── */
   function _drawChartForMode(name, sessions, maxSets) {
-    if (_progressMode === 'int') drawIntensityWithPR(name, sessions);
-    else                         drawChart(name, sessions, maxSets);
+    drawBestSetChart(name, sessions);
+    drawSessionTotalChart(name, sessions);
   }
 
   /* ── Global mode toggle — redraws all visible cards ─────── */
@@ -5547,15 +5641,327 @@
     document.querySelectorAll('#progress-mode-bar .chart-mode-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.mode === mode));
     document.querySelectorAll('#progress-charts .chart-card').forEach(card => {
-      const d    = card._chartData;
-      const wrap = card.querySelector('.chart-wrap');
-      if (!d || !wrap || !wrap.clientWidth) return; /* skip collapsed/invisible */
-      wrap.innerHTML = '';
+      const d = card._chartData;
+      if (!d) return;
+      const wraps = card.querySelectorAll('.chart-wrap');
+      if (!wraps[0] || !wraps[0].clientWidth) return; /* skip collapsed/invisible */
+      wraps.forEach(w => { w.innerHTML = ''; });
       _drawChartForMode(d.name, d.sessions, d.maxSets);
     });
   }
 
-  /* ── Canvas chart ───────────────────────────────────────── */
+  /* ── Graph 1: Best Set — dual-line (reps + best-set intensity) ── */
+  function drawBestSetChart(name, sessions) {
+    const wrap = document.getElementById('wrap-' + CSS.escape(name));
+    if (!wrap) return;
+
+    const dark = isDark();
+    const dpr  = window.devicePixelRatio || 1;
+    const W    = wrap.clientWidth;
+    const H    = Math.min(220, Math.max(140, Math.round(W * 0.48)));
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'chart-canvas';
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    wrap.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    /* data */
+    const bestReps = sessions.map(s =>
+      Math.max(0, ...s.sets.map(st => parseFloat(st.reps) || 0)));
+    const bestSetInt = sessions.map((s, si) => {
+      const maxR = bestReps[si];
+      const bs = s.sets.find(st => (parseFloat(st.reps) || 0) === maxR) || s.sets[0];
+      return bs ? calcSetIntensity(name, parseFloat(bs.reps) || 0, parseFloat(bs.kg) || 0) : 0;
+    });
+
+    const PAD = { top: 20, right: 46, bottom: 38, left: 36 };
+    const cW  = W - PAD.left - PAD.right;
+    const cH  = H - PAD.top  - PAD.bottom;
+
+    const repTicks = niceYTicks(0, Math.max(...bestReps, 1), 4);
+    const intTicks = niceYTicks(0, Math.max(...bestSetInt, 1), 4);
+    const repMin = repTicks[0], repMax = repTicks[repTicks.length - 1];
+    const intMin = intTicks[0], intMax = intTicks[intTicks.length - 1];
+
+    const xOf    = i => sessions.length === 1 ? PAD.left + cW / 2
+                      : PAD.left + (i / (sessions.length - 1)) * cW;
+    const yOfRep = r => PAD.top + (1 - (r - repMin) / (repMax - repMin)) * cH;
+    const yOfInt = v => PAD.top + (1 - (v - intMin) / (intMax - intMin)) * cH;
+    const clamp  = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+    const labelColor = dark ? 'rgba(160,160,168,0.85)' : 'rgba(60,60,67,0.50)';
+    const gridColor  = dark ? 'rgba(255,255,255,0.10)' : 'rgba(60,60,67,0.08)';
+    const dotFill    = dark ? '#242426' : '#FFFFFF';
+    const blue       = dark ? '#0A84FF' : '#007AFF';
+    const gold       = '#FFD700';
+
+    /* grid */
+    ctx.save();
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth   = 0.5;
+    repTicks.forEach(t => {
+      ctx.beginPath();
+      ctx.moveTo(PAD.left, yOfRep(t));
+      ctx.lineTo(PAD.left + cW, yOfRep(t));
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    /* left y labels — reps (blue) */
+    ctx.save();
+    ctx.fillStyle    = blue;
+    ctx.font         = '400 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    repTicks.forEach(t => ctx.fillText(t, PAD.left - 6, yOfRep(t)));
+    ctx.restore();
+
+    /* right y labels — intensity (gold) */
+    ctx.save();
+    ctx.fillStyle    = gold;
+    ctx.font         = '400 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'middle';
+    intTicks.forEach(t => ctx.fillText(fmtInt(t), PAD.left + cW + 6, yOfInt(t)));
+    ctx.restore();
+
+    /* x labels */
+    ctx.save();
+    ctx.fillStyle    = labelColor;
+    ctx.font         = '400 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    const xIdxs = pickLabelIdxs(sessions.length, 5);
+    sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9); });
+    ctx.restore();
+
+    const repPts = bestReps.map((r, i) => ({ x: xOf(i), y: yOfRep(r) }));
+    const intPts = bestSetInt.map((v, i) => ({ x: xOf(i), y: yOfInt(v) }));
+
+    /* intensity area + line (gold, behind reps) */
+    if (intPts.length > 1) {
+      const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
+      grad.addColorStop(0, hexAlpha(gold, 0.10));
+      grad.addColorStop(1, hexAlpha(gold, 0));
+      ctx.beginPath();
+      ctx.moveTo(intPts[0].x, yOfInt(intMin));
+      intPts.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(intPts[intPts.length - 1].x, yOfInt(intMin));
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.strokeStyle = gold;
+      ctx.lineWidth   = 2;
+      ctx.lineJoin    = 'round';
+      intPts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    }
+
+    /* reps area + line (blue) */
+    if (repPts.length > 1) {
+      const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
+      grad.addColorStop(0, hexAlpha(blue, 0.13));
+      grad.addColorStop(1, hexAlpha(blue, 0));
+      ctx.beginPath();
+      ctx.moveTo(repPts[0].x, yOfRep(repMin));
+      repPts.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(repPts[repPts.length - 1].x, yOfRep(repMin));
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.strokeStyle = blue;
+      ctx.lineWidth   = 2;
+      ctx.lineJoin    = 'round';
+      repPts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    }
+
+    /* trend line on reps */
+    if (repPts.length > 1) {
+      const trendColor = dark ? 'rgba(255,255,255,0.28)' : 'rgba(60,60,67,0.20)';
+      ctx.save();
+      ctx.strokeStyle = trendColor;
+      ctx.lineWidth   = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.lineJoin    = 'round';
+      ctx.beginPath();
+      bestReps.forEach((_, i) => {
+        const win = bestReps.slice(Math.max(0, i - 6), i + 1);
+        const avg = win.reduce((s, v) => s + v, 0) / win.length;
+        i === 0 ? ctx.moveTo(xOf(i), yOfRep(clamp(avg, repMin, repMax)))
+                : ctx.lineTo(xOf(i), yOfRep(clamp(avg, repMin, repMax)));
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* intensity dots */
+    intPts.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle   = dotFill;
+      ctx.fill();
+      ctx.strokeStyle = gold;
+      ctx.lineWidth   = 2;
+      ctx.stroke();
+    });
+
+    /* reps dots */
+    repPts.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle   = dotFill;
+      ctx.fill();
+      ctx.strokeStyle = blue;
+      ctx.lineWidth   = 2.5;
+      ctx.stroke();
+    });
+
+    /* PR marker on reps */
+    const prVal = Math.max(...bestReps);
+    if (prVal > 0) {
+      const prIdx = bestReps.lastIndexOf(prVal);
+      ctx.beginPath();
+      ctx.arc(xOf(prIdx), yOfRep(prVal), 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = gold;
+      ctx.fill();
+      ctx.save();
+      ctx.fillStyle    = gold;
+      ctx.font         = '700 9px -apple-system, sans-serif';
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('PR', xOf(prIdx), yOfRep(prVal) - 7);
+      ctx.restore();
+    }
+
+    /* mini legend top-left */
+    ctx.save();
+    ctx.font         = '500 9px -apple-system, sans-serif';
+    ctx.textBaseline = 'middle';
+    const lY = PAD.top - 10;
+    ctx.fillStyle = blue;
+    ctx.beginPath(); ctx.arc(PAD.left + 4, lY, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillText('Reps', PAD.left + 10, lY);
+    const rW = ctx.measureText('Reps').width;
+    ctx.fillStyle = gold;
+    ctx.beginPath(); ctx.arc(PAD.left + 18 + rW, lY, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillText('Intensity', PAD.left + 24 + rW, lY);
+    ctx.restore();
+  }
+
+  /* ── Graph 2: Session Total — single green line ─────────── */
+  function drawSessionTotalChart(name, sessions) {
+    const wrap = document.getElementById('int-wrap-' + CSS.escape(name));
+    if (!wrap) return;
+
+    const totals = sessions.map(s => calcSessionIntensity(name, s.sets));
+    if (totals.every(v => v === 0)) {
+      wrap.innerHTML = '<div style="text-align:center;padding:.75rem 0 .875rem;font-size:.8125rem;color:var(--tertiary)">Log weight or reps to see volume</div>';
+      return;
+    }
+
+    const dark = isDark();
+    const dpr  = window.devicePixelRatio || 1;
+    const W    = wrap.clientWidth;
+    const H    = Math.min(180, Math.max(120, Math.round(W * 0.38)));
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'chart-canvas';
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    wrap.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const PAD  = { top: 14, right: 20, bottom: 38, left: 44 };
+    const cW   = W - PAD.left - PAD.right;
+    const cH   = H - PAD.top  - PAD.bottom;
+    const color = '#30D158';
+
+    const yTicks = niceYTicks(0, Math.max(...totals, 1), 4);
+    const yMin   = yTicks[0];
+    const yMax   = yTicks[yTicks.length - 1];
+
+    const xOf = i => sessions.length === 1 ? PAD.left + cW / 2
+                   : PAD.left + (i / (sessions.length - 1)) * cW;
+    const yOf = v => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * cH;
+
+    const labelColor = dark ? 'rgba(160,160,168,0.85)' : 'rgba(60,60,67,0.50)';
+    const gridColor  = dark ? 'rgba(255,255,255,0.10)' : 'rgba(60,60,67,0.08)';
+    const dotFill    = dark ? '#242426' : '#FFFFFF';
+
+    /* grid */
+    ctx.save();
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth   = 0.5;
+    yTicks.forEach(t => {
+      ctx.beginPath(); ctx.moveTo(PAD.left, yOf(t)); ctx.lineTo(PAD.left + cW, yOf(t)); ctx.stroke();
+    });
+    ctx.restore();
+
+    /* y labels */
+    ctx.save();
+    ctx.fillStyle    = color;
+    ctx.font         = '400 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    yTicks.forEach(t => ctx.fillText(fmtInt(t), PAD.left - 6, yOf(t)));
+    ctx.restore();
+
+    /* x labels */
+    ctx.save();
+    ctx.fillStyle    = labelColor;
+    ctx.font         = '400 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    const xIdxs = pickLabelIdxs(sessions.length, 5);
+    sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9); });
+    ctx.restore();
+
+    const pts = totals.map((v, i) => ({ x: xOf(i), y: yOf(v) }));
+
+    /* area + line */
+    if (pts.length > 1) {
+      const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
+      grad.addColorStop(0, hexAlpha(color, 0.15));
+      grad.addColorStop(1, hexAlpha(color, 0));
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, yOf(yMin));
+      pts.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(pts[pts.length - 1].x, yOf(yMin));
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 2;
+      ctx.lineJoin    = 'round';
+      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    }
+
+    /* dots */
+    pts.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle   = dotFill;
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 2.5;
+      ctx.stroke();
+    });
+  }
+
+  /* ── Canvas chart (legacy reps-only, kept for reference) ── */
   function drawChart(name, sessions, maxSets) {
     const wrap = document.getElementById('wrap-' + CSS.escape(name));
     if (!wrap) return;
@@ -6966,8 +7372,6 @@
     _plansMode = 'editor';
     _planDraft = { id: plan.id, name: plan.name, exercises: plan.exercises.map(_normPlanEx) };
     renderLibPlans();
-    /* scroll editor into view */
-    setTimeout(() => document.getElementById('lib-plans-inner')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
   }
 
   async function planEditorAddEx() {
@@ -6978,8 +7382,14 @@
   }
 
   function planEditorRemoveEx(idx) {
-    _planDraft.exercises.splice(idx, 1);
-    renderLibPlans();
+    const ex = _planDraft.exercises[idx];
+    const name = ex ? _normPlanEx(ex).name : 'this exercise';
+    _wConfirm({
+      title: 'Remove Exercise?',
+      msg: `"${name}" will be removed from the plan.`,
+      okLabel: 'Remove', okColor: 'red',
+      onOk: () => { _planDraft.exercises.splice(idx, 1); renderLibPlans(); }
+    });
   }
 
   function planEditorStepSets(idx, delta) {
@@ -7101,9 +7511,14 @@
   }
 
   function deletePlan(id) {
-    plans = plans.filter(p => p.id !== id);
-    persistPlans();
-    renderLibPlans();
+    const plan = plans.find(p => p.id === id);
+    const name = plan ? plan.name : 'this plan';
+    _wConfirm({
+      title: 'Delete Plan?',
+      msg: `"${name}" will be permanently deleted.`,
+      okLabel: 'Delete', okColor: 'red',
+      onOk: () => { plans = plans.filter(p => p.id !== id); persistPlans(); renderLibPlans(); }
+    });
   }
 
   /* ── Start workout from plan ─────────────────────────────── */
@@ -7386,7 +7801,12 @@
     /* small rAF delay so the push starts after the tap-active state clears */
     requestAnimationFrame(() => {
       panel.classList.add('open');
-      if (id === 'settings-warmup-edit') wuEditRender();
+      if (id === 'settings-warmup-general') wuGenEditRender();
+      if (id === 'settings-warmup-edit') {
+        wuEditRender();
+        const strTog = document.getElementById('wu-str-toggle');
+        if (strTog) strTog.checked = _getWarmupStrengthEnabled();
+      }
       if (id === 'settings-killer-edit') ksEditRender();
       if (id === 'settings-prefs') {
         const tog = document.getElementById('ghost-mode-toggle');
@@ -7684,6 +8104,19 @@
     } catch { return WARMUP_STRENGTH_DEFAULT.map(x => ({...x})); }
   })();
 
+  /* Live general warmup routine — user-editable in Settings */
+  let WARMUP_GENERAL_LIVE = (function() {
+    try {
+      const s = JSON.parse(localStorage.getItem('warmupGeneralRoutine') || 'null');
+      return Array.isArray(s) && s.length ? s : WARMUP_GENERAL.map(x => ({...x}));
+    } catch { return WARMUP_GENERAL.map(x => ({...x})); }
+  })();
+
+  function _getWarmupGeneralEnabled()   { return localStorage.getItem('warmupGeneralEnabled')   !== 'false'; }
+  function _getWarmupStrengthEnabled()  { return localStorage.getItem('warmupStrengthEnabled')  !== 'false'; }
+  function _setWarmupGeneralEnabled(v)  { localStorage.setItem('warmupGeneralEnabled',  v ? 'true' : 'false'); }
+  function _setWarmupStrengthEnabled(v) { localStorage.setItem('warmupStrengthEnabled', v ? 'true' : 'false'); }
+
   /* ── State ───────────────────────────────────────────────── */
   let _warmupPhase      = 'general';
   let _warmupIdx        = 0;
@@ -7708,12 +8141,32 @@
   function startWithWarmup(planId) {
     closeStartChoice();
     _warmupPostPlanId = planId;
-    _warmupPhase = 'general';
-    _warmupIdx   = 0;
     _warmupStrStart = null;
-    document.getElementById('warmup-nav-title').textContent = 'General Warm-up';
+
+    const genOn = _getWarmupGeneralEnabled() && WARMUP_GENERAL_LIVE.length > 0;
+    const strOn = _getWarmupStrengthEnabled();
+
+    /* Both phases disabled — skip warmup entirely */
+    if (!genOn && !strOn) {
+      if (planId !== null) startWorkoutFromPlan(planId);
+      else startBlankWorkout();
+      return;
+    }
+
     document.getElementById('warmup-overlay').classList.add('open');
-    _warmupRenderGeneral();
+
+    if (genOn) {
+      _warmupPhase = 'general';
+      _warmupIdx   = 0;
+      document.getElementById('warmup-nav-title').textContent = 'General Warm-up';
+      _warmupRenderGeneral();
+    } else {
+      /* General disabled — jump straight to strength */
+      _warmupPhase = 'strength';
+      _warmupIdx   = 0;
+      document.getElementById('warmup-nav-title').textContent = 'Strength Warm-up';
+      _warmupRenderStrengthIntro();
+    }
   }
 
   function warmupSkip() {
@@ -7772,23 +8225,28 @@
 
   /* ── General phase (timed) ───────────────────────────────── */
   function _warmupRenderGeneral() {
-    if (_warmupIdx >= WARMUP_GENERAL.length) {
-      _warmupPhase = 'strength';
-      _warmupIdx   = 0;
-      document.getElementById('warmup-nav-title').textContent = 'Strength Warm-up';
-      // Replace body immediately — removes the old "Next →" button so it
-      // cannot be tapped again during the 1400 ms voice + transition delay.
-      document.getElementById('warmup-body').innerHTML =
-        `<div class="warmup-move-name" style="margin-top:2.5rem">🎉 General warmup done!</div>
-         <div class="warmup-move-sub" style="margin-top:.625rem">Preparing strength sequence…</div>`;
-      _warmupSpeak("General warmup done — amazing work! Now let’s hit the strength sequence!");
-      setTimeout(_warmupRenderStrengthIntro, 3500);
+    const strOn = _getWarmupStrengthEnabled();
+    if (_warmupIdx >= WARMUP_GENERAL_LIVE.length) {
+      if (strOn) {
+        _warmupPhase = 'strength';
+        _warmupIdx   = 0;
+        document.getElementById('warmup-nav-title').textContent = 'Strength Warm-up';
+        document.getElementById('warmup-body').innerHTML =
+          `<div class="warmup-move-name" style="margin-top:2.5rem">🎉 General warmup done!</div>
+           <div class="warmup-move-sub" style="margin-top:.625rem">Preparing strength sequence…</div>`;
+        _warmupSpeak("General warmup done — amazing work! Now let's hit the strength sequence!");
+        setTimeout(_warmupRenderStrengthIntro, 3500);
+      } else {
+        /* Strength disabled — finish after general */
+        _warmupCleanup();
+        _warmupShowPostChoice();
+      }
       return;
     }
 
-    const step = WARMUP_GENERAL[_warmupIdx];
-    const totalSteps = WARMUP_GENERAL.length;
-    const dotsHTML = WARMUP_GENERAL.map((_, i) =>
+    const step = WARMUP_GENERAL_LIVE[_warmupIdx];
+    const totalSteps = WARMUP_GENERAL_LIVE.length;
+    const dotsHTML = WARMUP_GENERAL_LIVE.map((_, i) =>
       `<div class="warmup-dot ${i < _warmupIdx ? 'done' : i === _warmupIdx ? 'active' : ''}"></div>`
     ).join('');
 
@@ -8035,6 +8493,77 @@
     showToast('Routine reset — average cleared');
   }
 
+  function wuStrToggleChanged(checked) {
+    _setWarmupStrengthEnabled(checked);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     GENERAL WARMUP ROUTINE EDITOR
+     ══════════════════════════════════════════════════════════ */
+
+  function wuGenEditRender() {
+    const tog = document.getElementById('wu-gen-toggle');
+    if (tog) tog.checked = _getWarmupGeneralEnabled();
+    const list = document.getElementById('wu-gen-list');
+    if (!list) return;
+    list.innerHTML = WARMUP_GENERAL_LIVE.map((s, i) => `
+      <div class="wu-edit-row">
+        <span class="wu-edit-idx">${i + 1}.</span>
+        <input class="wu-edit-name" type="text" value="${s.name.replace(/"/g, '&quot;')}"
+          placeholder="Exercise name" data-idx="${i}" />
+        <input class="wu-edit-reps" type="number" value="${s.secs}" min="5" max="300"
+          inputmode="numeric" data-idx="${i}" />
+        <span style="font-size:.75rem;color:var(--tertiary)">s</span>
+        <button class="wu-edit-del" onclick="wuGenEditDeleteRow(${i})" title="Remove">&#x2715;</button>
+      </div>`).join('');
+  }
+
+  function wuGenEditRead() {
+    const rows = document.querySelectorAll('#wu-gen-list .wu-edit-row');
+    return Array.from(rows).map(row => ({
+      name: row.querySelector('.wu-edit-name').value.trim() || 'Exercise',
+      secs: Math.max(5, parseInt(row.querySelector('.wu-edit-reps').value, 10) || 30),
+      hint: '',
+      cue:  '',
+    }));
+  }
+
+  function wuGenEditAddRow() {
+    WARMUP_GENERAL_LIVE = wuGenEditRead();
+    WARMUP_GENERAL_LIVE.push({ name: 'Exercise', secs: 30, hint: '', cue: '' });
+    wuGenEditRender();
+    const list = document.getElementById('wu-gen-list');
+    list?.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function wuGenEditDeleteRow(idx) {
+    WARMUP_GENERAL_LIVE = wuGenEditRead();
+    if (WARMUP_GENERAL_LIVE.length <= 1) { showToast('Must have at least 1 exercise'); return; }
+    WARMUP_GENERAL_LIVE.splice(idx, 1);
+    wuGenEditRender();
+  }
+
+  function wuGenEditSave() {
+    const newRoutine = wuGenEditRead();
+    if (!newRoutine.length) { showToast('Add at least one exercise'); return; }
+    WARMUP_GENERAL_LIVE = newRoutine;
+    localStorage.setItem('warmupGeneralRoutine', JSON.stringify(newRoutine));
+    showToast('General warm-up saved');
+    settingsPop();
+  }
+
+  function wuGenEditReset() {
+    if (!confirm('Reset to the default 8-exercise routine? Your custom routine will be lost.')) return;
+    WARMUP_GENERAL_LIVE = WARMUP_GENERAL.map(x => ({...x}));
+    localStorage.removeItem('warmupGeneralRoutine');
+    wuGenEditRender();
+    showToast('General warm-up reset');
+  }
+
+  function wuGenToggleChanged(checked) {
+    _setWarmupGeneralEnabled(checked);
+  }
+
   /* ── Seed built-in plans (once) ────────────────────────── */
   (function seedPlans() {
     const PLAN_NAME = 'Advanced Upper Body';
@@ -8134,8 +8663,8 @@
     function swipeBackAction() {
       /* 1. Settings sub-panel open? */
       const subPanels = ['settings-personal','settings-goals','settings-prefs',
-                         'settings-data','settings-about','settings-warmup-edit',
-                         'settings-killer-edit'];
+                         'settings-data','settings-about','settings-warmup-general',
+                         'settings-warmup-edit','settings-killer-edit'];
       for (const id of subPanels) {
         if (document.getElementById(id)?.classList.contains('open')) {
           return () => settingsPop();
