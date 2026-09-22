@@ -2289,6 +2289,36 @@
       flex-shrink: 0;
     }
     .plan-ex-del:hover { color: var(--red); background: var(--del-hover); }
+    .plan-ex-stepper {
+      display: flex;
+      align-items: center;
+      gap: 0.125rem;
+      flex-shrink: 0;
+    }
+    .plan-ex-stepper-btn {
+      background: var(--fill);
+      border: none;
+      border-radius: 0.375rem;
+      width: 1.625rem; height: 1.625rem;
+      font-size: 1rem;
+      line-height: 1;
+      color: var(--label);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-family: inherit;
+      font-weight: 500;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .plan-ex-stepper-btn:active { opacity: .6; }
+    .plan-ex-stepper-val {
+      width: 1.375rem;
+      text-align: center;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--label);
+      font-variant-numeric: tabular-nums;
+    }
     .plan-ex-handle {
       display: flex; align-items: center; justify-content: center;
       width: 1.75rem; height: 1.75rem;
@@ -4416,7 +4446,7 @@
         ${sectionLabel('Training Plans')}
         <div class="wizard-choices">
           ${plans.map(p => {
-            const sub = p.exercises.slice(0, 3).join(', ') + (p.exercises.length > 3 ? '…' : '');
+            const sub = p.exercises.slice(0, 3).map(e => _normPlanEx(e).name).join(', ') + (p.exercises.length > 3 ? '…' : '');
             return `<button class="wizard-choice" onclick="_startWorkoutMaybeWarmup(${p.id})">
               📋 ${p.name}<small>${sub || `${p.exercises.length} exercise${p.exercises.length !== 1 ? 's' : ''}`}</small>
             </button>`;
@@ -4496,7 +4526,7 @@
   }
 
   let _exCardSeq = 0;
-  function createExCard(name, isKiller = false) {
+  function createExCard(name, isKiller = false, numSets = 1) {
     exerciseCount++;
     const id  = 'ex-' + Date.now() + '-' + (++_exCardSeq);
     const tb  = !!getExMeta(name).tb;  /* time-based hold exercise? */
@@ -4528,7 +4558,8 @@
         </button>
       </div>`;
     document.getElementById('exercise-list').appendChild(div);
-    addSet(id);
+    const setsToAdd = Math.max(1, numSets);
+    for (let i = 0; i < setsToAdd; i++) addSet(id);
     persistActiveWorkout();
     /* Scroll the new card into view within the .scroll-area — never touches the window */
     setTimeout(() => div.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
@@ -6852,7 +6883,7 @@
       </div>`;
     } else {
       plans.forEach(plan => {
-        const subs = plan.exercises.slice(0, 4).join(' · ') + (plan.exercises.length > 4 ? ' …' : '');
+        const subs = plan.exercises.slice(0, 4).map(e => _normPlanEx(e).name).join(' · ') + (plan.exercises.length > 4 ? ' …' : '');
         html += `<div class="plan-item">
           <div class="plan-item-main" style="cursor:default">
             <div class="plan-item-name">${plan.name}</div>
@@ -6872,14 +6903,27 @@
     el.innerHTML = html;
   }
 
+  /* Normalise a plan exercise entry — old plans stored plain strings */
+  function _normPlanEx(e) {
+    return (typeof e === 'string') ? { name: e, sets: 3 } : { name: e.name, sets: e.sets || 3 };
+  }
+
   function _renderPlanEditor(el) {
-    const exItems = (_planDraft.exercises || []).map((name, i) => `
+    const exItems = (_planDraft.exercises || []).map((raw, i) => {
+      const ex = _normPlanEx(raw);
+      return `
       <div class="plan-ex-item" data-idx="${i}">
         <span class="plan-ex-handle" title="Drag to reorder">≡</span>
         <span class="plan-ex-num">${i + 1}</span>
-        <span class="plan-ex-name-lbl">${name}</span>
+        <span class="plan-ex-name-lbl">${ex.name}</span>
+        <div class="plan-ex-stepper">
+          <button class="plan-ex-stepper-btn" onclick="planEditorStepSets(${i},-1)">−</button>
+          <span class="plan-ex-stepper-val" id="plan-ex-sets-${i}">${ex.sets}</span>
+          <button class="plan-ex-stepper-btn" onclick="planEditorStepSets(${i},+1)">+</button>
+        </div>
         <button class="plan-ex-del" onclick="planEditorRemoveEx(${i})" title="Remove">×</button>
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
     const title = _planDraft.id ? 'Edit Plan' : 'New Plan';
     el.innerHTML = `<div class="section-header">${title}</div>
@@ -6916,7 +6960,7 @@
     const plan = plans.find(p => p.id === id);
     if (!plan) return;
     _plansMode = 'editor';
-    _planDraft = { id: plan.id, name: plan.name, exercises: [...plan.exercises] };
+    _planDraft = { id: plan.id, name: plan.name, exercises: plan.exercises.map(_normPlanEx) };
     renderLibPlans();
     /* scroll editor into view */
     setTimeout(() => document.getElementById('lib-plans-inner')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
@@ -6925,13 +6969,24 @@
   async function planEditorAddEx() {
     const name = await openExPicker();
     if (!name) return;
-    _planDraft.exercises.push(name);
+    _planDraft.exercises.push({ name, sets: 3 });
     renderLibPlans();
   }
 
   function planEditorRemoveEx(idx) {
     _planDraft.exercises.splice(idx, 1);
     renderLibPlans();
+  }
+
+  function planEditorStepSets(idx, delta) {
+    const ex = _planDraft.exercises[idx];
+    if (!ex) return;
+    const norm = _normPlanEx(ex);
+    norm.sets = Math.min(10, Math.max(1, norm.sets + delta));
+    _planDraft.exercises[idx] = norm;
+    /* update just the value span without re-rendering the whole editor */
+    const span = document.getElementById('plan-ex-sets-' + idx);
+    if (span) span.textContent = norm.sets;
   }
 
   /* ── Plan editor drag-and-drop (Pointer Events — works on iOS) ───── */
@@ -7027,11 +7082,12 @@
     const name = (document.getElementById('plan-name-input')?.value || _planDraft.name || '').trim();
     if (!name) { showToast('Enter a plan name first'); return; }
     if (!_planDraft.exercises.length) { showToast('Add at least one exercise'); return; }
+    const normExercises = _planDraft.exercises.map(_normPlanEx);
     if (_planDraft.id) {
       const idx = plans.findIndex(p => p.id === _planDraft.id);
-      if (idx !== -1) plans[idx] = { id: _planDraft.id, name, exercises: [..._planDraft.exercises] };
+      if (idx !== -1) plans[idx] = { id: _planDraft.id, name, exercises: normExercises };
     } else {
-      plans.push({ id: Date.now(), name, exercises: [..._planDraft.exercises] });
+      plans.push({ id: Date.now(), name, exercises: normExercises });
     }
     persistPlans();
     _plansMode = 'list';
@@ -7063,8 +7119,9 @@
 
     showWorkoutScreen();
 
-    activePlanData = { planName: plan.name, exercises: [...plan.exercises], nextIndex: 1 };
-    createExCard(plan.exercises[0]);
+    const normEx = plan.exercises.map(_normPlanEx);
+    activePlanData = { planName: plan.name, exercises: normEx, nextIndex: 1 };
+    createExCard(normEx[0].name, false, normEx[0].sets);
     updatePlanBanner();
     updateNextExBtn();
     persistActiveWorkout();
@@ -7073,8 +7130,8 @@
   /* ── Next exercise (plan mode) ───────────────────────────── */
   function planNextExercise() {
     if (!activePlanData || activePlanData.nextIndex >= activePlanData.exercises.length) return;
-    const name = activePlanData.exercises[activePlanData.nextIndex++];
-    createExCard(name);
+    const ex = _normPlanEx(activePlanData.exercises[activePlanData.nextIndex++]);
+    createExCard(ex.name, false, ex.sets);
     updateNextExBtn();
     updatePlanBanner();
     persistActiveWorkout();
