@@ -342,15 +342,16 @@
 
     /* ── Timer ────────────────────────────────────────────── */
     .timer-block {
-      margin: 1.25rem var(--gutter) 1rem;
+      margin: 0.625rem var(--gutter) 0.75rem;
+      padding: 0.875rem 1.25rem;
       background: var(--card);
       border-radius: var(--radius-card);
       box-shadow: var(--shadow);
       overflow: hidden;
-      padding: 1.25rem;
       display: flex;
       align-items: center;
       gap: 1rem;
+      flex-shrink: 0;
     }
     .timer-dot {
       width: 0.625rem; height: 0.625rem;
@@ -3112,14 +3113,14 @@
     <button class="btn-finish" onclick="finishWorkout()">Finish</button>
   </div>
   <div id="plan-banner" class="plan-banner" style="display:none"></div>
-  <div class="scroll-area">
-    <div class="timer-block">
-      <div>
-        <div class="timer-label">Elapsed</div>
-        <div id="timer">00:00</div>
-      </div>
-      <div class="timer-dot"></div>
+  <div class="timer-block">
+    <div>
+      <div class="timer-label">Elapsed</div>
+      <div id="timer">00:00</div>
     </div>
+    <div class="timer-dot"></div>
+  </div>
+  <div class="scroll-area">
     <div class="section-header">Exercises</div>
     <!-- Warmup + Killer Set summary cards sit above regular exercises -->
     <div id="workout-warmup-card" class="wsc-card" style="display:none">
