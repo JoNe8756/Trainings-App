@@ -2962,63 +2962,66 @@
     .highlight-title { font-size: 0.9375rem; font-weight: 600; letter-spacing: -.2px; line-height: 1.2; }
     .highlight-body  { font-size: 0.8125rem; color: var(--tertiary); margin-top: 0.125rem; line-height: 1.35; }
 
-    /* ── Inline workout confirmation bar ─────────────────── */
-    .wc-confirm-row {
+    /* ── Workout confirmation overlay ────────────────────── */
+    #wc-overlay {
       display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(0,0,0,.6);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       align-items: center;
+      justify-content: center;
+      padding: 2rem var(--gutter);
+    }
+    #wc-overlay.open { display: flex; }
+    .wc-dialog {
+      background: var(--card);
+      border-radius: 1.125rem;
+      box-shadow: 0 32px 80px rgba(0,0,0,.55);
       width: 100%;
-      gap: 0.5rem;
+      max-width: 21rem;
+      overflow: hidden;
+      border: 0.5px solid rgba(255,255,255,.10);
     }
-    .nav-bar-compact.confirming .wc-normal-row  { display: none; }
-    .nav-bar-compact.confirming .wc-confirm-row { display: flex; }
-    .wc-confirm-label {
-      flex: 1;
+    .wc-dialog-body {
+      padding: 1.5rem 1.5rem 1.25rem;
       text-align: center;
-      min-width: 0;
     }
-    .wc-confirm-label-title {
+    .wc-dialog-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -.3px;
+      color: var(--label);
+      margin-bottom: 0.375rem;
+    }
+    .wc-dialog-msg {
       font-size: 0.9375rem;
-      font-weight: 600;
-      letter-spacing: -.2px;
-      color: var(--label);
-      line-height: 1.2;
-    }
-    .wc-confirm-label-sub {
-      font-size: 0.75rem;
       color: var(--tertiary);
-      margin-top: 0.1rem;
+      line-height: 1.4;
     }
-    .wc-confirm-cancel {
-      background: var(--fill);
+    .wc-dialog-btns {
+      display: flex;
+      border-top: 0.5px solid var(--separator);
+    }
+    .wc-dialog-btn {
+      flex: 1;
       border: none;
-      border-radius: 0.625rem;
-      padding: 0.4375rem 0.875rem;
-      font-size: 0.875rem;
+      background: none;
+      padding: 1rem 0.5rem;
+      font-size: 1rem;
       font-family: inherit;
       font-weight: 600;
-      color: var(--label);
       cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
       -webkit-tap-highlight-color: transparent;
+      transition: background .12s;
     }
-    .wc-confirm-cancel:active { opacity: .6; }
-    .wc-confirm-ok {
-      border: none;
-      border-radius: 0.625rem;
-      padding: 0.4375rem 0.875rem;
-      font-size: 0.875rem;
-      font-family: inherit;
-      font-weight: 600;
-      color: #fff;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .wc-confirm-ok:active { opacity: .75; }
-    .wc-confirm-ok.red  { background: #FF3B30; }
-    .wc-confirm-ok.blue { background: #007AFF; }
+    .wc-dialog-btn:active { background: var(--fill); }
+    .wc-dialog-btn + .wc-dialog-btn { border-left: 0.5px solid var(--separator); }
+    .wc-dialog-btn.cancel { color: var(--label); font-weight: 400; }
+    .wc-dialog-btn.red    { color: #FF3B30; }
+    .wc-dialog-btn.blue   { color: #007AFF; }
   </style>
 </head>
 <body>
@@ -3104,19 +3107,9 @@
 <!-- ═══════════════ WORKOUT SCREEN ═══════════════ -->
 <div id="workout-screen" class="screen">
   <div class="nav-bar-compact" id="workout-nav">
-    <div class="wc-normal-row" style="display:contents">
-      <button class="btn-discard" onclick="discardWorkout()" title="Discard workout">Discard</button>
-      <h1>Active Workout</h1>
-      <button class="btn-finish" onclick="finishWorkout()">Finish</button>
-    </div>
-    <div class="wc-confirm-row" id="wc-confirm-row">
-      <button class="wc-confirm-cancel" onclick="_wConfirmCancel()">Cancel</button>
-      <div class="wc-confirm-label">
-        <div class="wc-confirm-label-title" id="wc-confirm-title"></div>
-        <div class="wc-confirm-label-sub"   id="wc-confirm-sub"></div>
-      </div>
-      <button class="wc-confirm-ok" id="wc-confirm-ok" onclick="_wConfirmCommit()"></button>
-    </div>
+    <button class="btn-discard" onclick="discardWorkout()" title="Discard workout">Discard</button>
+    <h1>Active Workout</h1>
+    <button class="btn-finish" onclick="finishWorkout()">Finish</button>
   </div>
   <div id="plan-banner" class="plan-banner" style="display:none"></div>
   <div class="scroll-area">
@@ -4073,7 +4066,6 @@
 
   /* Show the workout screen (used by resume and initial start) */
   function showWorkoutScreen() {
-    document.getElementById('workout-nav')?.classList.remove('confirming');
     ['home', 'progress', 'history', 'exercises'].forEach(t => {
       document.getElementById(t + '-screen').classList.remove('active');
       document.getElementById('tab-' + t).classList.remove('active');
@@ -4473,23 +4465,22 @@
       .forEach((r, i) => r.querySelector('.set-badge').textContent = i + 1);
   }
 
-  /* ── Finish workout ─────────────────────────────────────── */
-  /* ── Inline workout nav confirmation ───────────────────── */
+  /* ── Workout confirmation overlay ──────────────────────── */
   let _wConfirmCallback = null;
 
-  function _wConfirm({ title, sub, okLabel, okColor, onOk }) {
-    document.getElementById('wc-confirm-title').textContent = title;
-    document.getElementById('wc-confirm-sub').textContent   = sub;
-    const okBtn = document.getElementById('wc-confirm-ok');
+  function _wConfirm({ title, msg, okLabel, okColor, onOk }) {
+    document.getElementById('wc-dialog-title').textContent = title;
+    document.getElementById('wc-dialog-msg').textContent   = msg;
+    const okBtn = document.getElementById('wc-dialog-ok');
     okBtn.textContent = okLabel;
-    okBtn.className   = 'wc-confirm-ok ' + okColor;
+    okBtn.className   = 'wc-dialog-btn ' + okColor;
     _wConfirmCallback = onOk;
-    document.getElementById('workout-nav').classList.add('confirming');
+    document.getElementById('wc-overlay').classList.add('open');
   }
 
   function _wConfirmCancel() {
     _wConfirmCallback = null;
-    document.getElementById('workout-nav').classList.remove('confirming');
+    document.getElementById('wc-overlay').classList.remove('open');
   }
 
   function _wConfirmCommit() {
@@ -4501,7 +4492,7 @@
   function finishWorkout() {
     _wConfirm({
       title: 'Finish Workout?',
-      sub: 'Saves your session.',
+      msg: 'This will save your session and end the workout.',
       okLabel: 'Finish',
       okColor: 'blue',
       onOk: _doFinishWorkout
@@ -4568,7 +4559,7 @@
   function discardWorkout() {
     _wConfirm({
       title: 'Discard Workout?',
-      sub: 'Progress will be lost.',
+      msg: 'Your progress will be lost.',
       okLabel: 'Discard',
       okColor: 'red',
       onOk: _doDiscardWorkout
@@ -8003,5 +7994,18 @@
   });
 </script>
 
+<!-- ═══════════════ WORKOUT CONFIRM OVERLAY ═══════════════ -->
+<div id="wc-overlay">
+  <div class="wc-dialog">
+    <div class="wc-dialog-body">
+      <div class="wc-dialog-title" id="wc-dialog-title"></div>
+      <div class="wc-dialog-msg"   id="wc-dialog-msg"></div>
+    </div>
+    <div class="wc-dialog-btns">
+      <button class="wc-dialog-btn cancel" onclick="_wConfirmCancel()">Cancel</button>
+      <button class="wc-dialog-btn" id="wc-dialog-ok" onclick="_wConfirmCommit()"></button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
