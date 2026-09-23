@@ -94,20 +94,13 @@
       .ex-picker-search,
       .ex-add-input,
       .bw-card-input,
-      .plan-editor-name,
-      .lib-seg {
+      .plan-editor-name {
         background: var(--card-inner) !important;
       }
 
       /* Exercise head input uses card-inner too */
       .exercise-head input[type="text"] {
         background: var(--card-inner) !important;
-      }
-
-      /* Segment control active pill stays card-color (slightly brighter) */
-      .lib-seg-btn.active {
-        background: #3A3A3C !important;
-        box-shadow: 0 1px 4px rgba(0,0,0,.5);
       }
 
       /* Plan banner: white text on bg needs a boost */
@@ -495,7 +488,7 @@
 
     .sets-col-header {
       display: grid;
-      grid-template-columns: 2.25rem 1fr 1fr 3rem 2rem;
+      grid-template-columns: 2.25rem 1fr 1fr 3rem 2rem 2rem;
       gap: 0.5rem;
       padding: 0.625rem 0 0.375rem;
       font-size: 0.6875rem;
@@ -510,12 +503,78 @@
 
     .set-row {
       display: grid;
-      grid-template-columns: 2.25rem 1fr 1fr 3rem 2rem;
+      grid-template-columns: 2.25rem 1fr 1fr 3rem 2rem 2rem;
       gap: 0.5rem;
       align-items: center;
       padding: 0.3125rem 0;
     }
     .set-row + .set-row { border-top: 0.5px solid var(--separator); }
+
+    .btn-log-set {
+      background: none; border: none; cursor: pointer;
+      color: var(--tertiary); font-size: 1rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      width: 1.75rem; height: 1.75rem; border-radius: 50%; margin: 0 auto;
+      transition: color .15s, background .15s;
+    }
+    .btn-log-set:active { color: var(--green); background: rgba(48,209,88,.12); }
+    .btn-log-set.logged { color: var(--green); }
+
+    #rest-card {
+      margin: 0.25rem 0 0.125rem;
+      background: #2C2C2E;
+      border-radius: var(--radius-card);
+      padding: 0.75rem 1rem 0.625rem;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 220ms ease, transform 220ms ease;
+      pointer-events: none;
+    }
+    #rest-card.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .rest-card-top {
+      display: flex;
+      align-items: center;
+    }
+    .rest-card-lbl {
+      font-size: 0.8125rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--tertiary); flex-shrink: 0;
+    }
+    #rest-card-countdown {
+      flex: 1; text-align: center; font-size: 1.625rem; font-weight: 700;
+      color: var(--label); font-variant-numeric: tabular-nums; letter-spacing: .5px;
+    }
+    .rest-card-skip {
+      background: none; border: none; color: var(--tertiary); font-size: 0.875rem;
+      font-weight: 500; font-family: inherit; cursor: pointer; flex-shrink: 0;
+      padding: 0.25rem 0;
+    }
+    .rest-card-bar-wrap {
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px; height: 3px;
+      margin: 0.5rem 0 0.5rem; overflow: hidden;
+    }
+    #rest-card-bar {
+      height: 100%; background: #007AFF; width: 100%;
+      transition: width 1s linear;
+      border-radius: 2px;
+    }
+    .rest-card-adj {
+      display: flex; justify-content: center; gap: 0.75rem;
+    }
+    .rest-adj-pill {
+      background: rgba(255,255,255,0.08); border: none; border-radius: 2rem;
+      padding: 0.3rem 1rem; font-size: 0.8125rem; font-weight: 600;
+      color: var(--label); cursor: pointer; font-family: inherit;
+    }
+    .rest-adj-pill:active { opacity: 0.55; }
+    .rest-card-hint {
+      text-align: center; font-size: 0.75rem; color: var(--tertiary);
+      margin-top: 0.375rem; letter-spacing: .1px;
+    }
 
     .set-badge {
       width: 1.75rem; height: 1.75rem;
@@ -824,6 +883,38 @@
     .empty-state-title  { font-size: 1.0625rem; font-weight: 600; color: var(--label); margin-bottom: 0.375rem; }
 
     /* ── Workout history cards ────────────────────────────── */
+    .hist-month-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem var(--gutter) 0.375rem;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .hist-month-title {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--tertiary);
+    }
+    .hist-month-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--tertiary);
+    }
+    .hist-month-chevron {
+      font-size: 0.625rem;
+      transition: transform .2s;
+      display: inline-block;
+    }
+    .hist-month-body {
+      overflow: hidden;
+      transition: height .25s ease;
+    }
     .workout-history-card {
       background: var(--card);
       border-radius: var(--radius-card);
@@ -1046,6 +1137,7 @@
     .legend-swatch       { width: 0.5rem; height: 0.5rem; border-radius: 50%; flex-shrink: 0; }
     .chart-wrap          { padding: 0.5rem 0 0; }
     .chart-graph-label   { font-size: .6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--tertiary); padding: .375rem var(--gutter) 0; }
+    .chart-graph-desc    { font-size: .6875rem; color: var(--tertiary); padding: .125rem var(--gutter) 0; opacity: .7; }
     canvas.chart-canvas  { display: block; }
 
     /* ── Sticky progress nav bar ─────────────────────────── */
@@ -1063,19 +1155,6 @@
     }
 
     /* ── Global progress mode bar ────────────────────────── */
-    #progress-mode-bar {
-      position: sticky;
-      top: 0; /* updated by JS after nav renders */
-      z-index: 15;
-      background: var(--glass-nav);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
-      padding: 0.5rem var(--gutter);
-      display: flex;
-      justify-content: center;
-    }
-    #progress-mode-bar .chart-mode-seg { width: 100%; max-width: 22rem; }
-
     /* ── Sticky progress category headers ────────────────── */
     .prog-cat-header {
       position: sticky;
@@ -1112,6 +1191,64 @@
       color: #007AFF;
       font-weight: 600;
       box-shadow: 0 1px 3px rgba(0,0,0,.12);
+    }
+    .progress-range-bar {
+      position: sticky;
+      top: 0; /* overridden by JS after nav height is known */
+      z-index: 10;
+      background: #000;
+      padding: 0.5rem var(--gutter) 0.625rem;
+      border-bottom: 0.5px solid var(--separator);
+    }
+    .progress-range-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: #8E8E93;
+      margin-bottom: 0.4rem;
+    }
+    .chart-range-seg {
+      display: flex;
+      width: 100%;
+      background: #1C1C1E;
+      border-radius: 12px;
+      padding: 3px;
+      box-sizing: border-box;
+      position: relative;
+    }
+    .range-pill {
+      position: absolute;
+      top: 3px;
+      left: 0;
+      height: calc(100% - 6px);
+      background: #007AFF;
+      border-radius: 9px;
+      transition: transform 200ms ease-in-out, width 200ms ease-in-out;
+      will-change: transform;
+      pointer-events: none;
+    }
+    .chart-range-seg .chart-mode-btn {
+      flex: 1;
+      padding: 0.3rem 0;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #8E8E93;
+      background: none;
+      border: none;
+      border-radius: 9px;
+      outline: none;
+      box-shadow: none;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      transition: color 200ms ease-in-out;
+    }
+    .chart-range-seg .chart-mode-btn.active {
+      color: #fff;
+      font-weight: 600;
     }
 
     /* ── This Week summary card ──────────────────────────── */
@@ -1299,7 +1436,7 @@
 
       /* slightly roomier set grid */
       .sets-col-header,
-      .set-row { grid-template-columns: 2.5rem 1fr 1fr 3rem 2.25rem; }
+      .set-row { grid-template-columns: 2.5rem 1fr 1fr 3rem 2.25rem 2.25rem; }
 
       .tab-btn { font-size: 0.6875rem; }
     }
@@ -1360,7 +1497,7 @@
 
       /* tighter set grid at 320 px */
       .sets-col-header,
-      .set-row { grid-template-columns: 1.75rem 1fr 1fr 2.5rem 1.75rem; gap: 0.25rem; }
+      .set-row { grid-template-columns: 1.75rem 1fr 1fr 2.5rem 1.75rem 1.75rem; gap: 0.25rem; }
       .sets-table { padding-left: 0.75rem; padding-right: 0.75rem; }
     }
 
@@ -1579,34 +1716,59 @@
 
     /* ── Library tab segment control ────────────────────────── */
     .lib-seg-wrap {
-      padding: 0 var(--gutter) 0.875rem;
-      flex-shrink: 0;
+      position: sticky;
+      top: 0; /* updated by JS */
+      z-index: 15;
+      background: var(--glass-nav);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      padding: 0.5rem var(--gutter);
+      display: flex;
+      justify-content: center;
     }
     .lib-seg {
       display: flex;
       background: var(--fill);
-      border-radius: 0.625rem;
-      padding: 0.1875rem;
+      border-radius: 0.5rem;
+      padding: 0.125rem;
+      width: 100%;
+      max-width: 22rem;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .lib-seg-pill {
+      position: absolute;
+      top: 0.125rem;
+      left: 0;
+      height: calc(100% - 0.25rem);
+      background: #007AFF;
+      border-radius: 0.375rem;
+      transition: transform 200ms ease-in-out, width 200ms ease-in-out;
+      will-change: transform;
+      pointer-events: none;
     }
     .lib-seg-btn {
       flex: 1;
       background: none;
       border: none;
-      border-radius: 0.5rem;
-      padding: 0.4375rem 0.5rem;
-      font-size: 0.875rem;
+      border-radius: 0.375rem;
+      padding: 0.3125rem 0.625rem;
+      font-size: 0.75rem;
       font-family: inherit;
       font-weight: 500;
-      color: var(--tertiary);
+      color: #8E8E93;
       cursor: pointer;
-      transition: background .15s, color .15s, box-shadow .15s;
       white-space: nowrap;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      transition: color 200ms ease-in-out;
+      outline: none;
+      box-shadow: none;
     }
     .lib-seg-btn.active {
-      background: var(--card);
-      color: var(--label);
+      color: #fff;
       font-weight: 600;
-      box-shadow: 0 1px 4px rgba(0,0,0,.12);
     }
 
     /* ── Exercises screen ─────────────────────────────────── */
@@ -3122,6 +3284,193 @@
     .wc-dialog-btn.cancel { color: var(--label); font-weight: 400; }
     .wc-dialog-btn.red    { color: #FF3B30; }
     .wc-dialog-btn.blue   { color: #007AFF; }
+
+    /* ═══════════════════════════════════════════════════════
+       LIQUID GLASS
+    ═══════════════════════════════════════════════════════ */
+
+    /* ── Bottom nav bar ─────────────────────────────────── */
+    .tab-bar {
+      background: rgba(20,20,20,0.55) !important;
+      backdrop-filter: blur(24px) saturate(200%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
+      border-top: 1px solid rgba(255,255,255,0.12) !important;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.30),
+                  inset 0 1px 0 rgba(255,255,255,0.18) !important;
+    }
+
+    /* ── Primary action buttons ─────────────────────────── */
+    /* Start Workout */
+    .btn-start {
+      background: rgba(0,122,255,0.72) !important;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.18) !important;
+      box-shadow: 0 4px 18px rgba(0,80,255,0.30),
+                  inset 0 1px 0 rgba(255,255,255,0.28) !important;
+    }
+
+    /* Finish */
+    .btn-finish {
+      background: rgba(48,209,88,0.72) !important;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.18) !important;
+      box-shadow: 0 4px 14px rgba(30,180,60,0.30),
+                  inset 0 1px 0 rgba(255,255,255,0.28) !important;
+    }
+
+    /* Next exercise */
+    .btn-next-ex {
+      background: rgba(48,209,88,0.72) !important;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.18) !important;
+      box-shadow: 0 4px 14px rgba(30,180,60,0.30),
+                  inset 0 1px 0 rgba(255,255,255,0.28) !important;
+    }
+
+    /* Add Exercise */
+    .btn-add-exercise {
+      background: rgba(255,255,255,0.06) !important;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.12) !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.22),
+                  inset 0 1px 0 rgba(255,255,255,0.14) !important;
+    }
+
+    /* Killer Set Next/Done */
+    .killer-btn-next {
+      background: rgba(255,59,48,0.72) !important;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.16) !important;
+      box-shadow: 0 4px 16px rgba(200,30,20,0.28),
+                  inset 0 1px 0 rgba(255,255,255,0.22) !important;
+    }
+    .killer-btn-done {
+      background: rgba(48,209,88,0.72) !important;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.18) !important;
+      box-shadow: 0 4px 14px rgba(30,180,60,0.30),
+                  inset 0 1px 0 rgba(255,255,255,0.28) !important;
+    }
+
+    /* ── Workout timer block ─────────────────────────────── */
+    .timer-block {
+      background: rgba(255,255,255,0.05) !important;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.10) !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.30),
+                  inset 0 1px 0 rgba(255,255,255,0.14) !important;
+    }
+
+    /* ── Rest timer card ─────────────────────────────────── */
+    #rest-card {
+      background: rgba(44,44,46,0.72) !important;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.12) !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.30),
+                  inset 0 1px 0 rgba(255,255,255,0.16) !important;
+    }
+
+    /* ── Confirmation dialog ─────────────────────────────── */
+    .wc-dialog {
+      background: rgba(28,28,30,0.80) !important;
+      backdrop-filter: blur(28px) saturate(200%);
+      -webkit-backdrop-filter: blur(28px) saturate(200%);
+      border: 1px solid rgba(255,255,255,0.14) !important;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.55),
+                  inset 0 1px 0 rgba(255,255,255,0.16) !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       MICRO-ANIMATIONS
+    ═══════════════════════════════════════════════════════ */
+
+    /* ── Tab fade transition ─────────────────────────────── */
+    .screen {
+      opacity: 0;
+      transition: opacity 180ms ease-in-out;
+    }
+    .screen.active {
+      opacity: 1;
+    }
+
+    /* ── Button press feedback ───────────────────────────── */
+    button:active,
+    .settings-row-tappable:active,
+    .workout-card:active,
+    .hist-month-header:active {
+      transform: scale(0.97);
+      transition: transform 120ms ease-in-out;
+    }
+    button { transition: transform 120ms ease-in-out; }
+
+    /* ── Bottom nav tab icons ────────────────────────────── */
+    .tab-btn { transition: transform 150ms ease-out, color .15s; }
+    .tab-btn:active { transform: scale(1.12); }
+
+    /* ── Exercise card expand/collapse ───────────────────── */
+    .exercise-card .sets-body {
+      overflow: hidden;
+      transition: opacity 220ms ease-in-out;
+    }
+
+    /* ── Chevron rotation (progress categories) ──────────── */
+    .prog-cat-chevron {
+      display: inline-block;
+      transition: transform 200ms ease-in-out;
+    }
+    .prog-cat-chevron.open { transform: rotate(90deg); }
+
+    /* ── Chevron rotation (history months) ───────────────── */
+    .hist-month-chevron {
+      display: inline-block;
+      transition: transform 200ms ease-in-out;
+    }
+    .hist-month-chevron.open { transform: rotate(90deg); }
+
+    /* ── Input focus highlight ───────────────────────────── */
+    input:not([type='checkbox']):not([type='range']):focus,
+    textarea:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.35);
+      transition: box-shadow 150ms ease;
+    }
+    input:not([type='checkbox']):not([type='range']) {
+      transition: box-shadow 150ms ease;
+    }
+
+    /* ── Settings toggle thumb ───────────────────────────── */
+    .settings-toggle-track::after {
+      transition: transform 180ms ease-in-out !important;
+    }
+
+    /* ── History month body height transition ─────────────── */
+    .hist-month-body { transition: height .22s ease-in-out; }
+
+    /* ── Progress category body height transition ─────────── */
+    .prog-cat-body {
+      overflow: hidden;
+      transition: height 220ms ease-out, opacity 180ms ease-out;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       REDUCED MOTION: disable all transitions/animations
+    ══════════════════════════════════════════════════════ */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -3301,7 +3650,6 @@
     <div class="nav-bar">
       <div class="nav-bar-title">History</div>
     </div>
-    <div class="section-header">All Workouts</div>
     <div id="history-list">
       <div class="empty-state">
         <span class="empty-state-emoji">📋</span>
@@ -3319,13 +3667,11 @@
     <div class="nav-bar">
       <div class="nav-bar-title">Progress</div>
     </div>
-    <div id="progress-mode-bar" style="display:none">
-      <div class="chart-mode-seg">
-        <button class="chart-mode-btn active" data-mode="reps" onclick="_setProgressMode('reps')">Reps</button>
-        <button class="chart-mode-btn" data-mode="int" onclick="_setProgressMode('int')">Intensity ⚡</button>
-      </div>
-    </div>
     <div id="progress-week-summary"></div>
+    <div id="progress-range-bar" class="progress-range-bar">
+      <div class="progress-range-label">Chart Range</div>
+      <div class="chart-range-seg" id="progress-range-seg"></div>
+    </div>
     <div id="progress-charts"></div>
     <div style="height:1.5rem"></div>
   </div>
@@ -3338,7 +3684,8 @@
       <div class="nav-bar-title">Library</div>
     </div>
     <div class="lib-seg-wrap">
-      <div class="lib-seg">
+      <div class="lib-seg" id="lib-seg">
+        <div class="lib-seg-pill" id="lib-seg-pill"></div>
         <button class="lib-seg-btn active" id="lib-seg-exercises" onclick="showLibSeg('exercises')">Exercises</button>
         <button class="lib-seg-btn"        id="lib-seg-plans"     onclick="showLibSeg('plans')">Plans</button>
       </div>
@@ -3639,6 +3986,17 @@
         </div>
         <label class="settings-toggle">
           <input type="checkbox" id="ghost-mode-toggle" onchange="setGhostMode(this.checked)" />
+          <div class="settings-toggle-track"></div>
+        </label>
+      </div>
+      <div class="settings-row" style="border-top:0.5px solid var(--separator)">
+        <div class="settings-row-icon icon-blue">⏱</div>
+        <div class="settings-row-label" style="flex:1">
+          Rest Timer
+          <div style="font-size:.75rem;color:var(--tertiary);margin-top:.1rem">Show countdown between sets</div>
+        </div>
+        <label class="settings-toggle">
+          <input type="checkbox" id="rest-timer-toggle" onchange="_setRestTimerEnabled(this.checked)" />
           <div class="settings-toggle-track"></div>
         </label>
       </div>
@@ -4137,7 +4495,7 @@
       <div class="detail-card">${cuesHTML}<div style="height:.5rem"></div></div>` : ''}
       <div style="height:1.5rem"></div>`;
 
-    document.querySelector('.lib-seg-wrap').style.display   = 'none';
+    document.querySelector('.lib-seg-wrap').style.display          = 'none';
     document.getElementById('lib-exercises-content').style.display = 'none';
     document.getElementById('lib-plans-content').style.display     = 'none';
     document.getElementById('lib-detail-content').style.display    = '';
@@ -4221,7 +4579,10 @@
     });
     document.getElementById('workout-screen').classList.remove('active');
 
-    document.getElementById(tab + '-screen').classList.add('active');
+    const nextScreen = document.getElementById(tab + '-screen');
+    nextScreen.classList.add('active');          /* display:flex kicks in */
+    nextScreen.style.opacity = '0';              /* start transparent */
+    requestAnimationFrame(() => nextScreen.style.opacity = ''); /* let CSS transition take over */
     const btn = document.getElementById('tab-' + tab);
     if (btn) btn.classList.add('active');
 
@@ -4231,7 +4592,14 @@
     if (tab === 'home')      { renderRecent(); renderFreqGoal(); renderHighlights(); }
     if (tab === 'history')   renderHistory();
     if (tab === 'progress')  renderProgress();
-    if (tab === 'exercises') showLibSeg(_libSeg);
+    if (tab === 'exercises') {
+      showLibSeg(_libSeg);
+      requestAnimationFrame(() => {
+        const nav     = document.querySelector('#exercises-screen .nav-bar');
+        const segWrap = document.querySelector('.lib-seg-wrap');
+        if (nav && segWrap) segWrap.style.top = nav.offsetHeight + 'px';
+      });
+    }
   }
 
   /* Show the workout screen (used by resume and initial start) */
@@ -4491,6 +4859,23 @@
     }
   }
 
+  function _warmupRowSummary() {
+    const genOn = _getWarmupGeneralEnabled() && WARMUP_GENERAL_LIVE.length > 0;
+    const strOn = _getWarmupStrengthEnabled();
+    if (!genOn && !strOn) return null;
+    if (genOn && strOn) {
+      const totalSecs = WARMUP_GENERAL_LIVE.reduce((s, x) => s + (parseInt(x.secs) || 0), 0);
+      const mins = Math.round(totalSecs / 60);
+      return `${mins} min general · strength sequence`;
+    }
+    if (genOn) {
+      const totalSecs = WARMUP_GENERAL_LIVE.reduce((s, x) => s + (parseInt(x.secs) || 0), 0);
+      const mins = Math.round(totalSecs / 60);
+      return `${mins} min general`;
+    }
+    return 'strength sequence only';
+  }
+
   function _renderStartChoice() {
     const el = document.getElementById('start-choice-content');
     const warmupOn = _getWarmupPref();
@@ -4498,23 +4883,26 @@
       `<div style="font-size:.625rem;font-weight:700;letter-spacing:.08em;color:var(--tertiary);
                    text-transform:uppercase;margin:.875rem 0 .375rem;padding-left:.125rem">${txt}</div>`;
 
-    el.innerHTML = `
-      <div class="wizard-step-q" style="margin-bottom:.875rem">Start Workout</div>
-
-      <!-- Warmup toggle -->
+    const warmupSummary = _warmupRowSummary();
+    const warmupRowHTML = warmupSummary === null ? '' : `
       <div style="display:flex;align-items:center;justify-content:space-between;
                   background:var(--card);border-radius:.75rem;padding:.625rem .875rem;
                   margin-bottom:.25rem">
         <div>
           <div style="font-size:.9375rem;font-weight:600;color:var(--label)">🔥 Include Warmup</div>
-          <div style="font-size:.75rem;color:var(--tertiary);margin-top:.125rem">4 min general · strength sequence</div>
+          <div style="font-size:.75rem;color:var(--tertiary);margin-top:.125rem">${warmupSummary}</div>
         </div>
         <label class="settings-toggle" style="flex-shrink:0;margin-left:.75rem">
           <input type="checkbox" id="sc-warmup-toggle" ${warmupOn ? 'checked' : ''}
             onchange="_setWarmupPref(this.checked)">
           <div class="settings-toggle-track"></div>
         </label>
-      </div>
+      </div>`;
+
+    el.innerHTML = `
+      <div class="wizard-step-q" style="margin-bottom:.875rem">Start Workout</div>
+
+      ${warmupRowHTML}
 
       ${sectionLabel('Freeform')}
       <div class="wizard-choices"${plans.length ? ' style="margin-bottom:.25rem"' : ''}>
@@ -4629,7 +5017,7 @@
       </div>
       <div class="sets-table">
         <div class="sets-col-header">
-          <span>Set</span><span>kg</span><span>${tb ? 'Secs' : 'Reps'}</span><span>⚡</span><span></span>
+          <span>Set</span><span>kg</span><span>${tb ? 'Secs' : 'Reps'}</span><span>⚡</span><span></span><span></span>
         </div>
         <div class="sets-body"></div>
         <div class="ghost-hint" id="ghost-${id}"></div>
@@ -4653,7 +5041,12 @@
       title: 'Remove Exercise?',
       msg: `"${name}" and all its sets will be removed.`,
       okLabel: 'Remove', okColor: 'red',
-      onOk: () => { document.getElementById(id)?.remove(); persistActiveWorkout(); }
+      onOk: () => {
+        _animateRemove(document.getElementById(id), () => {
+          document.getElementById(id)?.remove();
+          persistActiveWorkout();
+        });
+      }
     });
   }
 
@@ -4670,6 +5063,7 @@
       <input class="set-input" type="number" placeholder="—" min="0" step="0.5" inputmode="decimal" />
       <input class="set-input" type="number" placeholder="—" min="0" step="1"   inputmode="decimal" />
       <span class="set-intensity-badge"></span>
+      <button class="btn-log-set" onclick="logSet('${exId}','${sid}',this)" title="Log set">✓</button>
       <button class="btn-delete-set" onclick="removeSet('${sid}','${exId}')" title="Remove set">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
           <path d="M7 .5a6.5 6.5 0 1 0 0 13A6.5 6.5 0 0 0 7 .5zm2.78 8.72a.75.75 0 0 1-1.06 1.06L7 8.56l-1.72 1.72a.75.75 0 0 1-1.06-1.06L5.94 7.5 4.22 5.78a.75.75 0 0 1 1.06-1.06L7 6.44l1.72-1.72a.75.75 0 0 1 1.06 1.06L8.06 7.5l1.72 1.72z"/>
@@ -4699,7 +5093,179 @@
       .forEach((r, i) => r.querySelector('.set-badge').textContent = i + 1);
   }
 
+  /* ── Rest timer ─────────────────────────────────────────── */
+  let _rest = null; /* { interval, secs, totalSecs, exId, exName, startedAt, btn } */
+  let _lastCompletedRest = null; /* { exId, secs } — set when timer expires naturally */
+
+  const REST_DEFAULT_SECS = 90;
+
+  /* ── Rest performance data ──────────────────────────────── */
+  function _getRestPerfData(name) {
+    try { return JSON.parse(localStorage.getItem('restPerf:' + name) || '[]'); } catch(e) { return []; }
+  }
+  function _saveRestPerfPoint(name, restSecs, reps, weight) {
+    const arr = _getRestPerfData(name);
+    arr.push({ rest: restSecs, reps, weight: weight || 0 });
+    localStorage.setItem('restPerf:' + name, JSON.stringify(arr));
+  }
+  function _calcOptimalRest(name) {
+    const data = _getRestPerfData(name);
+    if (data.length < 6) return null;
+    const hasWeight = data.some(d => d.weight > 0);
+    const buckets = {};
+    for (const d of data) {
+      const b = Math.floor(d.rest / 30) * 30;
+      if (!buckets[b]) buckets[b] = [];
+      buckets[b].push(hasWeight && d.weight > 0 ? d.reps * d.weight : d.reps);
+    }
+    const avgOf = arr => arr.reduce((a, v) => a + v, 0) / arr.length;
+    const bucketAvgs = Object.entries(buckets).map(([b, vals]) => ({ b: +b, avg: avgOf(vals) }));
+    const best = Math.max(...bucketAvgs.map(x => x.avg));
+    const threshold = best * 0.9;
+    const qualifying = bucketAvgs.filter(x => x.avg >= threshold).sort((a, b) => a.b - b.b);
+    if (!qualifying.length) return null;
+    return Math.round(qualifying[0].b / 15) * 15;
+  }
+
+  /* ── Rest timer core ────────────────────────────────────── */
+  function _restBeep() {
+    try {
+      const ac  = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ac.createOscillator();
+      const g   = ac.createGain();
+      osc.connect(g); g.connect(ac.destination);
+      osc.frequency.value = 880;
+      g.gain.setValueAtTime(0.35, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.4);
+      osc.start(ac.currentTime);
+      osc.stop(ac.currentTime + 0.4);
+    } catch(e) {}
+  }
+  function _fmtSecs(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
+  function _restUpdateLabel() {
+    if (!_rest) return;
+    const cd = document.getElementById('rest-card-countdown');
+    if (cd) cd.textContent = _fmtSecs(_rest.secs);
+    const barEl = document.getElementById('rest-card-bar');
+    if (barEl && _rest.totalSecs) barEl.style.width = (_rest.secs / _rest.totalSecs * 100) + '%';
+  }
+  function _restAdjust(delta) {
+    if (!_rest) return;
+    const newSecs = Math.max(15, _rest.secs + delta);
+    const diff = newSecs - _rest.secs;
+    _rest.secs = newSecs;
+    if (diff > 0) _rest.totalSecs += diff;
+    _restUpdateLabel();
+  }
+  function _restClear() {
+    if (!_rest) return;
+    /* store how long they actually rested before caller clears state */
+    const elapsed = _rest.totalSecs - _rest.secs;
+    _lastCompletedRest = { exId: _rest.exId, secs: elapsed };
+    clearInterval(_rest.interval);
+    if (_rest.btn) _rest.btn.classList.remove('logged');
+    _rest = null;
+    const card = document.getElementById('rest-card');
+    if (card) {
+      card.classList.remove('active');
+      setTimeout(() => { const c = document.getElementById('rest-card'); if (c) c.remove(); }, 300);
+    }
+  }
+  function logSet(exId, sid, btn) {
+    /* ── Record perf data for this set ─────────────────────── */
+    const exCard = document.getElementById(exId);
+    const exName = exCard?.querySelector('.exercise-head input')?.value || '';
+    let restTaken = null;
+    if (_rest && _rest.exId === exId) {
+      restTaken = _rest.totalSecs - _rest.secs;
+    } else if (_lastCompletedRest && _lastCompletedRest.exId === exId) {
+      restTaken = _lastCompletedRest.secs;
+    }
+    _lastCompletedRest = null;
+    if (restTaken !== null && restTaken >= 20 && restTaken <= 600) {
+      const row = btn?.closest('.set-row');
+      const inputs = row?.querySelectorAll('.set-input');
+      if (inputs && inputs.length >= 2) {
+        const weight = parseFloat(inputs[0].value) || 0;
+        const reps   = parseFloat(inputs[1].value) || 0;
+        if (reps > 0) _saveRestPerfPoint(exName, restTaken, reps, weight);
+      }
+    }
+
+    /* ── Start new rest timer ───────────────────────────────── */
+    _restClear();
+    if (btn) btn.classList.add('logged');
+    if (!_getRestTimerEnabled()) return;
+
+    const optimal = _calcOptimalRest(exName);
+    const dur = optimal !== null ? optimal : REST_DEFAULT_SECS;
+    const hasSuggestion = optimal !== null;
+
+    const existing = document.getElementById('rest-card');
+    if (existing) existing.remove();
+
+    const rc = document.createElement('div');
+    rc.id = 'rest-card';
+    rc.innerHTML = `<div class="rest-card-top">
+      <span class="rest-card-lbl">Rest</span>
+      <span id="rest-card-countdown">0:00</span>
+      <button class="rest-card-skip" onclick="_restClear()">Skip</button>
+    </div>
+    <div class="rest-card-bar-wrap"><div id="rest-card-bar"></div></div>
+    <div class="rest-card-adj">
+      <button class="rest-adj-pill" onclick="_restAdjust(-15)">−15s</button>
+      <button class="rest-adj-pill" onclick="_restAdjust(15)">+15s</button>
+    </div>
+    ${hasSuggestion ? `<div class="rest-card-hint">Suggested: ${_fmtSecs(optimal)} — based on your performance</div>` : ''}`;
+
+    const setRow = btn?.closest('.set-row');
+    if (setRow) setRow.after(rc);
+    else exCard?.querySelector('.sets-list')?.append(rc);
+
+    _rest = { interval: null, secs: dur, totalSecs: dur, exId, exName, btn: btn || null };
+    _restUpdateLabel();
+    requestAnimationFrame(() => requestAnimationFrame(() => rc.classList.add('active')));
+
+    _rest.interval = setInterval(() => {
+      if (!_rest) return;
+      _rest.secs--;
+      if (_rest.secs <= 0) {
+        _restBeep();
+        try { navigator.vibrate?.(300); } catch(e) {}
+        _lastCompletedRest = { exId: _rest.exId, secs: _rest.totalSecs };
+        clearInterval(_rest.interval);
+        if (_rest.btn) _rest.btn.classList.remove('logged');
+        _rest = null;
+        const card = document.getElementById('rest-card');
+        if (card) {
+          card.classList.remove('active');
+          setTimeout(() => { const c = document.getElementById('rest-card'); if (c) c.remove(); }, 300);
+        }
+        return;
+      }
+      _restUpdateLabel();
+    }, 1000);
+  }
+
   /* ── Workout confirmation overlay ──────────────────────── */
+  function _animateRemove(el, onDone) {
+    if (!el) { onDone(); return; }
+    el.style.overflow   = 'hidden';
+    el.style.height     = el.scrollHeight + 'px';
+    el.style.margin     = getComputedStyle(el).margin;
+    el.style.padding    = getComputedStyle(el).padding;
+    /* force reflow so transition sees the explicit height */
+    el.getBoundingClientRect();
+    el.style.transition = 'opacity 280ms ease-in, height 280ms ease-in, margin 280ms ease-in, padding 280ms ease-in';
+    el.style.opacity    = '0';
+    el.style.height     = '0';
+    el.style.marginTop  = '0';
+    el.style.marginBottom = '0';
+    el.style.paddingTop = '0';
+    el.style.paddingBottom = '0';
+    setTimeout(onDone, 285);
+  }
+
   let _wConfirmCallback = null;
 
   function _wConfirm({ title, msg, okLabel, okColor, onOk }) {
@@ -4811,6 +5377,7 @@
     document.getElementById('pause-overlay')?.classList.remove('open');
     clearInterval(timerInterval);
     _workoutActive = false;
+    _restClear();
     activePlanData = null;
     exerciseCount  = 0;
     _completedWarmup = null;
@@ -4826,21 +5393,23 @@
 
   /* ── Delete a saved workout ─────────────────────────────── */
   function deleteWorkout(id) {
-    const w = workouts.find(x => x.id === id);
-    const label = w ? new Date(w.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + (w.planName ? ` · ${w.planName}` : '') : 'this workout';
+    closeWorkoutDetail();
     _wConfirm({
       title: 'Delete Workout?',
-      msg: `"${label}" will be permanently deleted.`,
+      msg: 'This cannot be undone.',
       okLabel: 'Delete', okColor: 'red',
       onOk: () => {
-        workouts = workouts.filter(x => x.id !== id);
-        persist();
-        const homeActive     = document.getElementById('home-screen').classList.contains('active');
-        const historyActive  = document.getElementById('history-screen').classList.contains('active');
-        const progressActive = document.getElementById('progress-screen')?.classList.contains('active');
-        if (homeActive)     { renderRecent(); renderFreqGoal(); renderHighlights(); }
-        if (historyActive)  renderHistory();
-        if (progressActive) renderProgress();
+        const card = document.querySelector(`[data-workout-id="${id}"]`);
+        _animateRemove(card, () => {
+          workouts = workouts.filter(x => x.id !== id);
+          persist();
+          const homeActive     = document.getElementById('home-screen').classList.contains('active');
+          const historyActive  = document.getElementById('history-screen').classList.contains('active');
+          const progressActive = document.getElementById('progress-screen')?.classList.contains('active');
+          if (homeActive)     { renderRecent(); renderFreqGoal(); renderHighlights(); }
+          if (historyActive)  renderHistory();
+          if (progressActive) renderProgress();
+        });
       }
     });
   }
@@ -4926,7 +5495,7 @@
         </div>
         <div class="sets-table">
           <div class="sets-col-header">
-            <span>Set</span><span>kg</span><span>${tb ? 'Secs' : 'Reps'}</span><span>⚡</span><span></span>
+            <span>Set</span><span>kg</span><span>${tb ? 'Secs' : 'Reps'}</span><span>⚡</span><span></span><span></span>
           </div>
           <div class="sets-body"></div>
           <div class="ghost-hint" id="ghost-${id}"></div>
@@ -4949,6 +5518,7 @@
           <input class="set-input" type="number" placeholder="—" min="0" step="0.5" inputmode="decimal" value="${setData.kg || ''}" />
           <input class="set-input" type="number" placeholder="—" min="0" step="1" inputmode="decimal" value="${setData.reps || ''}" />
           <span class="set-intensity-badge"></span>
+          <button class="btn-log-set" onclick="logSet('${id}','${sid}',this)" title="Log set">✓</button>
           <button class="btn-delete-set" onclick="removeSet('${sid}','${id}')" title="Remove set">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
               <path d="M7 .5a6.5 6.5 0 1 0 0 13A6.5 6.5 0 0 0 7 .5zm2.78 8.72a.75.75 0 0 1-1.06 1.06L7 8.56l-1.72 1.72a.75.75 0 0 1-1.06-1.06L5.94 7.5 4.22 5.78a.75.75 0 0 1 1.06-1.06L7 6.44l1.72-1.72a.75.75 0 0 1 1.06 1.06L8.06 7.5l1.72 1.72z"/>
@@ -5015,13 +5585,75 @@
   }
 
   /* ── Render: history ────────────────────────────────────── */
+  function _histMonthKey(w) {
+    const d = new Date(w.date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }
+  function _histMonthLabel(key) {
+    const [y, m] = key.split('-');
+    return new Date(+y, +m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+  function _getHistFolderState() {
+    try { return JSON.parse(localStorage.getItem('histFolderState') || '{}'); } catch { return {}; }
+  }
+  function _setHistFolderState(state) {
+    localStorage.setItem('histFolderState', JSON.stringify(state));
+  }
+  function toggleHistMonth(key) {
+    const state = _getHistFolderState();
+    state[key] = !_isHistMonthOpen(key, state);
+    _setHistFolderState(state);
+    const body = document.getElementById('hist-body-' + key);
+    const chev = document.getElementById('hist-chev-' + key);
+    if (!body) return;
+    if (state[key]) {
+      body.style.height = body.scrollHeight + 'px';
+      setTimeout(() => { if (state[key]) body.style.height = 'auto'; }, 260);
+    } else {
+      body.style.height = body.scrollHeight + 'px';
+      requestAnimationFrame(() => { body.style.height = '0'; });
+    }
+    if (chev) chev.classList.toggle('open', !!state[key]);
+  }
+  function _isHistMonthOpen(key, state) {
+    if (key in state) return !!state[key];
+    /* default: current month open, rest collapsed */
+    const now = new Date();
+    const curKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return key === curKey;
+  }
   function renderHistory() {
     const el = document.getElementById('history-list');
     if (!workouts.length) {
       el.innerHTML = emptyState('📋', 'No History Yet', 'Completed workouts will appear here.');
       return;
     }
-    el.innerHTML = workouts.map(w => workoutCard(w)).join('');
+    /* group by month key, newest first */
+    const groups = {};
+    workouts.forEach(w => {
+      const k = _histMonthKey(w);
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(w);
+    });
+    const keys = Object.keys(groups).sort().reverse();
+    const state = _getHistFolderState();
+    el.innerHTML = keys.map(key => {
+      const open  = _isHistMonthOpen(key, state);
+      const cards = groups[key].map(w => workoutCard(w)).join('');
+      const count = groups[key].length;
+      return `
+        <div class="hist-month-header" onclick="toggleHistMonth('${key}')">
+          <span class="hist-month-title">${_histMonthLabel(key)}</span>
+          <span class="hist-month-meta">
+            ${count} workout${count !== 1 ? 's' : ''}
+            <span class="hist-month-chevron${open ? ' open' : ''}" id="hist-chev-${key}">▸</span>
+          </span>
+        </div>
+        <div class="hist-month-body" id="hist-body-${key}" style="height:${open ? 'auto' : '0'}">
+          ${cards}
+          <div style="height:.25rem"></div>
+        </div>`;
+    }).join('');
   }
 
   /* ── Killer history helpers ────────────────────────────── */
@@ -5272,7 +5904,7 @@
     </svg>`;
 
     return `
-      <div class="workout-history-card" onclick="openWorkoutDetail(${w.id})" style="cursor:pointer">
+      <div class="workout-history-card" data-workout-id="${w.id}" onclick="openWorkoutDetail(${w.id})" style="cursor:pointer">
         <div class="workout-history-head">
           <div class="workout-history-info">
             ${w.planName ? `<div class="workout-history-plan">📋 ${w.planName}</div>` : ''}
@@ -5281,7 +5913,7 @@
           </div>
           <div class="workout-history-meta">
             <div class="workout-history-dur">${durStr}</div>
-            <button class="btn-delete-workout" onclick="deleteWorkout(${w.id})" title="Delete workout">
+            <button class="btn-delete-workout" onclick="event.stopPropagation();deleteWorkout(${w.id})" title="Delete workout">
               ${trashSVG}
             </button>
           </div>
@@ -5320,7 +5952,8 @@
     const map    = {};
     const sorted = [...workouts].sort((a, b) => new Date(a.date) - new Date(b.date));
     sorted.forEach(w => {
-      const label = new Date(w.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const _ld = new Date(w.date);
+      const label = _ld.getDate() + ' ' + _ld.toLocaleDateString('en-US', { month: 'short' });
       w.exercises.forEach(ex => {
         const name = ex.name.trim() || 'Unnamed';
         if (!map[name]) map[name] = [];
@@ -5342,12 +5975,100 @@
   let _progressMode   = 'reps'; /* resets to 'reps' on every renderProgress call */
 
   /* ── Build one chart card element (no canvas yet) ───────── */
+  const RANGE_OPTS = [
+    { label: '30',  key: '30' },
+    { label: '3M',  key: '3M' },
+    { label: '6M',  key: '6M' },
+    { label: '1Y',  key: '1Y' },
+    { label: '5Y',  key: '5Y' },
+    { label: 'All', key: 'all' },
+  ];
+
+  function _filterSessions(sessions, key) {
+    if (key === 'all') return sessions;
+    if (key === '30')  return sessions.slice(-30);
+    const now = new Date();
+    let cutoff;
+    if (key === '3M') cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+    else if (key === '6M') cutoff = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+    else if (key === '1Y') cutoff = new Date(now.getFullYear() - 1,  now.getMonth(), now.getDate());
+    else if (key === '5Y') cutoff = new Date(now.getFullYear() - 5,  now.getMonth(), now.getDate());
+    return sessions.filter(s => new Date(s.date) >= cutoff);
+  }
+
+  function _getProgressRange() { return localStorage.getItem('progressRange') || '30'; }
+  function _setProgressRange(key) { localStorage.setItem('progressRange', key); }
+
+  function _renderProgressRangeSeg() {
+    const seg = document.getElementById('progress-range-seg');
+    if (!seg) return;
+    const cur = _getProgressRange();
+    seg.innerHTML = '<div class="range-pill"></div>' + RANGE_OPTS.map(o =>
+      `<button class="chart-mode-btn${o.key === cur ? ' active' : ''}" data-range="${o.key}">${o.label}</button>`
+    ).join('');
+
+    const pill = seg.querySelector('.range-pill');
+    function _movePill(btn, animate) {
+      if (!pill) return;
+      if (!animate) pill.style.transition = 'none';
+      pill.style.width  = btn.offsetWidth + 'px';
+      pill.style.transform = `translateX(${btn.offsetLeft}px)`;
+      if (!animate) requestAnimationFrame(() => {
+        pill.style.transition = 'transform 200ms ease-in-out, width 200ms ease-in-out';
+      });
+    }
+
+    requestAnimationFrame(() => {
+      const activeBtn = seg.querySelector('.chart-mode-btn.active');
+      if (activeBtn) _movePill(activeBtn, false);
+    });
+
+    seg.querySelectorAll('.chart-mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _setProgressRange(btn.dataset.range);
+        seg.querySelectorAll('.chart-mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _movePill(btn, true);
+        _rerangeAllCharts(btn.dataset.range);
+      });
+    });
+  }
+
+  function _rerangeAllCharts(rangeKey) {
+    document.querySelectorAll('#progress-charts .chart-card').forEach(card => {
+      if (!card._chartData) return;
+      /* only redraw cards that are currently visible (category not collapsed) */
+      if (card.offsetParent !== null) _redrawCharts(card, rangeKey);
+    });
+    /* update pending draws so lazy-expanded folders use the new range */
+    _progCatPending.forEach((pending, cat) => {
+      _progCatPending.set(cat, pending); /* already stored; draw will use _getProgressRange() */
+    });
+  }
+
+  function _redrawCharts(card, rangeKey) {
+    const { name, sessions, maxSets } = card._chartData;
+    const filtered = _filterSessions(sessions, rangeKey);
+    const w1 = document.getElementById('wrap-' + CSS.escape(name));
+    const w2 = document.getElementById('int-wrap-' + CSS.escape(name));
+    if (w1) w1.innerHTML = '';
+    if (w2) w2.innerHTML = '';
+    const sub = card.querySelector('.chart-card-subtitle');
+    if (sub) sub.textContent = filtered.length === 1
+      ? 'Log another session to see your trend'
+      : `${filtered.length} sessions`;
+    _drawChartForMode(name, filtered, maxSets);
+  }
+
   function _buildChartCard(name, sessions) {
     const maxSets  = Math.max(...sessions.map(s => s.sets.length));
-    const subtitle = sessions.length === 1
+    const rangeKey = _getProgressRange();
+    const filtered = _filterSessions(sessions, rangeKey);
+    const subtitle = filtered.length === 1
       ? 'Log another session to see your trend'
-      : `${sessions.length} sessions`;
+      : `${filtered.length} sessions`;
 
+    const escapedName = CSS.escape(name);
     const card = document.createElement('div');
     card.className = 'chart-card';
     card.innerHTML = `
@@ -5358,9 +6079,11 @@
         </div>
       </div>
       <div class="chart-graph-label">Best Set</div>
-      <div class="chart-wrap" id="wrap-${CSS.escape(name)}"></div>
+      <div class="chart-graph-desc">Best set per session — reps and intensity</div>
+      <div class="chart-wrap" id="wrap-${escapedName}"></div>
       <div class="chart-graph-label" style="margin-top:.5rem">Session Total</div>
-      <div class="chart-wrap" id="int-wrap-${CSS.escape(name)}"></div>`;
+      <div class="chart-graph-desc">Combined intensity of all sets per session</div>
+      <div class="chart-wrap" id="int-wrap-${escapedName}"></div>`;
 
     card._chartData = { name, sessions, maxSets };
     return { card, maxSets };
@@ -5484,21 +6207,14 @@
 
     if (!names.length) {
       container.innerHTML = emptyState('📈', 'No Data Yet', 'Complete more workouts to see your progress.');
-      const mb = document.getElementById('progress-mode-bar');
-      if (mb) mb.style.display = 'none';
       return;
     }
 
     container.innerHTML = '';
     _progCatPending = new Map();
     _progressMode   = 'reps';
-    const modeBar = document.getElementById('progress-mode-bar');
-    if (modeBar) {
-      modeBar.style.display = '';
-      modeBar.querySelectorAll('.chart-mode-btn').forEach(b =>
-        b.classList.toggle('active', b.dataset.mode === 'reps'));
-    }
     renderWeekSummary();
+    _renderProgressRangeSeg();
 
     /* Build exercise→category reverse map from the library */
     const lib = getExLib();
@@ -5552,14 +6268,14 @@
 
       const header = document.createElement('div');
       header.className = 'prog-cat-header';
-      header.innerHTML = `<span class="prog-cat-name">${cat}</span><span class="prog-cat-chevron">${isCollapsed ? '▸' : '▾'}</span>`;
+      header.innerHTML = `<span class="prog-cat-name">${cat}</span><span class="prog-cat-chevron${isCollapsed ? '' : ' open'}">▸</span>`;
       header.addEventListener('click', () => _toggleProgCat(cat));
       folder.appendChild(header);
 
       const body = document.createElement('div');
       body.className = 'prog-cat-body';
       body.id = 'prog-cat-body-' + cat;
-      if (isCollapsed) body.style.display = 'none';
+      if (isCollapsed) { body.style.display = 'none'; body.style.height = '0px'; }
       folder.appendChild(body);
       container.appendChild(folder);
 
@@ -5576,8 +6292,9 @@
       /* Draw charts immediately for the expanded folder */
       if (!isCollapsed) {
         requestAnimationFrame(() => {
+          const rk = _getProgressRange();
           pending.forEach(({ name, sessions, maxSets }) => {
-            _drawChartForMode(name, sessions, maxSets);
+            _drawChartForMode(name, _filterSessions(sessions, rk), maxSets);
           });
           _progCatPending.delete(cat);
         });
@@ -5586,14 +6303,13 @@
 
     /* Set sticky top offsets after layout */
     requestAnimationFrame(() => {
-      const nav     = document.querySelector('#progress-screen .nav-bar');
-      const modeBar = document.getElementById('progress-mode-bar');
-      const navH    = nav ? nav.offsetHeight : 0;
-      const modeH   = modeBar ? modeBar.offsetHeight : 0;
-      if (modeBar) modeBar.style.top = navH + 'px';
-      const catTop = navH + modeH;
+      const nav    = document.querySelector('#progress-screen .nav-bar');
+      const navH   = nav ? nav.offsetHeight : 0;
+      const rangeBar = document.getElementById('progress-range-bar');
+      if (rangeBar) rangeBar.style.top = navH + 'px';
+      const rangeBarH = rangeBar ? rangeBar.offsetHeight : 0;
       document.querySelectorAll('#progress-charts .prog-cat-header').forEach(h => {
-        h.style.top = catTop + 'px';
+        h.style.top = (navH + rangeBarH) + 'px';
       });
     });
   }
@@ -5604,11 +6320,10 @@
     const folder = body?.closest('.prog-cat-folder');
     if (!body || !folder) return;
 
-    const expanding = body.style.display === 'none';
-    body.style.display = expanding ? '' : 'none';
+    const expanding = body.style.display === 'none' || body.style.height === '0px';
 
     const chevron = folder.querySelector('.prog-cat-chevron');
-    if (chevron) chevron.textContent = expanding ? '▾' : '▸';
+    if (chevron) chevron.classList.toggle('open', expanding);
 
     /* Persist */
     let saved = {};
@@ -5616,15 +6331,35 @@
     saved[cat] = !expanding;
     localStorage.setItem('progCatCollapsed', JSON.stringify(saved));
 
+    if (expanding) {
+      body.style.display = '';
+      body.style.opacity = '0';
+      const h = body.scrollHeight;
+      body.style.height = '0px';
+      requestAnimationFrame(() => {
+        body.style.height  = h + 'px';
+        body.style.opacity = '1';
+        setTimeout(() => { if (saved[cat] === false) body.style.height = 'auto'; }, 225);
+      });
+    } else {
+      body.style.height  = body.scrollHeight + 'px';
+      body.style.opacity = '0';
+      requestAnimationFrame(() => {
+        body.style.height = '0px';
+        setTimeout(() => { body.style.display = 'none'; }, 220);
+      });
+    }
+
     /* Draw charts lazily on first expand */
     if (expanding && _progCatPending.has(cat)) {
       const pending = _progCatPending.get(cat);
       _progCatPending.delete(cat);
-      requestAnimationFrame(() => {
+      setTimeout(() => {
+        const rk = _getProgressRange();
         pending.forEach(({ name, sessions, maxSets }) => {
-          _drawChartForMode(name, sessions, maxSets);
+          _drawChartForMode(name, _filterSessions(sessions, rk), maxSets);
         });
-      });
+      }, 230);
     }
   }
 
@@ -5632,22 +6367,6 @@
   function _drawChartForMode(name, sessions, maxSets) {
     drawBestSetChart(name, sessions);
     drawSessionTotalChart(name, sessions);
-  }
-
-  /* ── Global mode toggle — redraws all visible cards ─────── */
-  function _setProgressMode(mode) {
-    if (_progressMode === mode) return;
-    _progressMode = mode;
-    document.querySelectorAll('#progress-mode-bar .chart-mode-btn').forEach(b =>
-      b.classList.toggle('active', b.dataset.mode === mode));
-    document.querySelectorAll('#progress-charts .chart-card').forEach(card => {
-      const d = card._chartData;
-      if (!d) return;
-      const wraps = card.querySelectorAll('.chart-wrap');
-      if (!wraps[0] || !wraps[0].clientWidth) return; /* skip collapsed/invisible */
-      wraps.forEach(w => { w.innerHTML = ''; });
-      _drawChartForMode(d.name, d.sessions, d.maxSets);
-    });
   }
 
   /* ── Graph 1: Best Set — dual-line (reps + best-set intensity) ── */
@@ -5679,7 +6398,7 @@
       return bs ? calcSetIntensity(name, parseFloat(bs.reps) || 0, parseFloat(bs.kg) || 0) : 0;
     });
 
-    const PAD = { top: 20, right: 46, bottom: 38, left: 36 };
+    const PAD = { top: 38, right: 44, bottom: 50, left: 44 };
     const cW  = W - PAD.left - PAD.right;
     const cH  = H - PAD.top  - PAD.bottom;
 
@@ -5727,17 +6446,43 @@
     ctx.font         = '400 10px -apple-system, sans-serif';
     ctx.textAlign    = 'left';
     ctx.textBaseline = 'middle';
-    intTicks.forEach(t => ctx.fillText(fmtInt(t), PAD.left + cW + 6, yOfInt(t)));
+    intTicks.forEach(t => ctx.fillText(fmtInt(t), PAD.left + cW + 8, yOfInt(t)));
     ctx.restore();
 
-    /* x labels */
+    /* x labels — deduplicate when all dates are the same or only one session */
     ctx.save();
     ctx.fillStyle    = labelColor;
     ctx.font         = '400 10px -apple-system, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'top';
-    const xIdxs = pickLabelIdxs(sessions.length, 5);
-    sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9); });
+    const allSameDate = sessions.every(s => s.label === sessions[0].label);
+    if (allSameDate) {
+      ctx.fillText(sessions[0].label, PAD.left + cW / 2, H - PAD.bottom + 9);
+    } else {
+      const xIdxs = pickLabelIdxs(sessions.length, 5);
+      sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9); });
+    }
+    ctx.restore();
+
+    /* axis labels */
+    ctx.save();
+    ctx.fillStyle = labelColor;
+    ctx.font      = '400 9px -apple-system, sans-serif';
+    /* x axis label: "Date" */
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('Date', PAD.left + cW / 2, H - 4);
+    /* left y axis label: "Reps" — rotated, sits outside left pad */
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.translate(9, PAD.top + cH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Reps', 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    /* right y axis label: "Intensity ⚡" — 16px clearance from numbers */
+    ctx.translate(W - 10, PAD.top + cH / 2);
+    ctx.rotate(Math.PI / 2);
+    ctx.fillText('Intensity ⚡', 0, 0);
     ctx.restore();
 
     const repPts = bestReps.map((r, i) => ({ x: xOf(i), y: yOfRep(r) }));
@@ -5828,31 +6573,34 @@
     const prVal = Math.max(...bestReps);
     if (prVal > 0) {
       const prIdx = bestReps.lastIndexOf(prVal);
+      const prX   = xOf(prIdx);
+      const prY   = yOfRep(prVal);
       ctx.beginPath();
-      ctx.arc(xOf(prIdx), yOfRep(prVal), 5.5, 0, Math.PI * 2);
+      ctx.arc(prX, prY, 5.5, 0, Math.PI * 2);
       ctx.fillStyle = gold;
       ctx.fill();
-      ctx.save();
-      ctx.fillStyle    = gold;
-      ctx.font         = '700 9px -apple-system, sans-serif';
-      ctx.textAlign    = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText('PR', xOf(prIdx), yOfRep(prVal) - 7);
-      ctx.restore();
     }
 
-    /* mini legend top-left */
+    /* mini legend — top CENTER, 14px above chart area */
     ctx.save();
     ctx.font         = '500 9px -apple-system, sans-serif';
     ctx.textBaseline = 'middle';
-    const lY = PAD.top - 10;
+    const lY   = PAD.top - 18;
+    const dotR = 3, gap = 5, spacing = 16;
+    const repLabelW = ctx.measureText('Reps').width;
+    const intLabelW = ctx.measureText('Intensity').width;
+    /* total width of: ● gap "Reps" spacing ● gap "Intensity" */
+    const totalLegW = dotR * 2 + gap + repLabelW + spacing + dotR * 2 + gap + intLabelW;
+    let lCur = PAD.left + cW / 2 - totalLegW / 2;
     ctx.fillStyle = blue;
-    ctx.beginPath(); ctx.arc(PAD.left + 4, lY, 3, 0, Math.PI * 2); ctx.fill();
-    ctx.fillText('Reps', PAD.left + 10, lY);
-    const rW = ctx.measureText('Reps').width;
+    ctx.beginPath(); ctx.arc(lCur + dotR, lY, dotR, 0, Math.PI * 2); ctx.fill();
+    lCur += dotR * 2 + gap;
+    ctx.fillText('Reps', lCur, lY);
+    lCur += repLabelW + spacing;
     ctx.fillStyle = gold;
-    ctx.beginPath(); ctx.arc(PAD.left + 18 + rW, lY, 3, 0, Math.PI * 2); ctx.fill();
-    ctx.fillText('Intensity', PAD.left + 24 + rW, lY);
+    ctx.beginPath(); ctx.arc(lCur + dotR, lY, dotR, 0, Math.PI * 2); ctx.fill();
+    lCur += dotR * 2 + gap;
+    ctx.fillText('Intensity', lCur, lY);
     ctx.restore();
   }
 
@@ -5882,7 +6630,7 @@
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    const PAD  = { top: 14, right: 20, bottom: 38, left: 44 };
+    const PAD  = { top: 14, right: 44, bottom: 50, left: 44 };
     const cW   = W - PAD.left - PAD.right;
     const cH   = H - PAD.top  - PAD.bottom;
     const color = '#30D158';
@@ -5925,6 +6673,22 @@
     ctx.textBaseline = 'top';
     const xIdxs = pickLabelIdxs(sessions.length, 5);
     sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9); });
+    ctx.restore();
+
+    /* axis labels */
+    ctx.save();
+    ctx.fillStyle = labelColor;
+    ctx.font      = '400 9px -apple-system, sans-serif';
+    /* x axis label: "Date" */
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('Date', PAD.left + cW / 2, H - 4);
+    /* left y axis label: "Total Intensity ⚡" */
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.translate(10, PAD.top + cH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Total Intensity ⚡', 0, 0);
     ctx.restore();
 
     const pts = totals.map((v, i) => ({ x: xOf(i), y: yOf(v) }));
@@ -6878,6 +7642,9 @@
     document.querySelectorAll('#exercise-list .exercise-card').forEach(card => updateGhostHint(card.id));
   }
 
+  function _getRestTimerEnabled() { return localStorage.getItem('restTimerEnabled') !== '0'; }
+  function _setRestTimerEnabled(on) { localStorage.setItem('restTimerEnabled', on ? '1' : '0'); }
+
   function getExPR(name, tb) {
     let best = null;
     workouts.forEach(w => {
@@ -7254,8 +8021,21 @@
 
   function showLibSeg(seg) {
     _libSeg = seg;
-    document.getElementById('lib-seg-exercises').classList.toggle('active', seg === 'exercises');
-    document.getElementById('lib-seg-plans').classList.toggle('active', seg === 'plans');
+    const exBtn   = document.getElementById('lib-seg-exercises');
+    const plBtn   = document.getElementById('lib-seg-plans');
+    const pill    = document.getElementById('lib-seg-pill');
+    const activeBtn = seg === 'exercises' ? exBtn : plBtn;
+    exBtn?.classList.toggle('active', seg === 'exercises');
+    plBtn?.classList.toggle('active', seg === 'plans');
+    if (pill && activeBtn) {
+      const firstPos = !pill.style.width || pill.style.width === '0px';
+      if (firstPos) pill.style.transition = 'none';
+      pill.style.width     = activeBtn.offsetWidth + 'px';
+      pill.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
+      if (firstPos) requestAnimationFrame(() => {
+        pill.style.transition = 'transform 200ms ease-in-out, width 200ms ease-in-out';
+      });
+    }
     document.getElementById('lib-exercises-content').style.display = seg === 'exercises' ? '' : 'none';
     document.getElementById('lib-plans-content').style.display     = seg === 'plans'     ? '' : 'none';
     if (seg === 'exercises') renderExScreen();
@@ -7294,7 +8074,7 @@
     } else {
       plans.forEach(plan => {
         const subs = plan.exercises.slice(0, 4).map(e => _normPlanEx(e).name).join(' · ') + (plan.exercises.length > 4 ? ' …' : '');
-        html += `<div class="plan-item">
+        html += `<div class="plan-item" data-plan-id="${plan.id}">
           <div class="plan-item-main" style="cursor:default">
             <div class="plan-item-name">${plan.name}</div>
             <div class="plan-item-subs">${subs || 'No exercises'}</div>
@@ -7388,7 +8168,13 @@
       title: 'Remove Exercise?',
       msg: `"${name}" will be removed from the plan.`,
       okLabel: 'Remove', okColor: 'red',
-      onOk: () => { _planDraft.exercises.splice(idx, 1); renderLibPlans(); }
+      onOk: () => {
+        const row = document.querySelector(`#plan-ex-list [data-idx="${idx}"]`);
+        _animateRemove(row, () => {
+          _planDraft.exercises.splice(idx, 1);
+          renderLibPlans();
+        });
+      }
     });
   }
 
@@ -7517,7 +8303,14 @@
       title: 'Delete Plan?',
       msg: `"${name}" will be permanently deleted.`,
       okLabel: 'Delete', okColor: 'red',
-      onOk: () => { plans = plans.filter(p => p.id !== id); persistPlans(); renderLibPlans(); }
+      onOk: () => {
+        const item = document.querySelector(`[data-plan-id="${id}"]`);
+        _animateRemove(item, () => {
+          plans = plans.filter(p => p.id !== id);
+          persistPlans();
+          renderLibPlans();
+        });
+      }
     });
   }
 
@@ -7811,6 +8604,8 @@
       if (id === 'settings-prefs') {
         const tog = document.getElementById('ghost-mode-toggle');
         if (tog) tog.checked = getGhostMode();
+        const rtTog = document.getElementById('rest-timer-toggle');
+        if (rtTog) rtTog.checked = _getRestTimerEnabled();
       }
     });
   }
@@ -8134,7 +8929,7 @@
   function _saveStrengthTime(secs) {
     const arr = _getStrengthTimes();
     arr.push({ date: new Date().toISOString(), secs });
-    localStorage.setItem('warmupStrengthTimes', JSON.stringify(arr));
+    localStorage.setItem('warmupStrengthTimes', JSON.stringify(arr.slice(-16)));
   }
 
   /* ── Entry ───────────────────────────────────────────────── */
@@ -8180,47 +8975,14 @@
     window.speechSynthesis?.cancel();
   }
 
-  /* ── Post-warmup: choose workout ─────────────────────────── */
+  /* ── Post-warmup: go directly into the pre-selected workout ── */
   function _warmupShowPostChoice() {
     document.getElementById('warmup-overlay').classList.remove('open');
-    /* If a plan was pre-selected, go straight to it */
     if (_warmupPostPlanId !== null) {
       startWorkoutFromPlan(_warmupPostPlanId);
-      return;
+    } else {
+      startBlankWorkout();
     }
-    /* Otherwise open the start-choice modal so user can pick plan or blank */
-    _renderStartChoice();
-    /* Swap the warmup buttons out so user gets a clean choice */
-    const el = document.getElementById('start-choice-content');
-    el.innerHTML = `
-      <div class="wizard-step-q" style="margin-bottom:.25rem">Choose Workout</div>
-      <div class="wizard-step-hint" style="margin-bottom:1rem">Warm-up done — now pick your session 💪</div>
-
-      <div style="font-size:.625rem;font-weight:700;letter-spacing:.08em;color:var(--tertiary);
-                  text-transform:uppercase;margin-bottom:.375rem;padding-left:.125rem">Freeform</div>
-      <div class="wizard-choices" style="margin-bottom:1rem">
-        <button class="wizard-choice" onclick="closeStartChoice();startBlankWorkout()">
-          🏃 Blank Workout<small>Choose exercises as you go</small>
-        </button>
-      </div>
-
-      ${plans.length ? `
-        <div style="font-size:.625rem;font-weight:700;letter-spacing:.08em;color:var(--tertiary);
-                    text-transform:uppercase;margin-bottom:.375rem;padding-left:.125rem">Training Plans</div>
-        <div class="wizard-choices">
-          ${plans.map(p => {
-            const sub = p.exercises.slice(0,3).join(', ') + (p.exercises.length > 3 ? '…' : '');
-            return `<button class="wizard-choice" onclick="closeStartChoice();startWorkoutFromPlan(${p.id})">
-              📋 ${p.name}<small>${sub || p.exercises.length + ' exercises'}</small>
-            </button>`;
-          }).join('')}
-        </div>
-      ` : ''}
-
-      <div class="wizard-footer" style="margin-top:.75rem">
-        <button class="wizard-btn-back" onclick="closeStartChoice()">Close</button>
-      </div>`;
-    document.getElementById('start-choice').classList.add('open');
   }
 
   /* ── General phase (timed) ───────────────────────────────── */
@@ -8368,7 +9130,7 @@
   /* ── Complete screen ─────────────────────────────────────── */
   function _warmupRenderComplete(elapsedSecs) {
     const times  = _getStrengthTimes();
-    const past   = times.slice(0, -1); /* exclude the one we just saved */
+    const past   = times.slice(0, -1).slice(-15); /* last 15, exclude current */
     let compareHTML = '';
     if (past.length >= 1) {
       const avg   = Math.round(past.reduce((a, t) => a + t.secs, 0) / past.length);
@@ -8396,7 +9158,7 @@
       <div class="warmup-move-name" style="margin-bottom:.5rem">Warm-up Complete!</div>
       ${fmtElapsed}
       <button class="warmup-next-btn green" onclick="_warmupShowPostChoice()" style="margin-top:1.5rem">
-        Choose Workout →
+        Start Workout →
       </button>`;
   }
 
@@ -8592,6 +9354,13 @@
   renderFreqGoal();
   renderHighlights();
 
+  /* Set library seg-wrap sticky top (matches pattern used for progress-mode-bar) */
+  requestAnimationFrame(() => {
+    const nav     = document.querySelector('#exercises-screen .nav-bar');
+    const segWrap = document.querySelector('.lib-seg-wrap');
+    if (nav && segWrap) segWrap.style.top = nav.offsetHeight + 'px';
+  });
+
   /* ── Restore in-progress workout on page load ───────────── */
   restoreActiveWorkout();
 
@@ -8749,5 +9518,6 @@
     </div>
   </div>
 </div>
+
 </body>
 </html>
