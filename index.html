@@ -506,7 +506,7 @@
       grid-template-columns: 2.25rem 1fr 1fr 3rem 2rem 2rem;
       gap: 0.5rem;
       align-items: center;
-      padding: 0.3125rem 0;
+      padding: 0.3125rem 0.375rem;
     }
     .set-row + .set-row { border-top: 0.5px solid var(--separator); }
 
@@ -519,6 +519,39 @@
     }
     .btn-log-set:active { color: var(--green); background: rgba(48,209,88,.12); }
     .btn-log-set.logged { color: var(--green); }
+
+    /* ── Set row completion states ─────────────────────── */
+    .set-row { transition: background 200ms ease-in-out, box-shadow 200ms ease-in-out, opacity 200ms ease-in-out; }
+
+    /* COMPLETED */
+    .set-row.set-done {
+      background: #1A3320;
+      border-radius: .625rem;
+      margin: 1px 0;
+    }
+    .set-row.set-done .set-input {
+      color: #fff !important; -webkit-text-fill-color: #fff !important;
+      background: rgba(255,255,255,.08) !important;
+      font-weight: 700;
+    }
+    .set-row.set-done .btn-log-set {
+      color: #30D158 !important; font-size: 1.125rem;
+      font-weight: 900; background: rgba(48,209,88,.18); border-radius: 50%;
+    }
+    .set-row.set-done .set-badge { background: #30D158 !important; color: #fff !important; }
+    .set-row.set-done + .set-row, .set-row + .set-row.set-done { border-top-color: transparent; }
+
+    /* ACTIVE — has data, not yet logged */
+    .set-row.set-active {
+      background: #1A2433;
+      border-radius: .625rem;
+      margin: 1px 0;
+      box-shadow: inset 3px 0 0 #007AFF;
+    }
+    .set-row.set-active + .set-row, .set-row + .set-row.set-active { border-top-color: transparent; }
+
+    /* UPCOMING — no data yet */
+    .set-row.set-upcoming { opacity: 0.4; }
 
     #rest-card {
       margin: 0.25rem 0 0.125rem;
@@ -744,11 +777,29 @@
       outline: none; border-bottom: 2px solid var(--red); color: var(--red);
     }
     .kd-unit { font-size: .75rem; color: var(--tertiary); flex-shrink: 0; }
+    .kd-check { font-size: .8125rem; font-weight: 700; color: #30D158; flex-shrink: 0; }
+    .killer-done-row { background: rgba(28,58,42,.65); }
+    .killer-done-row .kd-name { color: var(--tertiary); }
+    /* ── Killer upcoming list ── */
+    #killer-upcoming-list {
+      flex-shrink: 0; border-top: 0.5px solid var(--separator);
+      max-height: 20vh; overflow-y: auto;
+    }
+    #killer-upcoming-list:empty { display: none; }
+    .killer-upcoming-row {
+      display: flex; align-items: center; gap: .625rem;
+      padding: .4375rem 1rem; border-bottom: 0.5px solid var(--separator);
+      opacity: .5;
+    }
+    .killer-upcoming-row:last-child { border-bottom: none; }
+    .ku-idx { font-size: .75rem; color: var(--tertiary); width: 1.125rem; text-align: right; flex-shrink: 0; }
+    .ku-name { flex: 1; font-size: .875rem; color: var(--label); }
     /* ── Active exercise section ──────────────────────── */
     .killer-active {
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: flex-start;
       padding: 2rem var(--gutter) 1rem; gap: 1.5rem;
+      box-shadow: inset 3px 0 0 #007AFF;
     }
     .killer-ex-name {
       font-size: 1.625rem; font-weight: 700; color: var(--label);
@@ -2580,6 +2631,65 @@
       color: var(--tertiary);
       line-height: 1.35;
     }
+
+    /* ── Goals section on Summary tab ──────────────────────── */
+    #goals-section {
+      margin: 0.5rem var(--gutter) 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .goal-card {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      padding: 0.875rem 1rem;
+    }
+    .goal-card-name {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--tertiary);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: 0.25rem;
+    }
+    .goal-card-values {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -.2px;
+      margin-bottom: 0.5rem;
+      color: var(--label);
+    }
+    .goal-card-values .goal-target {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--tertiary);
+    }
+    .goal-card-bar-track {
+      height: 6px;
+      background: rgba(128,128,128,.18);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 0.375rem;
+    }
+    .goal-card-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: #007AFF;
+      transition: width .4s cubic-bezier(.4,0,.2,1);
+    }
+    .goal-card-bar-fill.reached { background: #30D158; }
+    .goal-card-msg {
+      font-size: 0.75rem;
+      color: var(--tertiary);
+      line-height: 1.3;
+    }
+    .goal-card-msg.reached { color: #30D158; font-weight: 600; }
+    @media (prefers-color-scheme: dark) {
+      .goal-card {
+        border: 0.5px solid rgba(255,255,255,.10);
+      }
+    }
     /* ── Goal editor — lives as a settings-panel sub (slides from right) ── */
     .freq-goal-row {
       display: flex;
@@ -2659,6 +2769,250 @@
       padding: 0.875rem;
       cursor: pointer;
       font-family: inherit;
+    }
+
+    /* ── Goal editor inputs ─────────────────────────────── */
+    .goal-editor-select {
+      flex: 1;
+      background: var(--bg);
+      border: 1.5px solid rgba(128,128,128,.25);
+      border-radius: 8px;
+      color: var(--label);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      padding: 0.5rem 0.625rem;
+      font-family: inherit;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .goal-editor-select:focus { outline: none; border-color: var(--blue); background: var(--fill-focus); }
+    @media (prefers-color-scheme: dark) {
+      .goal-editor-select { background: var(--card-inner) !important; }
+    }
+
+    /* ── Goals page — expandable goal cards ─────────────── */
+    .gp-goal-card {
+      background: var(--card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      margin: 0 var(--gutter) 0.625rem;
+      overflow: hidden;
+    }
+    @media (prefers-color-scheme: dark) {
+      .gp-goal-card { border: 0.5px solid rgba(255,255,255,.10); }
+    }
+    .gp-goal-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.875rem 1rem;
+    }
+    .gp-goal-icon {
+      font-size: 1.25rem;
+      width: 2rem;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .gp-goal-labels { flex: 1; min-width: 0; }
+    .gp-goal-title {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--label);
+    }
+    .gp-goal-subtitle {
+      font-size: 0.75rem;
+      color: var(--tertiary);
+      margin-top: 0.1rem;
+    }
+    .gp-goal-body {
+      border-top: 0.5px solid var(--separator);
+      padding: 1rem;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 220ms ease-out, padding 220ms ease-out;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+    .gp-goal-body.gp-open {
+      max-height: 600px;
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+    /* Progress area */
+    .gp-progress-val {
+      font-size: 1.625rem;
+      font-weight: 700;
+      letter-spacing: -.4px;
+      line-height: 1;
+      margin-bottom: 0.375rem;
+      color: var(--label);
+    }
+    .gp-progress-val .gp-pv-target {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--tertiary);
+    }
+    .gp-progress-bar-track {
+      height: 7px;
+      background: rgba(128,128,128,.18);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 0.375rem;
+    }
+    .gp-progress-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: #007AFF;
+      transition: width .4s cubic-bezier(.4,0,.2,1);
+    }
+    .gp-progress-bar-fill.gp-reached { background: #30D158; }
+    .gp-progress-msg {
+      font-size: 0.8125rem;
+      color: var(--tertiary);
+      line-height: 1.35;
+      margin-bottom: 0.875rem;
+    }
+    .gp-progress-msg.gp-reached { color: #30D158; font-weight: 600; }
+    /* Config area */
+    .gp-config-sep {
+      height: 0.5px;
+      background: var(--separator);
+      margin: 0 -1rem 0.875rem;
+    }
+    .gp-config-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.625rem;
+    }
+    .gp-config-label {
+      font-size: 0.875rem;
+      color: var(--secondary);
+      font-weight: 500;
+      min-width: 4.5rem;
+    }
+    .gp-num-input {
+      width: 5rem;
+      background: var(--fill);
+      border: 1.5px solid rgba(128,128,128,.25);
+      border-radius: 8px;
+      color: var(--label);
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.4375rem 0.625rem;
+      text-align: center;
+      font-family: inherit;
+    }
+    .gp-num-input:focus { outline: none; border-color: var(--blue); background: var(--fill-focus); }
+    @media (prefers-color-scheme: dark) {
+      .gp-num-input { background: var(--card-inner) !important; }
+    }
+    .gp-period-seg {
+      display: flex;
+      gap: 0.375rem;
+      flex: 1;
+    }
+    .gp-period-btn {
+      flex: 1;
+      background: var(--fill);
+      border: 1.5px solid rgba(128,128,128,.25);
+      border-radius: 8px;
+      color: var(--secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.4375rem 0.5rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .12s, border-color .12s, color .12s;
+    }
+    .gp-period-btn.active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+      font-weight: 600;
+    }
+    .gp-ex-select {
+      flex: 1;
+      background: var(--fill);
+      border: 1.5px solid rgba(128,128,128,.25);
+      border-radius: 8px;
+      color: var(--label);
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.4375rem 0.625rem;
+      font-family: inherit;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .gp-ex-select:focus { outline: none; border-color: var(--blue); }
+    @media (prefers-color-scheme: dark) {
+      .gp-ex-select { background: var(--card-inner) !important; }
+    }
+    .gp-save-btn {
+      width: 100%;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      padding: 0.8125rem;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 0.25rem;
+    }
+    .gp-save-btn:active { opacity: .8; }
+    /* Suggestions */
+    .gp-suggest-card {
+      background: var(--fill);
+      border-radius: 12px;
+      padding: 0.875rem 1rem;
+      margin: 0 var(--gutter) 0.625rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+    }
+    @media (prefers-color-scheme: dark) {
+      .gp-suggest-card { border: 0.5px solid rgba(255,255,255,.08); }
+    }
+    .gp-suggest-text {
+      font-size: 0.9rem;
+      color: var(--label);
+      line-height: 1.4;
+    }
+    .gp-suggest-btn {
+      align-self: flex-start;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .gp-suggest-btn:active { opacity: .8; }
+    .gp-suggest-empty {
+      padding: 1rem var(--gutter);
+      font-size: 0.875rem;
+      color: var(--tertiary);
+      text-align: center;
+      line-height: 1.5;
+    }
+    .gp-input-hint {
+      font-size: 0.75rem;
+      color: var(--tertiary);
+      line-height: 1.4;
+      margin-top: -0.25rem;
+      margin-bottom: 0.5rem;
+    }
+    /* Toggle: green when on, gray when off — per iOS spec */
+    .gp-goal-card .settings-toggle input:checked + .settings-toggle-track { background: #34C759; }
+    .gp-goal-card .settings-toggle-track { background: #3A3A3C; }
+    .gp-unit-hint {
+      font-size: 0.8125rem;
+      color: var(--tertiary);
     }
 
     /* ── Settings screen ─────────────────────────────────── */
@@ -3026,6 +3380,28 @@
       background: var(--green);
       box-shadow: 0 4px 18px rgba(52,199,89,.35);
     }
+
+    /* ── Warmup step-list states ──────────────────────────── */
+    .wu-steps-list { width: 100%; display: flex; flex-direction: column; gap: .375rem; margin: .75rem 0 1.25rem; }
+    .wu-step-row {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .625rem .875rem; border-radius: .75rem;
+      transition: background 250ms ease-in-out, opacity 250ms ease-in-out, box-shadow 250ms ease-in-out;
+    }
+    .wu-step-row.wu-done { background: rgba(28,58,42,.75); }
+    .wu-step-row.wu-current { background: var(--fill); box-shadow: inset 3px 0 0 #007AFF; }
+    .wu-step-row.wu-upcoming { opacity: .5; }
+    .wu-step-check {
+      width: 1.25rem; height: 1.25rem; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700;
+    }
+    .wu-done .wu-step-check { background: #30D158; color: #fff; }
+    .wu-current .wu-step-check, .wu-upcoming .wu-step-check { border: 1.5px solid var(--tertiary); }
+    .wu-step-name { flex: 1; font-size: .9375rem; font-weight: 500; color: var(--label); }
+    .wu-done .wu-step-name { color: var(--tertiary); }
+    .wu-step-timer { font-size: .9375rem; font-weight: 700; color: #007AFF; font-variant-numeric: tabular-nums; min-width: 2.5rem; text-align: right; }
+    .wu-step-dur { font-size: .8125rem; color: var(--tertiary); min-width: 2.5rem; text-align: right; }
 
     /* ── Summary highlights ───────────────────────────────── */
     /* ── Workout summary cards (Warmup + Killer Set above exercise list) ── */
@@ -3526,16 +3902,8 @@
       <button class="btn-repeat" id="btn-repeat" onclick="repeatLastWorkout()">↩ Repeat Last</button>
     </div>
 
-    <!-- Training frequency goal card -->
-    <div id="freq-goal-card" style="display:none">
-      <div class="freq-goal-header">
-        <div class="freq-goal-label" id="freq-goal-period-label">Weekly Goal</div>
-        <button class="freq-goal-edit-btn" onclick="openFreqGoalEditor()">Edit</button>
-      </div>
-      <div class="freq-goal-count"><span id="freq-goal-done">0</span><span> / <span id="freq-goal-target">4</span> <span id="freq-goal-period-suffix">this week</span></span></div>
-      <div class="freq-goal-bar-track"><div class="freq-goal-bar-fill" id="freq-goal-bar" style="width:0%"></div></div>
-      <div class="freq-goal-msg" id="freq-goal-msg"></div>
-    </div>
+    <!-- Goals section (frequency + volume + exercise-specific) -->
+    <div id="goals-section" style="display:none"></div>
 
     <div id="highlights-section">
       <div class="section-header">Highlights</div>
@@ -3616,6 +3984,7 @@
       <div class="killer-input-label" id="killer-input-label">reps</div>
     </div>
   </div>
+  <div id="killer-upcoming-list"></div>
   <div class="killer-footer">
     <button class="killer-btn-skip" onclick="killerSetSkip()">Skip</button>
     <button id="killer-btn-action" class="killer-btn-next" onclick="killerSetNext()">Next →</button>
@@ -3755,6 +4124,11 @@
         <div class="settings-row-label">Training Goals</div>
         <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
       </div>
+      <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-workout-setup')">
+        <div class="settings-row-icon icon-orange">🔥</div>
+        <div class="settings-row-label">Workout Setup</div>
+        <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
+      </div>
       <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-prefs')">
         <div class="settings-row-icon icon-purple">⚙️</div>
         <div class="settings-row-label">Preferences</div>
@@ -3812,7 +4186,7 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════
-     SETTINGS — TRAINING GOALS
+     SETTINGS — TRAINING GOALS (overview)
 ═══════════════════════════════════════════════════════ -->
 <div id="settings-goals" class="settings-panel sub">
   <div class="settings-nav">
@@ -3822,15 +4196,161 @@
     <div class="settings-nav-title">Training Goals</div>
   </div>
   <div class="settings-body">
-    <div class="settings-section-header">Frequency</div>
+    <div class="settings-section-header">My Goals</div>
     <div class="settings-card">
-      <div class="settings-row settings-row-tappable" onclick="openFreqGoalEditor()">
-        <div class="settings-row-icon icon-green">🎯</div>
+      <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-goal-freq')">
+        <div class="settings-row-icon icon-green">📅</div>
         <div class="settings-row-label">Frequency Goal</div>
-        <span class="settings-row-value" id="settings-freq-display">Not set</span>
+        <span class="settings-row-value" id="gp-freq-overview-status">Off</span>
+        <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
+      </div>
+      <div class="settings-row-separator"></div>
+      <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-goal-vol')">
+        <div class="settings-row-icon icon-blue">⚡</div>
+        <div class="settings-row-label">Weekly Volume</div>
+        <span class="settings-row-value" id="gp-vol-overview-status">Off</span>
+        <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
+      </div>
+      <div class="settings-row-separator"></div>
+      <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-goal-ex')">
+        <div class="settings-row-icon icon-yellow">🏆</div>
+        <div class="settings-row-label">Exercise Milestones</div>
+        <span class="settings-row-value" id="gp-ex-overview-status">Off</span>
         <svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>
       </div>
     </div>
+    <div class="settings-section-header">Suggestions</div>
+    <div id="goals-suggestions-list"></div>
+    <div style="height:1rem"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SETTINGS — FREQUENCY GOAL sub-page
+═══════════════════════════════════════════════════════ -->
+<div id="settings-goal-freq" class="settings-panel sub">
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="settingsPop()">
+      <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+    </button>
+    <div class="settings-nav-title">Frequency Goal</div>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-header">Enable</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div class="settings-row-icon icon-green">📅</div>
+        <div class="settings-row-label">Frequency Goal</div>
+        <label class="settings-toggle">
+          <input type="checkbox" id="gp-freq-toggle" onchange="_freqGoalToggleChanged(this.checked)" />
+          <div class="settings-toggle-track"></div>
+        </label>
+      </div>
+    </div>
+    <div id="gp-freq-subpage-body" style="display:none">
+      <div class="settings-section-header">Progress</div>
+      <div class="gp-goal-card" style="margin:0 var(--gutter) .625rem">
+        <div class="gp-progress-val"><span id="gp-freq-progress-val">0</span><span class="gp-pv-target" id="gp-freq-progress-target"> / 4 this week</span></div>
+        <div class="gp-progress-bar-track"><div class="gp-progress-bar-fill" id="gp-freq-bar-fill" style="width:0%"></div></div>
+        <div class="gp-progress-msg" id="gp-freq-msg"></div>
+      </div>
+      <div class="settings-section-header">Target</div>
+      <div class="settings-card">
+        <div class="settings-row">
+          <div class="settings-row-label">Workouts</div>
+          <input type="number" id="gp-freq-count" class="settings-num-input" min="1" max="30" step="1" inputmode="numeric" value="4" oninput="saveFreqGoal()" />
+          <span class="settings-unit">per period</span>
+        </div>
+        <div class="settings-row-separator"></div>
+        <div class="settings-row">
+          <div class="settings-row-label">Period</div>
+          <div class="gp-period-seg" style="margin-left:auto">
+            <button class="gp-period-btn active" id="gp-freq-period-week" onclick="_gpSelectFreqPeriod('week',true)">Week</button>
+            <button class="gp-period-btn" id="gp-freq-period-month" onclick="_gpSelectFreqPeriod('month',true)">Month</button>
+          </div>
+        </div>
+      </div>
+      <div class="gp-input-hint" id="gp-freq-hint" style="padding:0 var(--gutter)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SETTINGS — WEEKLY VOLUME sub-page
+═══════════════════════════════════════════════════════ -->
+<div id="settings-goal-vol" class="settings-panel sub">
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="settingsPop()">
+      <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+    </button>
+    <div class="settings-nav-title">Weekly Volume</div>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-header">Enable</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div class="settings-row-icon icon-blue">⚡</div>
+        <div class="settings-row-label">Weekly Volume Goal</div>
+        <label class="settings-toggle">
+          <input type="checkbox" id="gp-vol-toggle" onchange="_volumeGoalToggleChanged(this.checked)" />
+          <div class="settings-toggle-track"></div>
+        </label>
+      </div>
+    </div>
+    <div id="gp-vol-subpage-body" style="display:none">
+      <div class="settings-section-header">Progress</div>
+      <div class="gp-goal-card" style="margin:0 var(--gutter) .625rem">
+        <div class="gp-progress-val">⚡ <span id="gp-vol-progress-val">0</span><span class="gp-pv-target" id="gp-vol-progress-target"> / 2,000 this week</span></div>
+        <div class="gp-progress-bar-track"><div class="gp-progress-bar-fill" id="gp-vol-bar-fill" style="width:0%"></div></div>
+        <div class="gp-progress-msg" id="gp-vol-msg"></div>
+      </div>
+      <div class="settings-section-header">Target</div>
+      <div class="settings-card">
+        <div class="settings-row">
+          <div class="settings-row-label">⚡ Target</div>
+          <input type="number" id="gp-vol-target" class="settings-num-input" min="100" max="99999" step="100" inputmode="numeric" value="2000" style="width:5.5rem" oninput="saveVolumeGoal()" />
+          <span class="settings-unit">/ week</span>
+        </div>
+      </div>
+      <div class="gp-input-hint" id="gp-vol-hint" style="padding:0 var(--gutter)"></div>
+      <div style="padding:.25rem var(--gutter) 0;font-size:.75rem;color:var(--tertiary);line-height:1.5">Resets each Monday. Based on all workouts this week.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SETTINGS — EXERCISE MILESTONES sub-page
+═══════════════════════════════════════════════════════ -->
+<div id="settings-goal-ex" class="settings-panel sub">
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="settingsPop()">
+      <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+    </button>
+    <div class="settings-nav-title">Exercise Milestones</div>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-header">Goals</div>
+    <div class="gp-goal-card" style="margin:0 var(--gutter) .625rem;overflow:hidden">
+      <div id="gp-ex-list" style="border-bottom:0.5px solid var(--separator)"></div>
+      <div style="padding:.75rem 1rem">
+        <button onclick="_gpAddExGoal()" style="background:none;border:none;color:#007AFF;font-size:.9375rem;font-weight:600;font-family:inherit;cursor:pointer;padding:0">+ Add Exercise Goal</button>
+      </div>
+    </div>
+    <div style="padding:.25rem var(--gutter) 0;font-size:.75rem;color:var(--tertiary);line-height:1.5">Milestone goals never reset. Based on your best single set ever.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SETTINGS — WORKOUT SETUP (folder)
+═══════════════════════════════════════════════════════ -->
+<div id="settings-workout-setup" class="settings-panel sub">
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="settingsPop()">
+      <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+    </button>
+    <div class="settings-nav-title">Workout Setup</div>
+  </div>
+  <div class="settings-body">
     <div class="settings-section-header">Warmup</div>
     <div class="settings-card">
       <div class="settings-row settings-row-tappable" onclick="settingsPush('settings-warmup-general')">
@@ -4158,38 +4678,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-
-<!-- ═══════════════ FREQ GOAL EDITOR ═══════════════ -->
-<div id="freq-goal-editor" class="settings-panel sub">
-  <div class="settings-nav">
-    <button class="settings-back-btn" onclick="settingsPop()">
-      <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
-    </button>
-    <div class="settings-nav-title">Frequency Goal</div>
-  </div>
-  <div class="settings-body">
-    <div class="settings-section-header">Target</div>
-    <div class="settings-card">
-      <div class="freq-goal-row">
-        <label>Workouts</label>
-        <input type="number" id="freq-editor-count" min="1" max="30" step="1" inputmode="numeric" value="4" />
-        <span style="font-size:.875rem;color:var(--tertiary)">per period</span>
-      </div>
-      <div class="freq-goal-row">
-        <label>Period</label>
-        <div class="freq-goal-period-btns">
-          <button class="freq-goal-period-btn active" data-period="week" onclick="selectFreqPeriod(this)">Week</button>
-          <button class="freq-goal-period-btn" data-period="month" onclick="selectFreqPeriod(this)">Month</button>
-        </div>
-      </div>
-    </div>
-    <div class="freq-goal-sheet-footer">
-      <button class="freq-goal-save-btn" onclick="saveFreqGoal()">Save Goal</button>
-      <button class="freq-goal-remove-btn" id="freq-remove-btn" onclick="removeFreqGoal()" style="display:none">Remove</button>
-    </div>
-    <div style="height:1rem"></div>
-  </div>
-</div>
 
 <script>
   /* ── State ──────────────────────────────────────────────── */
@@ -5072,12 +5560,13 @@
     body.appendChild(row);
     // wire up real-time intensity + persistence on each input
     row.querySelectorAll('.set-input').forEach(inp => {
-      inp.addEventListener('input', () => { updateExIntensity(exId); updateGhostHint(exId); persistActiveWorkout(); });
+      inp.addEventListener('input', () => { updateExIntensity(exId); updateGhostHint(exId); persistActiveWorkout(); _refreshSetStates(exId); });
     });
     renumberSets(exId);
     updateExIntensity(exId);
     updateGhostHint(exId);
     persistActiveWorkout();
+    _refreshSetStates(exId);
   }
 
   function removeSet(sid, exId) {
@@ -5091,6 +5580,26 @@
   function renumberSets(exId) {
     document.querySelectorAll('#' + exId + ' .sets-body .set-row')
       .forEach((r, i) => r.querySelector('.set-badge').textContent = i + 1);
+  }
+
+  function _refreshSetStates(exId) {
+    const rows = document.querySelectorAll('#' + exId + ' .sets-body .set-row');
+    let anyDone = false;
+    rows.forEach(row => { if (row.classList.contains('set-done')) anyDone = true; });
+    rows.forEach(row => {
+      if (row.classList.contains('set-done')) return;
+      const inputs = row.querySelectorAll('.set-input');
+      const hasData = Array.from(inputs).some(inp => inp.value.trim() !== '');
+      if (hasData) {
+        row.classList.add('set-active');
+        row.classList.remove('set-upcoming');
+      } else if (anyDone) {
+        row.classList.add('set-upcoming');
+        row.classList.remove('set-active');
+      } else {
+        row.classList.remove('set-active', 'set-upcoming');
+      }
+    });
   }
 
   /* ── Rest timer ─────────────────────────────────────────── */
@@ -5195,6 +5704,9 @@
     /* ── Start new rest timer ───────────────────────────────── */
     _restClear();
     if (btn) btn.classList.add('logged');
+    const _loggedRow = btn?.closest('.set-row');
+    if (_loggedRow) { _loggedRow.classList.add('set-done'); _loggedRow.classList.remove('set-active', 'set-upcoming'); }
+    _refreshSetStates(exId);
     if (!_getRestTimerEnabled()) return;
 
     const optimal = _calcOptimalRest(exName);
@@ -5526,11 +6038,12 @@
           </button>`;
         body.appendChild(row);
         row.querySelectorAll('.set-input').forEach(inp => {
-          inp.addEventListener('input', () => { updateExIntensity(id); updateGhostHint(id); persistActiveWorkout(); });
+          inp.addEventListener('input', () => { updateExIntensity(id); updateGhostHint(id); persistActiveWorkout(); _refreshSetStates(id); });
         });
       });
       updateExIntensity(id);
       updateGhostHint(id);
+      _refreshSetStates(id);
     });
 
     /* Restore Killer Set compact card */
@@ -8601,6 +9114,10 @@
         if (strTog) strTog.checked = _getWarmupStrengthEnabled();
       }
       if (id === 'settings-killer-edit') ksEditRender();
+      if (id === 'settings-goals') _gpOpenGoalsPage();
+      if (id === 'settings-goal-freq') _gpOpenFreqPage();
+      if (id === 'settings-goal-vol') _gpOpenVolPage();
+      if (id === 'settings-goal-ex') _gpRenderExList();
       if (id === 'settings-prefs') {
         const tog = document.getElementById('ghost-mode-toggle');
         if (tog) tog.checked = getGhostMode();
@@ -8629,13 +9146,7 @@
     if (el) el.value = localStorage.getItem('userHeight') ?? '';
   }
 
-  function updateSettingsFreqDisplay() {
-    const goal = getFreqGoal();
-    const el   = document.getElementById('settings-freq-display');
-    if (!el) return;
-    if (!goal) { el.textContent = 'Not set'; return; }
-    el.textContent = `${goal.count}× / ${goal.period === 'week' ? 'week' : 'month'}`;
-  }
+  function updateSettingsFreqDisplay() { updateSettingsGoalsDisplay(); }
 
   function clearAllData() {
     if (!confirm('Delete all workouts, plans, and settings? This cannot be undone.')) return;
@@ -8644,7 +9155,7 @@
     plans    = [];
     closeSettings();
     renderRecent();
-    renderFreqGoal();
+    renderGoalsSection();
     renderHighlights();
     showToast('All data cleared');
   }
@@ -8672,9 +9183,11 @@
       payload.customExMeta= JSON.parse(localStorage.getItem('customExMeta')|| '{}');
     }
     if (incl.settings) {
-      payload.freqGoal    = JSON.parse(localStorage.getItem('freqGoal')    || 'null');
-      payload.userBW      = localStorage.getItem('userBW')     || null;
-      payload.userHeight  = localStorage.getItem('userHeight') || null;
+      payload.freqGoal     = JSON.parse(localStorage.getItem('freqGoal')     || 'null');
+      payload.volumeGoal   = JSON.parse(localStorage.getItem('volumeGoal')   || 'null');
+      payload.exerciseGoal = JSON.parse(localStorage.getItem('exerciseGoal') || 'null');
+      payload.userBW       = localStorage.getItem('userBW')     || null;
+      payload.userHeight   = localStorage.getItem('userHeight') || null;
     }
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
@@ -8709,7 +9222,7 @@
       if (Array.isArray(payload.workouts))                                        detected.push('Training History');
       if (Array.isArray(payload.plans))                                           detected.push('Training Plans');
       if (payload.exLib !== undefined || payload.customExMeta !== undefined)      detected.push('Exercise Library');
-      if (payload.freqGoal !== undefined || payload.userBW !== undefined || payload.userHeight !== undefined) detected.push('Settings & Goals');
+      if (payload.freqGoal !== undefined || payload.volumeGoal !== undefined || payload.exerciseGoal !== undefined || payload.userBW !== undefined || payload.userHeight !== undefined) detected.push('Settings & Goals');
 
       if (!detected.length) { showToast('No recognisable data in file'); return; }
 
@@ -8732,6 +9245,10 @@
         localStorage.setItem('customExMeta', JSON.stringify(payload.customExMeta));
       if (payload.freqGoal !== undefined)
         localStorage.setItem('freqGoal', JSON.stringify(payload.freqGoal));
+      if (payload.volumeGoal !== undefined)
+        localStorage.setItem('volumeGoal', JSON.stringify(payload.volumeGoal));
+      if (payload.exerciseGoal !== undefined)
+        localStorage.setItem('exerciseGoal', JSON.stringify(payload.exerciseGoal));
       if (payload.userBW !== undefined)
         localStorage.setItem('userBW',     payload.userBW     ?? '');
       if (payload.userHeight !== undefined)
@@ -8740,7 +9257,7 @@
       /* Refresh UI */
       closeSettings();
       renderRecent();
-      renderFreqGoal();
+      renderGoalsSection();
       renderHighlights();
       showToast(`Imported: ${detected.join(', ')} ✓`);
     };
@@ -8748,7 +9265,7 @@
   }
 
   /* ══════════════════════════════════════════════════════════
-     TRAINING FREQUENCY GOAL
+     TRAINING FREQUENCY GOAL — data helpers (unchanged)
      ══════════════════════════════════════════════════════════ */
 
   function getFreqGoal() {
@@ -8759,21 +9276,15 @@
     else       localStorage.removeItem('freqGoal');
   }
 
-  /* Count workouts within the current period window.
-     Always derived fresh from workout history — never from a stored counter.
-     Uses new Date(y, m, d) to construct local midnight precisely (no setHours ambiguity),
-     then compares epoch ms so timezone handling is unambiguous. */
   function countWorkoutsInPeriod(period) {
     const now = new Date();
     let startMs;
     if (period === 'week') {
-      /* Walk back to the most recent Monday (ISO week) */
-      const day = now.getDay(); /* 0=Sun … 6=Sat */
+      const day = now.getDay();
       const daysBack = day === 0 ? 6 : day - 1;
       const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysBack);
       startMs = monday.getTime();
     } else {
-      /* 1st of the current calendar month, local midnight */
       startMs = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     }
     return workouts.filter(w => {
@@ -8791,75 +9302,637 @@
     return `${left} more workout${left !== 1 ? 's' : ''} to go — keep it up!`;
   }
 
-  function renderFreqGoal() {
-    const goal = getFreqGoal();
-    const card = document.getElementById('freq-goal-card');
-    if (!goal) {
-      if (card) card.style.display = 'none';
-      return;
-    }
-    if (!card) return;
-    card.style.display = '';
+  /* renderFreqGoal() is now an alias — all rendering goes through renderGoalsSection() */
+  function renderFreqGoal() { renderGoalsSection(); }
 
-    const done   = countWorkoutsInPeriod(goal.period);
-    const target = goal.count;
-    const pct    = Math.min(100, Math.round(done / target * 100));
-    const label  = goal.period === 'week' ? 'Weekly Goal' : 'Monthly Goal';
-    const suffix = goal.period === 'week' ? 'this week'   : 'this month';
+  /* ══════════════════════════════════════════════════════════
+     VOLUME GOAL — data helpers (unchanged)
+     ══════════════════════════════════════════════════════════ */
 
-    document.getElementById('freq-goal-period-label').textContent  = label;
-    document.getElementById('freq-goal-done').textContent          = done;
-    document.getElementById('freq-goal-target').textContent        = target;
-    document.getElementById('freq-goal-period-suffix').textContent = suffix;
-    document.getElementById('freq-goal-msg').textContent           = freqGoalMsg(done, target);
-
-    const bar = document.getElementById('freq-goal-bar');
-    bar.style.width = pct + '%';
-    bar.classList.toggle('done', done >= target);
+  function getVolumeGoal() {
+    try { return JSON.parse(localStorage.getItem('volumeGoal') || 'null'); } catch(e) { return null; }
+  }
+  function saveVolumeGoalData(goal) {
+    if (goal) localStorage.setItem('volumeGoal', JSON.stringify(goal));
+    else       localStorage.removeItem('volumeGoal');
   }
 
-  function openFreqGoalEditor() {
-    const goal = getFreqGoal();
-    const countEl  = document.getElementById('freq-editor-count');
-    const removeBtn = document.getElementById('freq-remove-btn');
-    if (goal) {
-      countEl.value = goal.count;
-      document.querySelectorAll('.freq-goal-period-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.period === goal.period);
+  function calcWeeklyIntensity() {
+    const now = new Date();
+    const day = now.getDay();
+    const daysBack = day === 0 ? 6 : day - 1;
+    const mondayMs = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysBack).getTime();
+    return workouts
+      .filter(w => { if (!w.date) return false; const t = new Date(w.date).getTime(); return !isNaN(t) && t >= mondayMs; })
+      .reduce((total, w) => {
+        (w.exercises || []).forEach(ex => {
+          (ex.sets || []).forEach(s => {
+            total += calcSetIntensity(ex.name, parseFloat(s.reps) || 0, parseFloat(s.kg) || 0);
+          });
+        });
+        return total;
+      }, 0);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     EXERCISE-SPECIFIC GOAL — data helpers (unchanged)
+     ══════════════════════════════════════════════════════════ */
+
+  /* Returns array of exercise goals, migrating old single-object format */
+  function getExerciseGoals() {
+    try {
+      const raw = JSON.parse(localStorage.getItem('exerciseGoal') || 'null');
+      if (!raw) return [];
+      if (Array.isArray(raw)) return raw;
+      return [raw]; /* migrate old single-object */
+    } catch(e) { return []; }
+  }
+  function saveExerciseGoals(arr) {
+    localStorage.setItem('exerciseGoal', JSON.stringify(arr || []));
+  }
+  /* Legacy compat shims used by backup/restore and suggestion code */
+  function getExerciseGoal() { const a = getExerciseGoals(); return a[0] || null; }
+  function saveExerciseGoalData(goal) { saveExerciseGoals(goal ? [goal] : []); }
+
+  function _allExerciseNames() {
+    const lib = getExLib();
+    const names = new Set();
+    EX_CATS.forEach(c => (lib[c] || []).forEach(n => names.add(n)));
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }
+
+  function getBestSetForExercise(name) {
+    let best = 0;
+    workouts.forEach(w => {
+      (w.exercises || []).filter(ex => ex.name === name).forEach(ex => {
+        (ex.sets || []).forEach(s => {
+          const v = parseFloat(s.reps) || 0;
+          if (v > best) best = v;
+        });
       });
-      removeBtn.style.display = '';
-    } else {
-      countEl.value = '4';
-      document.querySelectorAll('.freq-goal-period-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
-      removeBtn.style.display = 'none';
+    });
+    return best;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     GOALS SECTION — unified renderer for Summary tab (unchanged)
+     ══════════════════════════════════════════════════════════ */
+
+  function _makeGoalCard(name, current, target, unit) {
+    const pct     = target > 0 ? Math.min(100, Math.round(current / target * 100)) : 0;
+    const reached = current >= target && target > 0;
+    const fillCls = reached ? 'goal-card-bar-fill reached' : 'goal-card-bar-fill';
+    const msgText = reached ? 'Goal reached! 🎉' : `${fmtInt(current)} / ${fmtInt(target)} ${unit}`;
+    const msgCls  = reached ? 'goal-card-msg reached' : 'goal-card-msg';
+    return `<div class="goal-card">
+      <div class="goal-card-name">${name}</div>
+      <div class="goal-card-values">${fmtInt(current)}<span class="goal-target"> / ${fmtInt(target)} ${unit}</span></div>
+      <div class="goal-card-bar-track"><div class="${fillCls}" style="width:${pct}%"></div></div>
+      <div class="${msgCls}">${msgText}</div>
+    </div>`;
+  }
+
+  function renderGoalsSection() {
+    const section = document.getElementById('goals-section');
+    if (!section) return;
+    const freqGoal = getFreqGoal();
+    const volGoal  = getVolumeGoal();
+    const exGoal   = getExerciseGoal();
+    const cards = [];
+    if (freqGoal && freqGoal.enabled !== false) {
+      const done    = countWorkoutsInPeriod(freqGoal.period);
+      const period  = freqGoal.period === 'week' ? 'this week' : 'this month';
+      const label   = freqGoal.period === 'week' ? 'Weekly Frequency' : 'Monthly Frequency';
+      const pct     = Math.min(100, Math.round(done / freqGoal.count * 100));
+      const reached = done >= freqGoal.count;
+      const fillCls = reached ? 'goal-card-bar-fill reached' : 'goal-card-bar-fill';
+      const msgCls  = reached ? 'goal-card-msg reached' : 'goal-card-msg';
+      const msg     = reached ? 'Goal reached! 🎉' : freqGoalMsg(done, freqGoal.count);
+      cards.push(`<div class="goal-card">
+        <div class="goal-card-name">${label}</div>
+        <div class="goal-card-values">${done}<span class="goal-target"> / ${freqGoal.count} ${period}</span></div>
+        <div class="goal-card-bar-track"><div class="${fillCls}" style="width:${pct}%"></div></div>
+        <div class="${msgCls}">${msg}</div>
+      </div>`);
     }
-    settingsPush('freq-goal-editor');
+    if (volGoal && volGoal.enabled !== false) {
+      const current = calcWeeklyIntensity();
+      cards.push(_makeGoalCard('Weekly Volume ⚡', current, volGoal.target, 'intensity'));
+    }
+    getExerciseGoals().forEach(g => {
+      if (g && g.enabled !== false && g.name && g.target) {
+        const tb      = !!getExMeta(g.name).tb;
+        const unit    = tb ? 'secs' : 'reps';
+        const current = getBestSetForExercise(g.name);
+        cards.push(_makeGoalCard(g.name + ' Milestone', current, g.target, unit));
+      }
+    });
+    if (cards.length === 0) {
+      section.style.display = 'none';
+      section.innerHTML = '';
+    } else {
+      section.style.display = '';
+      section.innerHTML = cards.join('');
+    }
   }
 
-  function closeFreqGoalEditor() {
-    settingsPop();
+  /* ══════════════════════════════════════════════════════════
+     GOALS PAGE — inline card UI helpers
+     ══════════════════════════════════════════════════════════ */
+
+  function _gpSelectFreqPeriod(period, save) {
+    document.getElementById('gp-freq-period-week').classList.toggle('active', period === 'week');
+    document.getElementById('gp-freq-period-month').classList.toggle('active', period === 'month');
+    if (save) saveFreqGoal();
   }
 
-  function selectFreqPeriod(btn) {
-    document.querySelectorAll('.freq-goal-period-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+  /* Called when picker changes for a specific exercise goal row */
+  function _gpExPickerChanged(idx) {
+    const picker = document.getElementById('gp-ex-picker-' + idx);
+    if (!picker) return;
+    const name = picker.value;
+    const tb   = !!getExMeta(name).tb;
+    const unitHint = document.getElementById('gp-ex-unit-hint-' + idx);
+    if (unitHint) unitHint.textContent = tb ? 'seconds (best set)' : 'reps (best set)';
+    const sug      = _gpExSuggestion(name);
+    const hintEl   = document.getElementById('gp-ex-hint-' + idx);
+    const targetEl = document.getElementById('gp-ex-target-' + idx);
+    if (sug) {
+      if (hintEl) hintEl.textContent = sug.hint;
+      const goals = getExerciseGoals();
+      if (!goals[idx] || goals[idx].name !== name) {
+        if (targetEl) targetEl.value = sug.value;
+      }
+    } else {
+      if (hintEl) hintEl.textContent = '';
+    }
+    _gpSaveExGoalRow(idx);
+    _gpUpdateExProgress(idx);
   }
+
+  function _gpUpdateFreqProgress() {
+    const goal = getFreqGoal();
+    if (!goal) return;
+    const done    = countWorkoutsInPeriod(goal.period);
+    const target  = goal.count;
+    const period  = goal.period === 'week' ? 'this week' : 'this month';
+    const pct     = target > 0 ? Math.min(100, Math.round(done / target * 100)) : 0;
+    const reached = done >= target && target > 0;
+    const val  = document.getElementById('gp-freq-progress-val');
+    const tgt  = document.getElementById('gp-freq-progress-target');
+    const bar  = document.getElementById('gp-freq-bar-fill');
+    const msg  = document.getElementById('gp-freq-msg');
+    if (val) val.textContent = done;
+    if (tgt) tgt.textContent = ` / ${target} ${period}`;
+    if (bar) { bar.style.width = pct + '%'; bar.classList.toggle('gp-reached', reached); }
+    if (msg) { msg.textContent = reached ? 'Goal reached! 🎉' : freqGoalMsg(done, target); msg.classList.toggle('gp-reached', reached); }
+  }
+
+  function _gpUpdateVolProgress() {
+    const goal = getVolumeGoal();
+    if (!goal) return;
+    const current = calcWeeklyIntensity();
+    const target  = goal.target;
+    const pct     = target > 0 ? Math.min(100, Math.round(current / target * 100)) : 0;
+    const reached = current >= target && target > 0;
+    const val  = document.getElementById('gp-vol-progress-val');
+    const tgt  = document.getElementById('gp-vol-progress-target');
+    const bar  = document.getElementById('gp-vol-bar-fill');
+    const msg  = document.getElementById('gp-vol-msg');
+    if (val) val.textContent = fmtInt(current);
+    if (tgt) tgt.textContent = ` / ${fmtInt(target)} this week`;
+    if (bar) { bar.style.width = pct + '%'; bar.classList.toggle('gp-reached', reached); }
+    if (msg) { msg.textContent = reached ? 'Goal reached! 🎉' : `${fmtInt(current)} / ${fmtInt(target)} intensity this week`; msg.classList.toggle('gp-reached', reached); }
+  }
+
+  function _gpUpdateExProgress(idx) {
+    const goals  = getExerciseGoals();
+    const goal   = goals[idx];
+    const picker = document.getElementById('gp-ex-picker-' + idx);
+    const name   = (picker && picker.value) || (goal && goal.name) || '';
+    if (!name) return;
+    const current = getBestSetForExercise(name);
+    const target  = goal && goal.name === name ? goal.target : (parseInt((document.getElementById('gp-ex-target-' + idx) || {}).value) || 10);
+    const tb      = !!getExMeta(name).tb;
+    const unit    = tb ? 'secs' : 'reps';
+    const pct     = target > 0 ? Math.min(100, Math.round(current / target * 100)) : 0;
+    const reached = current >= target && target > 0;
+    const val = document.getElementById('gp-ex-progress-val-' + idx);
+    const tgt = document.getElementById('gp-ex-progress-target-' + idx);
+    const bar = document.getElementById('gp-ex-bar-fill-' + idx);
+    const msg = document.getElementById('gp-ex-msg-' + idx);
+    if (val) val.textContent = current;
+    if (tgt) tgt.textContent = ` / ${target} ${unit}`;
+    if (bar) { bar.style.width = pct + '%'; bar.classList.toggle('gp-reached', reached); }
+    if (msg) { msg.textContent = reached ? 'Goal reached! 🎉' : `Best: ${current} / ${target} ${unit}`; msg.classList.toggle('gp-reached', reached); }
+  }
+
+  /* ── Smart suggestion pre-fill helpers ─────────────────── */
+  function _gpFreqSuggestion() {
+    const counts = [1,2,3,4].map(o => _workoutsInWeekOffset(o).length);
+    const total  = counts.reduce((s,c) => s+c, 0);
+    if (total === 0) return null;
+    const avg = total / 4;
+    let suggested;
+    if (avg < 3)      suggested = 3;
+    else if (avg < 5) suggested = Math.round(avg) + 1;
+    else              suggested = Math.min(6, Math.round(avg) + 1);
+    return { value: suggested, hint: `You averaged ${avg.toFixed(1)} sessions/week — time to step it up 💪` };
+  }
+
+  function _gpVolSuggestion() {
+    const ints  = [1,2,3,4].map(o => _intensityOfWeekOffset(o));
+    const total = ints.reduce((s,v) => s+v, 0);
+    if (total === 0) return null;
+    const avg = total / 4;
+    const volGoal = getVolumeGoal();
+    const recentInts = [1,2].map(o => _intensityOfWeekOffset(o));
+    const hitGoalRecently = volGoal && volGoal.target > 0 &&
+      recentInts.filter(v => v >= volGoal.target * 0.9).length === 2;
+    const multiplier = hitGoalRecently ? 1.20 : 1.15;
+    const suggested = Math.max(100, Math.round(avg * multiplier / 50) * 50);
+    return { value: suggested, hint: `Your weekly average is ⚡ ${fmtInt(Math.round(avg))} — push for ⚡ ${fmtInt(suggested)} and see what you're capable of 🔥` };
+  }
+
+  function _gpExSuggestion(name) {
+    if (!name) return null;
+    const tb   = !!getExMeta(name).tb;
+    const unit = tb ? 'secs' : 'reps';
+    // Sessions containing this exercise, in chronological order
+    const exSessions = workouts.filter(w => (w.exercises || []).some(ex => ex.name === name));
+    if (exSessions.length === 0) return { value: 5, hint: `No data yet — set your first target and start building 💥` };
+    let best = 0;
+    exSessions.forEach(w => {
+      (w.exercises || []).filter(ex => ex.name === name).forEach(ex => {
+        (ex.sets || []).forEach(s => { const v = parseFloat(s.reps) || 0; if (v > best) best = v; });
+      });
+    });
+    if (best === 0) return { value: 5, hint: `No data yet — set your first target and start building 💥` };
+    // Find how many sessions ago the best was achieved (from the end of exSessions)
+    const lastBestIdx = exSessions.slice().reverse().findIndex(w =>
+      (w.exercises || []).some(ex => ex.name === name && (ex.sets || []).some(s => (parseFloat(s.reps) || 0) === best))
+    );
+    const sessionsAgo = lastBestIdx >= 0 ? lastBestIdx : 999;
+    if (sessionsAgo > 2) {
+      return { value: best + 1, hint: `You've been stuck at ${best} ${unit} — break through it 🎯` };
+    } else {
+      return { value: best + 2, hint: `You're on a roll — aim for ${best + 2} ${unit} and keep the momentum 🚀` };
+    }
+  }
+
+  /* Update the overview status labels and suggestions */
+  function _gpOpenGoalsPage() {
+    _gpRefreshOverview();
+    renderGoalSuggestions();
+  }
+
+  function _gpRefreshOverview() {
+    const freqGoal = getFreqGoal();
+    const volGoal  = getVolumeGoal();
+    const exGoals  = getExerciseGoals();
+    const freqOn   = !!(freqGoal && freqGoal.enabled !== false);
+    const volOn    = !!(volGoal && volGoal.enabled !== false);
+    const activeEx = exGoals.filter(g => g.enabled !== false && g.name);
+    const freqEl = document.getElementById('gp-freq-overview-status');
+    const volEl  = document.getElementById('gp-vol-overview-status');
+    const exEl   = document.getElementById('gp-ex-overview-status');
+    if (freqEl) freqEl.textContent = freqOn && freqGoal.count ? `${freqGoal.count}× / ${freqGoal.period === 'week' ? 'week' : 'month'}` : 'Off';
+    if (volEl)  volEl.textContent  = volOn && volGoal.target ? `⚡ ${fmtInt(volGoal.target)} / week` : 'Off';
+    if (exEl)   exEl.textContent   = activeEx.length > 0 ? `${activeEx.length} active` : 'Off';
+  }
+
+  /* Open Frequency Goal sub-page */
+  function _gpOpenFreqPage() {
+    const freqGoal = getFreqGoal();
+    const freqOn   = !!(freqGoal && freqGoal.enabled !== false);
+    const tog = document.getElementById('gp-freq-toggle');
+    if (tog) tog.checked = freqOn;
+    const body = document.getElementById('gp-freq-subpage-body');
+    if (body) body.style.display = freqOn ? '' : 'none';
+    const countEl = document.getElementById('gp-freq-count');
+    if (countEl) countEl.value = freqGoal && freqGoal.count ? freqGoal.count : 4;
+    _gpSelectFreqPeriod((freqGoal && freqGoal.period) || 'week');
+    const hintEl = document.getElementById('gp-freq-hint');
+    if (hintEl) { const sug = _gpFreqSuggestion(); hintEl.textContent = freqOn && sug ? sug.hint : ''; }
+    if (freqOn) _gpUpdateFreqProgress();
+  }
+
+  /* Open Weekly Volume sub-page */
+  function _gpOpenVolPage() {
+    const volGoal = getVolumeGoal();
+    const volOn   = !!(volGoal && volGoal.enabled !== false);
+    const tog = document.getElementById('gp-vol-toggle');
+    if (tog) tog.checked = volOn;
+    const body = document.getElementById('gp-vol-subpage-body');
+    if (body) body.style.display = volOn ? '' : 'none';
+    const targetEl = document.getElementById('gp-vol-target');
+    if (targetEl) targetEl.value = volGoal && volGoal.target ? volGoal.target : 2000;
+    const hintEl = document.getElementById('gp-vol-hint');
+    if (hintEl) { const sug = _gpVolSuggestion(); hintEl.textContent = volOn && sug ? sug.hint : ''; }
+    if (volOn) _gpUpdateVolProgress();
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     SAVE handlers — read from new inline IDs
+     ══════════════════════════════════════════════════════════ */
 
   function saveFreqGoal() {
-    const count  = parseInt(document.getElementById('freq-editor-count').value, 10);
+    const count  = parseInt((document.getElementById('gp-freq-count') || {}).value, 10);
     if (!count || count < 1) return;
-    const period = document.querySelector('.freq-goal-period-btn.active')?.dataset.period || 'week';
-    saveFreqGoalData({ count, period });
-    closeFreqGoalEditor();
-    renderFreqGoal();
-    updateSettingsFreqDisplay();
+    const weekBtn = document.getElementById('gp-freq-period-week');
+    const period  = (weekBtn && weekBtn.classList.contains('active')) ? 'week' : 'month';
+    const existing = getFreqGoal();
+    saveFreqGoalData({ count, period, enabled: existing ? existing.enabled !== false : true });
+    _gpUpdateFreqProgress();
+    renderGoalsSection();
+    _gpRefreshOverview();
   }
 
-  function removeFreqGoal() {
-    saveFreqGoalData(null);
-    closeFreqGoalEditor();
-    renderFreqGoal();
-    updateSettingsFreqDisplay();
+  function saveVolumeGoal() {
+    const target = parseInt((document.getElementById('gp-vol-target') || {}).value, 10);
+    if (!target || target < 1) return;
+    const existing = getVolumeGoal();
+    saveVolumeGoalData({ target, enabled: existing ? existing.enabled !== false : true });
+    _gpUpdateVolProgress();
+    renderGoalsSection();
+    _gpRefreshOverview();
+  }
+
+  function _gpSaveExGoalRow(idx) {
+    const picker = document.getElementById('gp-ex-picker-' + idx);
+    const name   = picker ? picker.value : '';
+    const target = parseInt((document.getElementById('gp-ex-target-' + idx) || {}).value, 10);
+    if (!name) return;
+    const goals = getExerciseGoals();
+    while (goals.length <= idx) goals.push({ name: '', target: 10, enabled: true });
+    const enabled = goals[idx] ? goals[idx].enabled !== false : true;
+    goals[idx] = { name, target: target || 10, enabled };
+    saveExerciseGoals(goals);
+    _gpUpdateExProgress(idx);
+    renderGoalsSection();
+    _gpRefreshOverview();
+  }
+
+  function _gpExToggleChanged(idx, checked) {
+    const goals = getExerciseGoals();
+    if (goals[idx]) { goals[idx].enabled = checked; saveExerciseGoals(goals); }
+    renderGoalsSection();
+    _gpRefreshOverview();
+  }
+
+  function _gpDeleteExGoal(idx) {
+    const goals = getExerciseGoals();
+    goals.splice(idx, 1);
+    saveExerciseGoals(goals);
+    _gpRenderExList();
+    renderGoalsSection();
+  }
+
+  function _gpAddExGoal() {
+    const goals = getExerciseGoals();
+    goals.push({ name: '', target: 10, enabled: true });
+    saveExerciseGoals(goals);
+    _gpRenderExList();
+    /* Auto-scroll to the new item */
+    setTimeout(() => {
+      const list = document.getElementById('gp-ex-list');
+      if (list) list.lastElementChild && list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 80);
+  }
+
+  function _gpRenderExList() {
+    const container = document.getElementById('gp-ex-list');
+    if (!container) return;
+    const goals = getExerciseGoals();
+    const names = _allExerciseNames();
+    if (goals.length === 0) { container.innerHTML = ''; return; }
+    container.innerHTML = goals.map((g, idx) => {
+      const enabled = g.enabled !== false;
+      const selOpts = names.map(n => `<option value="${n}"${g.name === n ? ' selected' : ''}>${n}</option>`).join('');
+      const tb  = g.name ? !!getExMeta(g.name).tb : false;
+      const sug = g.name ? _gpExSuggestion(g.name) : null;
+      const current = g.name ? getBestSetForExercise(g.name) : 0;
+      const target  = g.target || 10;
+      const pct     = target > 0 ? Math.min(100, Math.round(current / target * 100)) : 0;
+      const reached = current >= target && target > 0;
+      return `<div style="padding:.875rem 1rem;border-bottom:0.5px solid var(--separator)">
+        <div style="display:flex;align-items:center;gap:.625rem;margin-bottom:.625rem">
+          <label class="settings-toggle" style="flex-shrink:0">
+            <input type="checkbox" ${enabled ? 'checked' : ''} onchange="_gpExToggleChanged(${idx},this.checked)" />
+            <div class="settings-toggle-track"></div>
+          </label>
+          <select id="gp-ex-picker-${idx}" class="gp-ex-select" style="flex:1;min-width:0" onchange="_gpExPickerChanged(${idx})">
+            ${g.name ? '' : '<option value="">— pick exercise —</option>'}
+            ${selOpts}
+          </select>
+          <button onclick="_gpDeleteExGoal(${idx})" style="background:none;border:none;color:var(--tertiary);font-size:1.125rem;cursor:pointer;padding:.125rem .25rem;line-height:1;flex-shrink:0">×</button>
+        </div>
+        ${g.name ? `
+        <div class="gp-progress-val">Best: <span id="gp-ex-progress-val-${idx}">${current}</span><span class="gp-pv-target" id="gp-ex-progress-target-${idx}"> / ${target} ${tb ? 'secs' : 'reps'}</span></div>
+        <div class="gp-progress-bar-track"><div class="gp-progress-bar-fill${reached ? ' gp-reached' : ''}" id="gp-ex-bar-fill-${idx}" style="width:${pct}%"></div></div>
+        <div class="gp-progress-msg${reached ? ' gp-reached' : ''}" id="gp-ex-msg-${idx}">${reached ? 'Goal reached! 🎉' : `Best: ${current} / ${target} ${tb ? 'secs' : 'reps'}`}</div>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem">
+          <span style="font-size:.8125rem;color:var(--secondary);min-width:3rem">${tb ? 'Seconds' : 'Reps'}</span>
+          <input type="number" id="gp-ex-target-${idx}" class="gp-num-input" min="1" max="9999" step="1" inputmode="numeric" value="${target}" oninput="_gpSaveExGoalRow(${idx})" />
+          <span class="gp-unit-hint" id="gp-ex-unit-hint-${idx}">${tb ? 'seconds (best set)' : 'reps (best set)'}</span>
+        </div>
+        <div class="gp-input-hint" id="gp-ex-hint-${idx}">${sug ? sug.hint : ''}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  /* legacy — keep for any callsites referencing old single-goal save */
+  function saveExerciseGoal() { _gpSaveExGoalRow(0); }
+
+  /* ══════════════════════════════════════════════════════════
+     TOGGLE HANDLERS
+     ══════════════════════════════════════════════════════════ */
+
+  function _freqGoalToggleChanged(checked) {
+    const spBody = document.getElementById('gp-freq-subpage-body');
+    if (spBody) spBody.style.display = checked ? '' : 'none';
+    if (!checked) {
+      const goal = getFreqGoal();
+      if (goal) { goal.enabled = false; saveFreqGoalData(goal); }
+      renderGoalsSection();
+      _gpRefreshOverview();
+      return;
+    }
+    /* Turning ON — pre-fill smart suggestion */
+    const sug = _gpFreqSuggestion();
+    const existingGoal = getFreqGoal();
+    const count  = (existingGoal && existingGoal.count) || (sug && sug.value) || 4;
+    const period = (existingGoal && existingGoal.period) || 'week';
+    const countEl = document.getElementById('gp-freq-count');
+    if (countEl) countEl.value = count;
+    _gpSelectFreqPeriod(period);
+    const hintEl = document.getElementById('gp-freq-hint');
+    if (hintEl) hintEl.textContent = sug ? sug.hint : '';
+    saveFreqGoalData({ count, period, enabled: true });
+    _gpUpdateFreqProgress();
+    renderGoalsSection();
+    _gpRefreshOverview();
+  }
+
+  function _volumeGoalToggleChanged(checked) {
+    const spBody = document.getElementById('gp-vol-subpage-body');
+    if (spBody) spBody.style.display = checked ? '' : 'none';
+    if (!checked) {
+      const goal = getVolumeGoal();
+      if (goal) { goal.enabled = false; saveVolumeGoalData(goal); }
+      renderGoalsSection();
+      _gpRefreshOverview();
+      return;
+    }
+    /* Turning ON — pre-fill smart suggestion */
+    const sug = _gpVolSuggestion();
+    const existingGoal = getVolumeGoal();
+    const target = (existingGoal && existingGoal.target) || (sug && sug.value) || 2000;
+    const targetEl = document.getElementById('gp-vol-target');
+    if (targetEl) targetEl.value = target;
+    const hintEl = document.getElementById('gp-vol-hint');
+    if (hintEl) hintEl.textContent = sug ? sug.hint : '';
+    saveVolumeGoalData({ target, enabled: true });
+    _gpUpdateVolProgress();
+    renderGoalsSection();
+    _gpRefreshOverview();
+  }
+
+  /* removed — exercise goals now managed per-row via _gpExToggleChanged() */
+
+  /* legacy shim kept so openSettings() path still works */
+  function updateSettingsGoalsDisplay() { /* no-op — _gpOpenGoalsPage() handles live sync */ }
+
+  /* ══════════════════════════════════════════════════════════
+     GOAL SUGGESTIONS — rule-based logic
+     ══════════════════════════════════════════════════════════ */
+
+  /* Returns the Monday (local midnight ms) for N complete weeks ago.
+     weekOffset=1 → last complete Mon-Sun week; 2 → two weeks ago, etc. */
+  function _mondayOfWeekOffset(weekOffset) {
+    const now = new Date();
+    const day = now.getDay();
+    const daysToLastMonday = day === 0 ? 6 : day - 1;
+    const thisMonday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToLastMonday);
+    return new Date(thisMonday.getFullYear(), thisMonday.getMonth(), thisMonday.getDate() - 7 * weekOffset).getTime();
+  }
+
+  function _workoutsInWeekOffset(weekOffset) {
+    const startMs = _mondayOfWeekOffset(weekOffset);
+    const endMs   = startMs + 7 * 24 * 60 * 60 * 1000;
+    return workouts.filter(w => {
+      if (!w.date) return false;
+      const t = new Date(w.date).getTime();
+      return !isNaN(t) && t >= startMs && t < endMs;
+    });
+  }
+
+  function _intensityOfWeekOffset(weekOffset) {
+    return _workoutsInWeekOffset(weekOffset).reduce((total, w) => {
+      (w.exercises || []).forEach(ex => {
+        (ex.sets || []).forEach(s => {
+          total += calcSetIntensity(ex.name, parseFloat(s.reps) || 0, parseFloat(s.kg) || 0);
+        });
+      });
+      return total;
+    }, 0);
+  }
+
+  function _applyFreqSuggestion(count) {
+    const existing = getFreqGoal() || {};
+    saveFreqGoalData({ period: 'week', ...existing, count, enabled: true });
+    _gpOpenGoalsPage();
+    renderGoalsSection();
+    showToast('Frequency goal set!');
+  }
+
+  function _applyVolumeSuggestion(target) {
+    const existing = getVolumeGoal() || {};
+    saveVolumeGoalData({ ...existing, target, enabled: true });
+    _gpOpenGoalsPage();
+    renderGoalsSection();
+    showToast('Volume goal set!');
+  }
+
+  function _applyExerciseSuggestion(name, target) {
+    const goals = getExerciseGoals();
+    const existing = goals.findIndex(g => g.name === name);
+    if (existing >= 0) goals[existing] = { name, target, enabled: true };
+    else goals.push({ name, target, enabled: true });
+    saveExerciseGoals(goals);
+    _gpOpenGoalsPage();
+    renderGoalsSection();
+    showToast('Exercise goal set!');
+  }
+
+  function renderGoalSuggestions() {
+    const container = document.getElementById('goals-suggestions-list');
+    if (!container) return;
+
+    const suggestions = [];
+
+    /* 1. Frequency suggestion */
+    const freqSug = _gpFreqSuggestion();
+    if (freqSug) {
+      const currentFreq = getFreqGoal();
+      if (!currentFreq || currentFreq.count !== freqSug.value) {
+        suggestions.push(`<div class="gp-suggest-card">
+          <div class="gp-suggest-text">${freqSug.hint.replace(freqSug.value, `<strong>${freqSug.value} sessions/week</strong>`)}</div>
+          <button class="gp-suggest-btn" onclick="_applyFreqSuggestion(${freqSug.value})">Set this goal</button>
+        </div>`);
+      }
+    }
+
+    /* 2. Volume suggestion */
+    const volSug = _gpVolSuggestion();
+    if (volSug) {
+      const currentVol = getVolumeGoal();
+      if (!currentVol || currentVol.target !== volSug.value) {
+        suggestions.push(`<div class="gp-suggest-card">
+          <div class="gp-suggest-text">${volSug.hint}</div>
+          <button class="gp-suggest-btn" onclick="_applyVolumeSuggestion(${volSug.value})">Set this goal</button>
+        </div>`);
+      }
+    }
+
+    /* 3. Exercise plateau — same best-set across last 3 sessions for an exercise */
+    const exSessionMap = {};
+    const sortedWorkouts = [...workouts].sort((a,b) => new Date(b.date)-new Date(a.date));
+    sortedWorkouts.forEach(w => {
+      (w.exercises || []).forEach(ex => {
+        if (!ex.name) return;
+        if (!exSessionMap[ex.name]) exSessionMap[ex.name] = [];
+        const bestReps = (ex.sets || []).reduce((m,s) => Math.max(m, parseFloat(s.reps)||0), 0);
+        if (bestReps > 0) exSessionMap[ex.name].push(bestReps);
+      });
+    });
+    let plateauSuggestion = null;
+    for (const [name, sessions] of Object.entries(exSessionMap)) {
+      if (sessions.length < 3) continue;
+      const last3 = sessions.slice(0, 3);
+      if (last3[0] === last3[1] && last3[1] === last3[2]) {
+        plateauSuggestion = { name, val: last3[0] };
+        break;
+      }
+    }
+    if (plateauSuggestion) {
+      const { name, val } = plateauSuggestion;
+      const target = val + 1;
+      const exGoals = getExerciseGoals();
+      const alreadySet = exGoals.some(g => g.name === name && g.target === target);
+      if (!alreadySet) {
+        suggestions.push(`<div class="gp-suggest-card">
+          <div class="gp-suggest-text">You've been stuck at <strong>${val} reps</strong> on <strong>${name}</strong> — break through it 🎯</div>
+          <button class="gp-suggest-btn" onclick="_applyExerciseSuggestion(${JSON.stringify(name)}, ${target})">Set this goal</button>
+        </div>`);
+      }
+    }
+
+    if (suggestions.length === 0) {
+      container.innerHTML = `<div class="gp-suggest-empty">Complete a few more workouts and suggestions will appear here.</div>`;
+    } else {
+      container.innerHTML = suggestions.join('');
+    }
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -9162,15 +10235,108 @@
       </button>`;
   }
 
-  /* ── TTS helper ──────────────────────────────────────────── */
+  /* ── TTS duck state ─────────────────────────────────────── */
+  let _duckCtx        = null;   /* current per-cue AudioContext     */
+  let _duckGain       = null;   /* its GainNode                     */
+  let _duckFadeUpTid  = null;   /* setTimeout id for ctx.close()    */
+  let _duckVoice      = null;   /* cached preferred voice           */
+
+  function _pickVoice() {
+    if (_duckVoice) return _duckVoice;
+    const voices = window.speechSynthesis?.getVoices() || [];
+    const en = voices.filter(v => v.lang && v.lang.startsWith('en'));
+    const byPriority = [
+      en.find(v => /Natural|Enhanced/i.test(v.name)),
+      en.find(v => v.name === 'Samantha (Enhanced)'),
+      en.find(v => v.lang === 'en-US' && !v.localService),
+      en.find(v => v.lang === 'en-US'),
+      en[0],
+    ].filter(Boolean);
+    _duckVoice = byPriority[0] || null;
+    return _duckVoice;
+  }
+
+  /* Per-utterance smooth duck: fade-down → speak → fade-up → release. */
   function _warmupSpeak(text) {
     if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utt  = new SpeechSynthesisUtterance(text);
-    utt.rate   = 1.05;
-    utt.pitch  = 1.05;
-    utt.volume = 1;
-    window.speechSynthesis.speak(utt);
+
+    /* Cancel any in-flight fade-up and close previous context */
+    clearTimeout(_duckFadeUpTid);
+    if (_duckCtx && _duckCtx.state !== 'closed') {
+      try { _duckCtx.close(); } catch(e) {}
+    }
+    _duckCtx  = null;
+    _duckGain = null;
+
+    const FADE_DOWN = 0.6;   /* seconds */
+    const FADE_UP   = 0.8;   /* seconds */
+    const PRE_DELAY = 300;   /* ms before fade starts */
+
+    setTimeout(() => {
+      window.speechSynthesis.cancel();
+
+      /* --- duck setup --- */
+      try {
+        if (navigator.audioSession) navigator.audioSession.type = 'ambient';
+
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          const ctx  = new AC();
+          const gain = ctx.createGain();
+          gain.gain.setValueAtTime(1.0, ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + FADE_DOWN);
+          gain.connect(ctx.destination);
+
+          /* 1-frame silent loop — claims the session */
+          const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          src.loop   = true;
+          src.connect(gain);
+          src.start(0);
+
+          _duckCtx  = ctx;
+          _duckGain = gain;
+        }
+      } catch(e) { /* non-fatal */ }
+
+      /* Wait for fade-down to complete, then speak */
+      setTimeout(() => {
+        const utt    = new SpeechSynthesisUtterance(text);
+        const voice  = _pickVoice();
+        if (voice) utt.voice = voice;
+        utt.rate   = 0.88;
+        utt.pitch  = 1.0;
+        utt.volume = 1.0;
+
+        utt.onend = () => {
+          /* Fade back up then release the audio session */
+          if (_duckGain && _duckCtx && _duckCtx.state !== 'closed') {
+            try {
+              const now = _duckCtx.currentTime;
+              _duckGain.gain.cancelScheduledValues(now);
+              _duckGain.gain.setValueAtTime(_duckGain.gain.value, now);
+              _duckGain.gain.linearRampToValueAtTime(1.0, now + FADE_UP);
+            } catch(e) {}
+          }
+          _duckFadeUpTid = setTimeout(() => {
+            if (_duckCtx && _duckCtx.state !== 'closed') {
+              try { _duckCtx.close(); } catch(e) {}
+            }
+            _duckCtx  = null;
+            _duckGain = null;
+          }, FADE_UP * 1000);
+        };
+
+        window.speechSynthesis.speak(utt);
+      }, FADE_DOWN * 1000);
+    }, PRE_DELAY);
+  }
+
+  /* Pre-load voices list as soon as browser has them */
+  if (window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = () => { _duckVoice = null; _pickVoice(); };
+    _pickVoice();
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -9433,7 +10599,9 @@
       /* 1. Settings sub-panel open? */
       const subPanels = ['settings-personal','settings-goals','settings-prefs',
                          'settings-data','settings-about','settings-warmup-general',
-                         'settings-warmup-edit','settings-killer-edit'];
+                         'settings-warmup-edit','settings-killer-edit',
+                         'settings-workout-setup','settings-goal-freq',
+                         'settings-goal-vol','settings-goal-ex'];
       for (const id of subPanels) {
         if (document.getElementById(id)?.classList.contains('open')) {
           return () => settingsPop();
