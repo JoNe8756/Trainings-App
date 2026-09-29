@@ -3681,23 +3681,42 @@
       margin-bottom: 0.125rem;
     }
 
-    /* ── Home action bar (floating card above tab-bar) ──── */
+    /* ── Home action bar — iOS 26 Liquid Glass ──────────── */
     #home-action-bar {
       position: fixed;
-      /* sits ~0.625rem above the tab-bar */
       bottom: max(4.625rem, calc(3.875rem + env(safe-area-inset-bottom, 0px)));
       left: var(--gutter); right: var(--gutter);
       max-width: min(calc(430px - 2 * var(--gutter)), calc(100% - 2 * var(--gutter)));
       margin-left: auto; margin-right: auto;
       z-index: 101;
-      background: rgba(30,30,30,0.88);
-      backdrop-filter: blur(28px) saturate(200%);
-      -webkit-backdrop-filter: blur(28px) saturate(200%);
-      border: 0.5px solid rgba(255,255,255,0.14);
+      /* Liquid Glass: transparent — content scrolls through */
+      background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%);
+      backdrop-filter: blur(24px) saturate(200%) brightness(1.1);
+      -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(1.1);
+      border: 0.5px solid rgba(255,255,255,0.18);
       border-radius: 1.25rem;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.30);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.20),
+        0 -4px 24px rgba(0,0,0,0.25),
+        0 8px 32px rgba(0,0,0,0.20);
       padding: 0.75rem 0.75rem;
       display: none;
+      overflow: hidden;
+    }
+    /* Specular top-edge shine — 60% wide, centered */
+    #home-action-bar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 20%;
+      width: 60%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.30) 30%, rgba(255,255,255,0.30) 70%, transparent 100%);
+      pointer-events: none;
+    }
+    /* Fallback when backdrop-filter is unsupported */
+    @supports not (backdrop-filter: blur(1px)) {
+      #home-action-bar { background: rgba(0,0,0,0.85); }
     }
     #home-action-bar .btn-row { margin: 0; gap: 0.5rem; }
     #home-screen .scroll-area {
