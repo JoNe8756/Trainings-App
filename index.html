@@ -3596,24 +3596,27 @@
       margin-bottom: 0.125rem;
     }
 
-    /* ── Home action bar (fixed above tab-bar) ───────────── */
+    /* ── Home action bar (floating card above tab-bar) ──── */
     #home-action-bar {
       position: fixed;
-      bottom: max(4rem, calc(3.25rem + env(safe-area-inset-bottom, 0px)));
-      left: 0; right: 0;
-      max-width: min(430px, 100%);
+      /* sits ~0.625rem above the tab-bar */
+      bottom: max(4.625rem, calc(3.875rem + env(safe-area-inset-bottom, 0px)));
+      left: var(--gutter); right: var(--gutter);
+      max-width: min(calc(430px - 2 * var(--gutter)), calc(100% - 2 * var(--gutter)));
       margin-left: auto; margin-right: auto;
       z-index: 101;
-      background: rgba(20,20,20,0.72);
-      backdrop-filter: blur(24px) saturate(200%);
-      -webkit-backdrop-filter: blur(24px) saturate(200%);
-      border-top: 0.5px solid rgba(255,255,255,0.12);
-      padding: 0.625rem var(--gutter);
+      background: rgba(30,30,30,0.88);
+      backdrop-filter: blur(28px) saturate(200%);
+      -webkit-backdrop-filter: blur(28px) saturate(200%);
+      border: 0.5px solid rgba(255,255,255,0.14);
+      border-radius: 1.25rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.30);
+      padding: 0.75rem 0.75rem;
       display: none;
     }
-    #home-action-bar .btn-row { margin: 0; }
+    #home-action-bar .btn-row { margin: 0; gap: 0.5rem; }
     #home-screen .scroll-area {
-      padding-bottom: max(9rem, calc(8rem + env(safe-area-inset-bottom, 0px)));
+      padding-bottom: max(9.5rem, calc(8.5rem + env(safe-area-inset-bottom, 0px)));
     }
 
     #highlights-section { display: none; }
