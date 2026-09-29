@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trainings App — Test Suite</title>
+<style>
+  :root {
+    --bg: #000;
+    --card: #1C1C1E;
+    --label: #fff;
+    --secondary: #ebebf599;
+    --tertiary: #ebebf54d;
+    --separator: rgba(255,255,255,.1);
+    --green: #30D158;
+    --red: #FF3B30;
+    --blue: #0A84FF;
+    --yellow: #FFD60A;
+    --orange: #FF9F0A;
+    --gutter: 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--label); min-height: 100vh; padding: 1.5rem var(--gutter) 4rem; }
+
+  h1 { font-size: 2rem; font-weight: 700; letter-spacing: -.5px; margin-bottom: .25rem; }
+  .subtitle { color: var(--secondary); font-size: .9375rem; margin-bottom: 1.5rem; }
+
+  #summary-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    background: var(--card); border-radius: 1rem;
+    padding: 1rem 1.25rem; margin-bottom: 1.5rem;
+    border: .5px solid var(--separator);
+  }
+  #summary-text { font-size: 1.25rem; font-weight: 700; }
+  #summary-text.pass { color: var(--green); }
+  #summary-text.fail { color: var(--red); }
+  #copy-btn {
+    background: rgba(10,132,255,.15); color: var(--blue); border: none;
+    padding: .5rem 1rem; border-radius: .625rem; font-size: .875rem; font-weight: 600;
+    cursor: pointer; font-family: inherit; display: none;
+  }
+  #copy-btn:active { opacity: .7; }
+
+  .suite-header {
+    font-size: .6875rem; font-weight: 600; letter-spacing: .6px;
+    text-transform: uppercase; color: var(--tertiary);
+    padding: 1.25rem 0 .5rem;
+  }
+  .test-card {
+    display: flex; align-items: flex-start; gap: .75rem;
+    background: var(--card); border-radius: .75rem;
+    padding: .75rem 1rem; margin-bottom: .375rem;
+    border: .5px solid var(--separator);
+  }
+  .test-icon { font-size: 1rem; flex-shrink: 0; margin-top: .05rem; line-height: 1.4; }
+  .test-name { font-size: .875rem; font-weight: 500; color: var(--label); line-height: 1.4; }
+  .test-detail {
+    font-size: .75rem; color: var(--tertiary); margin-top: .25rem;
+    font-family: 'SF Mono', 'Menlo', monospace; word-break: break-all; line-height: 1.5;
+  }
+  .test-card.pass .test-icon::after { content: '✓'; color: var(--green); }
+  .test-card.fail .test-icon::after { content: '✗'; color: var(--red); }
+  .test-card.fail { border-color: rgba(255,59,48,.30); }
+  .test-card.warn .test-icon::after { content: '⚠'; color: var(--yellow); }
+</style>
+</head>
+<body>
+
+<h1>Test Suite</h1>
+<p class="subtitle">Trainings App — calculations, edge cases &amp; design-flaw detection</p>
+
+<div id="summary-bar">
+  <div id="summary-text">Running…</div>
+  <button id="copy-btn" onclick="copyFailures()">Copy failing tests</button>
+</div>
+
+<div id="results"></div>
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════════════════
+   PRODUCTION FUNCTIONS (extracted verbatim from index.html)
+   ══════════════════════════════════════════════════════════ */
+
+const EXERCISE_META = {
+  'Push-ups':{type:'bw',diff:2},'Dips':{type:'bw',diff:4},
+  'Pike push-ups':{type:'bw',diff:3},'Handstand push-ups':{type:'bw',diff:9},
+  'Handstand Hold':{type:'bw',diff:7,tb:1},
+  'Diamond push-ups':{type:'bw',diff:3},'Archer push-ups':{type:'bw',diff:7},
+  'Pull-ups':{type:'bw',diff:6},'Chin-ups':{type:'bw',diff:7},
+  'Rows':{type:'bw',diff:4},'Muscle-ups':{type:'bw',diff:8},
+  'Front Lever Hold':{type:'bw',diff:8,tb:1},
+  'Planks':{type:'bw',diff:2,tb:1},'Leg raises':{type:'bw',diff:3},
+  'Sit-ups':{type:'bw',diff:2},
+  'Tuck front lever':{type:'bw',diff:5,tb:1},
+  'Full front lever':{type:'bw',diff:9,tb:1},
+  'Bench press':{type:'w',diff:5},'Back squat':{type:'w',diff:6},
+  'Deadlift':{type:'w',diff:6},'Overhead press':{type:'w',diff:5},
+  'Bicep curls':{type:'w',diff:2},'Lateral raises':{type:'w',diff:2},
+};
+
+const LEVER_EXERCISES = new Set([
+  'Tuck front lever','Advanced tuck front lever','Straddle front lever','Full front lever',
+  'Front Lever Hold','Front Lever Bicycles','Tucked Front Lever Rows',
+  'Tuck back lever','Straddle back lever','Full back lever',
+  'Tuck planche','Advanced tuck planche','Straddle planche','Full planche',
+  'Human flag','Dragon flag',
+]);
+
+let _mockBW = 75;
+let _mockHeight = 175;
+function getUserBW()     { return _mockBW; }
+function getUserHeight() { return _mockHeight; }
+
+function getExMeta(name) {
+  return EXERCISE_META[name] || { type: 'bw', diff: 3 };
+}
+
+function heightLeverFactor(name) {
+  if (!LEVER_EXERCISES.has(name)) return 1;
+  const delta = getUserHeight() - 175;
+  return Math.min(1.10, Math.max(0.90, 1 + delta * 0.002));
+}
+
+function calcSetIntensity(name, reps, kg) {
+  const meta = getExMeta(name);
+  const raw  = parseFloat(reps) || 0;
+  const w    = parseFloat(kg)   || 0;
+  if (!raw) return 0;
+  const r = meta.tb ? raw / 6 : raw;
+  const base = meta.type === 'w'
+    ? meta.diff * r * (w || 1)
+    : meta.diff * r * (1 + w / getUserBW());
+  return Math.round(base * heightLeverFactor(name));
+}
+
+function fmtInt(n) {
+  return n >= 10000 ? Math.round(n/1000) + 'k'
+       : n >= 1000  ? (n/1000).toFixed(1).replace(/\.0$/, '') + 'k'
+       : String(n);
+}
+
+/* Workouts array — tests inject their own */
+let workouts = [];
+
+function countWorkoutsInPeriod(period) {
+  const now = new Date();
+  let startMs;
+  if (period === 'week') {
+    const day = now.getDay();
+    const daysBack = day === 0 ? 6 : day - 1;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysBack);
+    startMs = monday.getTime();
+  } else {
+    startMs = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  }
+  return workouts.filter(w => {
+    if (!w.date) return false;
+    const t = new Date(w.date).getTime();
+    return !isNaN(t) && t >= startMs;
+  }).length;
+}
+
+function _bestSetVol(workoutList, exName) {
+  let best = 0;
+  workoutList.forEach(w => {
+    (w.exercises || []).forEach(ex => {
+      if ((ex.name || '').trim() !== exName) return;
+      (ex.sets || []).forEach(s => {
+        const reps = parseFloat(s.reps) || 0;
+        const kg   = parseFloat(s.kg)   || 0;
+        const vol  = reps * Math.max(1, kg);
+        if (vol > best) best = vol;
+      });
+    });
+  });
+  return best;
+}
+
+function findNewPRs() {
+  if (workouts.length < 2) return [];
+  const latest  = workouts[0];
+  const history = workouts.slice(1);
+  const results = [];
+  const seen    = new Set();
+  latest.exercises.forEach(ex => {
+    const name = (ex.name || '').trim();
+    if (!name || seen.has(name) || ex.killer) return;
+    seen.add(name);
+    let latestVol = 0, latestReps = 0, latestKg = 0;
+    ex.sets.forEach(s => {
+      const reps = parseFloat(s.reps) || 0;
+      const kg   = parseFloat(s.kg)   || 0;
+      const vol  = reps * Math.max(1, kg);
+      if (vol > latestVol) { latestVol = vol; latestReps = reps; latestKg = kg; }
+    });
+    if (latestVol <= 0) return;
+    const prevBest = _bestSetVol(history, name);
+    if (prevBest <= 0) return;
+    if (latestVol <= prevBest) return;
+    results.push({ name, label: `${latestReps} reps`, gain: latestVol - prevBest });
+  });
+  return results.sort((a, b) => b.gain - a.gain);
+}
+
+function getBestSetForExercise(name) {
+  let best = 0;
+  workouts.forEach(w => {
+    (w.exercises || []).filter(ex => ex.name === name).forEach(ex => {
+      (ex.sets || []).forEach(s => {
+        const v = parseFloat(s.reps) || 0;
+        if (v > best) best = v;
+      });
+    });
+  });
+  return best;
+}
+
+function freqGoalMsg(done, target) {
+  const left = target - done;
+  if (done === 0)    return `${target} workout${target !== 1 ? 's' : ''} to go — let's get started!`;
+  if (left <= 0)     return '🎉 Goal reached — great work!';
+  if (left === 1)    return 'One more to hit your goal!';
+  return `${left} more workout${left !== 1 ? 's' : ''} to go — keep it up!`;
+}
+
+/* plateau detection — 3+ sessions same best reps = plateau */
+function detectPlateau(name, sessionCount = 3) {
+  const sessions = workouts
+    .filter(w => (w.exercises || []).some(ex => ex.name === name))
+    .slice(0, sessionCount);
+  if (sessions.length < sessionCount) return false;
+  const bests = sessions.map(w => {
+    let best = 0;
+    (w.exercises || []).filter(ex => ex.name === name).forEach(ex => {
+      (ex.sets || []).forEach(s => { const v = parseFloat(s.reps) || 0; if (v > best) best = v; });
+    });
+    return best;
+  });
+  return bests.every(v => v === bests[0]);
+}
+
+/* date range filter — mirrors Progress screen logic */
+function filterWorkoutsByRange(list, range) {
+  if (!range || range === 'all') return list;
+  const now = Date.now();
+  const msPerDay = 86400000;
+  const days = range === '7' ? 7 : range === '30' ? 30
+             : range === '3M' ? 90 : range === '6M' ? 180 : range === '1Y' ? 365 : null;
+  if (!days) return list;
+  const cutoff = now - days * msPerDay;
+  return list.filter(w => w.date && new Date(w.date).getTime() >= cutoff);
+}
+
+/* helpers for building fixture workouts */
+function daysAgo(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString();
+}
+function mondayThisWeek() {
+  const now = new Date();
+  const day = now.getDay();
+  const back = day === 0 ? 6 : day - 1;
+  const m = new Date(now.getFullYear(), now.getMonth(), now.getDate() - back);
+  return m.toISOString();
+}
+function lastSunday() {
+  const now = new Date();
+  const day = now.getDay();
+  const back = day === 0 ? 7 : day + 0; // previous Sunday
+  const s = new Date(now.getFullYear(), now.getMonth(), now.getDate() - back);
+  s.setHours(23, 59, 0);
+  return s.toISOString();
+}
+function firstOfThisMonth() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+}
+function lastMonth() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() - 1, 15).toISOString();
+}
+
+function makeWorkout(date, exercises) {
+  return {
+    id: Date.now() + Math.random(),
+    date,
+    duration: 1800,
+    exercises: exercises.map(e => ({
+      name: e.name,
+      sets: e.sets.map(s => ({ reps: String(s.reps || 0), kg: String(s.kg || 0) }))
+    }))
+  };
+}
+
+/* ══════════════════════════════════════════════════════════
+   TEST RUNNER
+   ══════════════════════════════════════════════════════════ */
+
+const _results = [];
+let _currentSuite = '';
+
+function suite(name) {
+  _currentSuite = name;
+}
+
+function runTest(name, fn) {
+  const entry = { suite: _currentSuite, name, pass: false, detail: '' };
+  try {
+    fn();
+    entry.pass = true;
+  } catch(e) {
+    entry.detail = e.message || String(e);
+  }
+  _results.push(entry);
+}
+
+function assertEqual(actual, expected, tolerance) {
+  if (typeof expected === 'number' && typeof actual === 'number') {
+    const tol = (tolerance !== undefined) ? tolerance : 0.01;
+    if (Math.abs(actual - expected) > tol) {
+      throw new Error(`Expected ${expected} (±${tol}), got ${actual}`);
+    }
+  } else {
+    if (actual !== expected) {
+      throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+    }
+  }
+}
+
+function assertDeepEqual(actual, expected) {
+  const a = JSON.stringify(actual), e = JSON.stringify(expected);
+  if (a !== e) throw new Error(`Expected ${e}, got ${a}`);
+}
+
+function assertNotNaN(val, label) {
+  if (typeof val !== 'number' || isNaN(val)) throw new Error(`${label || 'Value'} is NaN (got ${val})`);
+}
+
+function assertNotInfinity(val, label) {
+  if (!isFinite(val)) throw new Error(`${label || 'Value'} is Infinity (got ${val})`);
+}
+
+function assertNotNegative(val, label) {
+  if (val < 0) throw new Error(`${label || 'Value'} is negative (got ${val})`);
+}
+
+function assertNoThrow(fn, label) {
+  try { fn(); } catch(e) { throw new Error(`${label || 'Function'} threw: ${e.message}`); }
+}
+
+function assertTruthy(val, msg) {
+  if (!val) throw new Error(msg || `Expected truthy, got ${JSON.stringify(val)}`);
+}
+
+function assertFalsy(val, msg) {
+  if (val) throw new Error(msg || `Expected falsy, got ${JSON.stringify(val)}`);
+}
+
+/* ══════════════════════════════════════════════════════════
+   INTENSITY INDEX
+   ══════════════════════════════════════════════════════════ */
+suite('Intensity Index');
+
+runTest('Reps-based bw exercise: diff=2, 10 reps, no weight → 20', () => {
+  _mockBW = 75;
+  // Push-ups: type=bw, diff=2
+  // base = 2 * 10 * (1 + 0/75) = 20. heightFactor=1 (not lever). result=20
+  assertEqual(calcSetIntensity('Push-ups', 10, 0), 20);
+});
+
+runTest('Reps-based bw with bodyweight fraction: diff=6, 5 reps, 10kg added, BW=75 → correct', () => {
+  _mockBW = 75;
+  // Pull-ups: diff=6, bw, 5 reps, +10kg added weight
+  // base = 6 * 5 * (1 + 10/75) = 30 * 1.1333 = 34.0 → Math.round = 34
+  const result = calcSetIntensity('Pull-ups', 5, 10);
+  const expected = Math.round(6 * 5 * (1 + 10/75));
+  assertEqual(result, expected);
+});
+
+runTest('Weighted exercise: diff=5, 8 reps, 60kg → 2400', () => {
+  // Bench press: type=w, diff=5
+  // base = 5 * 8 * 60 = 2400. heightFactor=1
+  assertEqual(calcSetIntensity('Bench press', 8, 60), 2400);
+});
+
+runTest('Weighted exercise with zero weight: diff=5, 8 reps, 0kg → uses weight=1', () => {
+  // type=w, w||1 = 1 → base = 5 * 8 * 1 = 40
+  assertEqual(calcSetIntensity('Bench press', 8, 0), 40);
+});
+
+runTest('Isometric (tb=1): diff=7, 60 secs → 7 * (60/6) * 1 = 70', () => {
+  _mockBW = 75;
+  // Handstand Hold: type=bw, diff=7, tb=1
+  // r = 60/6 = 10; base = 7 * 10 * (1 + 0/75) = 70
+  assertEqual(calcSetIntensity('Handstand Hold', 60, 0), 70);
+});
+
+runTest('Isometric + added weight: diff=7, 60 secs, +10kg, BW=75', () => {
+  _mockBW = 75;
+  // r = 60/6 = 10; base = 7 * 10 * (1 + 10/75)
+  const expected = Math.round(7 * (60/6) * (1 + 10/75));
+  assertEqual(calcSetIntensity('Handstand Hold', 60, 10), expected);
+});
+
+runTest('Zero reps → intensity = 0, no crash', () => {
+  assertEqual(calcSetIntensity('Pull-ups', 0, 0), 0);
+});
+
+runTest('Zero reps string → intensity = 0', () => {
+  assertEqual(calcSetIntensity('Pull-ups', '0', 0), 0);
+});
+
+runTest('Zero difficulty (unknown exercise) → still computes (diff=3 fallback)', () => {
+  // Unknown exercise gets {type:'bw', diff:3}
+  const result = calcSetIntensity('Unknown XYZ', 10, 0);
+  assertNotNaN(result, 'Unknown exercise intensity');
+  assertEqual(result, Math.round(3 * 10 * 1));
+});
+
+runTest('Null/undefined reps → 0, no crash', () => {
+  assertNoThrow(() => {
+    const r = calcSetIntensity('Push-ups', null, undefined);
+    assertEqual(r, 0);
+  }, 'calcSetIntensity with null reps');
+});
+
+runTest('Intensity never returns NaN for extreme valid inputs', () => {
+  const r = calcSetIntensity('Deadlift', 999, 300);
+  assertNotNaN(r, 'extreme inputs');
+  assertNotInfinity(r, 'extreme inputs');
+});
+
+runTest('Lever exercise height factor at 175cm → factor = 1.0', () => {
+  _mockHeight = 175;
+  assertEqual(heightLeverFactor('Full front lever'), 1.0);
+});
+
+runTest('Lever exercise: 185cm → factor = 1.02', () => {
+  _mockHeight = 185;
+  assertEqual(heightLeverFactor('Full front lever'), 1.02);
+});
+
+runTest('Lever exercise: 155cm → clamped to 0.90', () => {
+  _mockHeight = 155; // 175-20 = -0.04 → would be 0.96 → no, 155: delta=-20, 1 + -20*0.002 = 0.96
+  // Actually 155cm: delta = -20, factor = max(0.90, 0.96) = 0.96
+  assertEqual(heightLeverFactor('Full front lever'), 0.96);
+  _mockHeight = 125; // delta = -50 → 1 - 0.1 = 0.90, clamped
+  assertEqual(heightLeverFactor('Full front lever'), 0.90);
+  _mockHeight = 175; // reset
+});
+
+runTest('Non-lever exercise ignores height → factor always 1', () => {
+  _mockHeight = 200;
+  assertEqual(heightLeverFactor('Push-ups'), 1);
+  assertEqual(heightLeverFactor('Bench press'), 1);
+  _mockHeight = 175;
+});
+
+/* ══════════════════════════════════════════════════════════
+   FMTINT
+   ══════════════════════════════════════════════════════════ */
+suite('fmtInt formatting');
+
+runTest('< 1000 → plain string', () => assertEqual(fmtInt(999), '999'));
+runTest('1000 → "1k"', () => assertEqual(fmtInt(1000), '1k'));
+runTest('1500 → "1.5k"', () => assertEqual(fmtInt(1500), '1.5k'));
+runTest('2000 → "2k"', () => assertEqual(fmtInt(2000), '2k'));
+runTest('10000 → "10k"', () => assertEqual(fmtInt(10000), '10k'));
+runTest('15000 → "15k"', () => assertEqual(fmtInt(15000), '15k'));
+runTest('0 → "0"', () => assertEqual(fmtInt(0), '0'));
+
+/* ══════════════════════════════════════════════════════════
+   GOAL PROGRESS — FREQUENCY
+   ══════════════════════════════════════════════════════════ */
+suite('Goal Progress — Frequency');
+
+runTest('Weekly: Mon/Wed/Fri this week → count = 3', () => {
+  const mon = mondayThisWeek();
+  workouts = [
+    makeWorkout(mon, [{name:'Push-ups',sets:[{reps:10}]}]),
+    makeWorkout(daysAgo(2), [{name:'Pull-ups',sets:[{reps:5}]}]),
+    makeWorkout(daysAgo(4), [{name:'Sit-ups',sets:[{reps:20}]}]),
+  ].filter(w => new Date(w.date) >= new Date(mondayThisWeek()));
+  // Build exactly 3 workouts this week
+  const now = new Date();
+  const day = now.getDay();
+  const back = day === 0 ? 6 : day - 1;
+  const mondayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - back);
+  workouts = [
+    makeWorkout(new Date(mondayDate.getTime() + 0*86400000).toISOString(), [{name:'Push-ups',sets:[{reps:10}]}]),
+    makeWorkout(new Date(mondayDate.getTime() + 1*86400000).toISOString(), [{name:'Pull-ups',sets:[{reps:5}]}]),
+    makeWorkout(new Date(mondayDate.getTime() + 2*86400000).toISOString(), [{name:'Sit-ups',sets:[{reps:20}]}]),
+  ];
+  assertEqual(countWorkoutsInPeriod('week'), 3);
+});
+
+runTest('Weekly: last Sunday\'s workout → NOT counted', () => {
+  workouts = [makeWorkout(lastSunday(), [{name:'Push-ups',sets:[{reps:10}]}])];
+  assertEqual(countWorkoutsInPeriod('week'), 0);
+});
+
+runTest('Monthly: last month\'s workout → not counted', () => {
+  workouts = [makeWorkout(lastMonth(), [{name:'Push-ups',sets:[{reps:10}]}])];
+  assertEqual(countWorkoutsInPeriod('month'), 0);
+});
+
+runTest('Monthly: first of this month → counted', () => {
+  workouts = [makeWorkout(firstOfThisMonth(), [{name:'Push-ups',sets:[{reps:10}]}])];
+  assertEqual(countWorkoutsInPeriod('month'), 1);
+});
+
+runTest('Empty workout history → count = 0, no crash', () => {
+  workouts = [];
+  assertEqual(countWorkoutsInPeriod('week'), 0);
+  assertEqual(countWorkoutsInPeriod('month'), 0);
+});
+
+runTest('Goal count never negative', () => {
+  workouts = [];
+  assertNotNegative(countWorkoutsInPeriod('week'), 'week count');
+  assertNotNegative(countWorkoutsInPeriod('month'), 'month count');
+});
+
+runTest('Workout with missing date → not counted, no crash', () => {
+  workouts = [{ id: 1, date: null, exercises: [] }, { id: 2, date: undefined, exercises: [] }];
+  assertNoThrow(() => countWorkoutsInPeriod('week'), 'null/undefined dates');
+  assertEqual(countWorkoutsInPeriod('week'), 0);
+});
+
+runTest('Workout with invalid date string → not counted', () => {
+  workouts = [makeWorkout('not-a-date', [{name:'Push-ups',sets:[{reps:10}]}])];
+  assertEqual(countWorkoutsInPeriod('week'), 0);
+});
+
+/* ══════════════════════════════════════════════════════════
+   PR DERIVATION
+   ══════════════════════════════════════════════════════════ */
+suite('PR Derivation');
+
+runTest('Single workout → no PRs (need prior history to compare)', () => {
+  workouts = [makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:10}]}])];
+  assertDeepEqual(findNewPRs(), []);
+});
+
+runTest('Two workouts, improvement → PR detected', () => {
+  workouts = [
+    makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:12}]}]),
+    makeWorkout(daysAgo(7), [{name:'Pull-ups',sets:[{reps:10}]}]),
+  ];
+  const prs = findNewPRs();
+  assertEqual(prs.length, 1);
+  assertEqual(prs[0].name, 'Pull-ups');
+});
+
+runTest('Two workouts, no improvement → no PR', () => {
+  workouts = [
+    makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:10}]}]),
+    makeWorkout(daysAgo(7), [{name:'Pull-ups',sets:[{reps:10}]}]),
+  ];
+  assertDeepEqual(findNewPRs(), []);
+});
+
+runTest('Two workouts, regression → no PR', () => {
+  workouts = [
+    makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:8}]}]),
+    makeWorkout(daysAgo(7), [{name:'Pull-ups',sets:[{reps:10}]}]),
+  ];
+  assertDeepEqual(findNewPRs(), []);
+});
+
+runTest('Empty workout history → no PRs, no crash', () => {
+  workouts = [];
+  assertNoThrow(() => findNewPRs(), 'findNewPRs empty');
+  assertDeepEqual(findNewPRs(), []);
+});
+
+runTest('Workout with no exercises → no crash', () => {
+  workouts = [
+    { id: 1, date: daysAgo(1), exercises: [] },
+    { id: 2, date: daysAgo(7), exercises: [] },
+  ];
+  assertNoThrow(() => findNewPRs(), 'no exercises');
+});
+
+runTest('_bestSetVol: empty list → 0', () => {
+  assertEqual(_bestSetVol([], 'Pull-ups'), 0);
+});
+
+runTest('_bestSetVol: exercise not in list → 0', () => {
+  const w = makeWorkout(daysAgo(1), [{name:'Push-ups',sets:[{reps:10}]}]);
+  assertEqual(_bestSetVol([w], 'Pull-ups'), 0);
+});
+
+runTest('_bestSetVol: picks max vol across multiple sets', () => {
+  const w = makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:8,kg:10},{reps:10,kg:0},{reps:6,kg:15}]}]);
+  // volumes: 8*10=80, 10*1=10, 6*15=90 → best=90
+  assertEqual(_bestSetVol([w], 'Pull-ups'), 90);
+});
+
+runTest('getBestSetForExercise: no history → 0', () => {
+  workouts = [];
+  assertEqual(getBestSetForExercise('Pull-ups'), 0);
+});
+
+runTest('getBestSetForExercise: returns max reps across all workouts', () => {
+  workouts = [
+    makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:12}]}]),
+    makeWorkout(daysAgo(7), [{name:'Pull-ups',sets:[{reps:15}]}]),
+    makeWorkout(daysAgo(14), [{name:'Pull-ups',sets:[{reps:10}]}]),
+  ];
+  assertEqual(getBestSetForExercise('Pull-ups'), 15);
+});
+
+runTest('getBestSetForExercise never returns NaN', () => {
+  workouts = [makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:'',kg:''}]}])];
+  const v = getBestSetForExercise('Pull-ups');
+  assertNotNaN(v, 'getBestSetForExercise');
+  assertNotInfinity(v, 'getBestSetForExercise');
+});
+
+runTest('PR never Infinity or NaN', () => {
+  workouts = [
+    makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:12}]}]),
+    makeWorkout(daysAgo(7), [{name:'Pull-ups',sets:[{reps:10}]}]),
+  ];
+  const prs = findNewPRs();
+  prs.forEach(pr => {
+    assertNotNaN(pr.gain, 'PR gain');
+    assertNotInfinity(pr.gain, 'PR gain');
+  });
+});
+
+/* ══════════════════════════════════════════════════════════
+   PLATEAU DETECTION
+   ══════════════════════════════════════════════════════════ */
+suite('Plateau Detection');
+
+runTest('3 sessions same reps → plateau = true', () => {
+  workouts = [
+    makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:10}]}]),
+    makeWorkout(daysAgo(8), [{name:'Pull-ups',sets:[{reps:10}]}]),
+    makeWorkout(daysAgo(15), [{name:'Pull-ups',sets:[{reps:10}]}]),
+  ];
+  assertTruthy(detectPlateau('Pull-ups'), '3 same reps should be plateau');
+});
+
+runTest('2 sessions same reps → plateau = false (insufficient data)', () => {
+  workouts = [
+    makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:10}]}]),
+    makeWorkout(daysAgo(8), [{name:'Pull-ups',sets:[{reps:10}]}]),
+  ];
+  assertFalsy(detectPlateau('Pull-ups'), '2 sessions not enough for plateau');
+});
+
+runTest('3 sessions improving → plateau = false', () => {
+  workouts = [
+    makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:12}]}]),
+    makeWorkout(daysAgo(8), [{name:'Pull-ups',sets:[{reps:11}]}]),
+    makeWorkout(daysAgo(15), [{name:'Pull-ups',sets:[{reps:10}]}]),
+  ];
+  assertFalsy(detectPlateau('Pull-ups'), 'improving trend is not plateau');
+});
+
+runTest('0 sessions → plateau = false, no crash', () => {
+  workouts = [];
+  assertNoThrow(() => detectPlateau('Pull-ups'), 'empty workouts plateau');
+  assertFalsy(detectPlateau('Pull-ups'), 'no sessions = false');
+});
+
+runTest('Exercise never done → plateau = false', () => {
+  workouts = [makeWorkout(daysAgo(1), [{name:'Push-ups',sets:[{reps:10}]}])];
+  assertFalsy(detectPlateau('Pull-ups'), 'never done exercise = false');
+});
+
+/* ══════════════════════════════════════════════════════════
+   DATE RANGE FILTERING
+   ══════════════════════════════════════════════════════════ */
+suite('Date Range Filtering');
+
+runTest('"30" filter on 50 sessions → returns ≤ 30 most recent', () => {
+  const list = Array.from({length:50}, (_,i) => makeWorkout(daysAgo(i), [{name:'Push-ups',sets:[{reps:10}]}]));
+  const filtered = filterWorkoutsByRange(list, '30');
+  assertTruthy(filtered.length <= 30, `Expected ≤30, got ${filtered.length}`);
+  assertTruthy(filtered.length > 0, 'Should have results');
+});
+
+runTest('"3M" filter → excludes sessions older than 90 days', () => {
+  const list = [
+    makeWorkout(daysAgo(10), [{name:'Push-ups',sets:[{reps:10}]}]),
+    makeWorkout(daysAgo(60), [{name:'Push-ups',sets:[{reps:10}]}]),
+    makeWorkout(daysAgo(100), [{name:'Push-ups',sets:[{reps:10}]}]),
+    makeWorkout(daysAgo(200), [{name:'Push-ups',sets:[{reps:10}]}]),
+  ];
+  const filtered = filterWorkoutsByRange(list, '3M');
+  assertEqual(filtered.length, 2);
+});
+
+runTest('Empty history → returns empty array, no crash', () => {
+  assertNoThrow(() => { const r = filterWorkoutsByRange([], '30'); assertDeepEqual(r, []); }, 'empty filter');
+});
+
+runTest('All sessions within range → returns all', () => {
+  const list = [
+    makeWorkout(daysAgo(1), [{name:'Push-ups',sets:[{reps:10}]}]),
+    makeWorkout(daysAgo(3), [{name:'Push-ups',sets:[{reps:10}]}]),
+    makeWorkout(daysAgo(5), [{name:'Push-ups',sets:[{reps:10}]}]),
+  ];
+  const filtered = filterWorkoutsByRange(list, '30');
+  assertEqual(filtered.length, 3);
+});
+
+runTest('"all" range → returns full list unchanged', () => {
+  const list = Array.from({length:100}, (_,i) => makeWorkout(daysAgo(i*3), [{name:'Push-ups',sets:[{reps:10}]}]));
+  assertEqual(filterWorkoutsByRange(list, 'all').length, 100);
+});
+
+/* ══════════════════════════════════════════════════════════
+   EDGE CASES — DATA INTEGRITY
+   ══════════════════════════════════════════════════════════ */
+suite('Edge Cases — Data Integrity');
+
+runTest('Workout saved with no exercises → does not corrupt count', () => {
+  workouts = [{ id: 1, date: daysAgo(1), exercises: [], duration: 60 }];
+  assertNoThrow(() => countWorkoutsInPeriod('week'), 'no-exercises workout count');
+  const prs = findNewPRs();
+  assertDeepEqual(prs, []);
+});
+
+runTest('Workout with exercises but no sets → handled gracefully', () => {
+  workouts = [
+    { id: 1, date: daysAgo(1), exercises: [{name:'Pull-ups', sets:[]}], duration: 60 },
+    { id: 2, date: daysAgo(7), exercises: [{name:'Pull-ups', sets:[]}], duration: 60 },
+  ];
+  assertNoThrow(() => findNewPRs(), 'no-sets exercises');
+  assertNoThrow(() => getBestSetForExercise('Pull-ups'), 'getBest no sets');
+  assertEqual(getBestSetForExercise('Pull-ups'), 0);
+});
+
+runTest('Exercise with no reps/weight → intensity = 0, not NaN', () => {
+  const result = calcSetIntensity('Push-ups', '', '');
+  assertEqual(result, 0);
+  assertNotNaN(result, 'empty string inputs');
+});
+
+runTest('Exercises with no reps logged → intensity = 0 (not NaN or undefined)', () => {
+  const r1 = calcSetIntensity('Pull-ups', undefined, undefined);
+  const r2 = calcSetIntensity('Bench press', null, null);
+  assertEqual(r1, 0); assertEqual(r2, 0);
+  assertNotNaN(r1); assertNotNaN(r2);
+});
+
+/* ══════════════════════════════════════════════════════════
+   EDGE CASES — BOUNDARY CONDITIONS
+   ══════════════════════════════════════════════════════════ */
+suite('Edge Cases — Boundary Conditions');
+
+runTest('Workout exactly at Monday 00:00:00 → counted in current week', () => {
+  const now = new Date();
+  const day = now.getDay();
+  const back = day === 0 ? 6 : day - 1;
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - back, 0, 0, 0, 0);
+  workouts = [makeWorkout(monday.toISOString(), [{name:'Push-ups',sets:[{reps:10}]}])];
+  assertEqual(countWorkoutsInPeriod('week'), 1);
+});
+
+runTest('Dec 31 workout → handled without crash', () => {
+  const dec31 = new Date(new Date().getFullYear(), 11, 31).toISOString();
+  workouts = [makeWorkout(dec31, [{name:'Push-ups',sets:[{reps:10}]}])];
+  assertNoThrow(() => countWorkoutsInPeriod('month'), 'Dec 31');
+  assertNoThrow(() => findNewPRs(), 'Dec 31 PRs');
+});
+
+runTest('Leap year date (Feb 29 2024) → no crash', () => {
+  workouts = [makeWorkout('2024-02-29T10:00:00.000Z', [{name:'Push-ups',sets:[{reps:10}]}])];
+  assertNoThrow(() => countWorkoutsInPeriod('week'), 'leap year');
+  assertNoThrow(() => getBestSetForExercise('Push-ups'), 'leap year best');
+});
+
+runTest('Single data point for range filtering → no crash', () => {
+  const list = [makeWorkout(daysAgo(1), [{name:'Push-ups',sets:[{reps:10}]}])];
+  assertNoThrow(() => filterWorkoutsByRange(list, '30'), 'single point filter');
+});
+
+runTest('All sets have weight=0 → weight factor defaults to 1 (not 0 or NaN) for weighted exercises', () => {
+  // type='w': base = diff * r * (w || 1) — w||1 ensures 1 when w=0
+  const result = calcSetIntensity('Bench press', 10, 0);
+  assertNotNaN(result, 'zero weight weighted exercise');
+  assertTruthy(result > 0, `Expected > 0, got ${result}`);
+  assertEqual(result, 5 * 10 * 1); // diff=5, r=10, w||1=1
+});
+
+runTest('Bodyweight exercise: zero BW in calculations → no division-by-zero crash', () => {
+  _mockBW = 0.001; // near-zero
+  assertNoThrow(() => calcSetIntensity('Pull-ups', 10, 0), 'near-zero BW');
+  _mockBW = 75;
+});
+
+/* ══════════════════════════════════════════════════════════
+   EDGE CASES — CALCULATION SAFETY
+   ══════════════════════════════════════════════════════════ */
+suite('Calculation Safety');
+
+const intensityInputs = [
+  [undefined, undefined], [null, null], ['', ''], [0, 0],
+  [NaN, NaN], [-1, -1], [Infinity, 0], [0, Infinity],
+];
+
+intensityInputs.forEach(([reps, kg]) => {
+  runTest(`calcSetIntensity(reps=${reps}, kg=${kg}) → never NaN/Infinity`, () => {
+    const r = calcSetIntensity('Push-ups', reps, kg);
+    assertNotNaN(r, `reps=${reps}, kg=${kg}`);
+    assertNotInfinity(r, `reps=${reps}, kg=${kg}`);
+  });
+});
+
+runTest('Goal progress never negative with empty history', () => {
+  workouts = [];
+  assertNotNegative(countWorkoutsInPeriod('week'), 'week count empty');
+  assertNotNegative(countWorkoutsInPeriod('month'), 'month count empty');
+});
+
+runTest('detectPlateau with 0 sessions → returns false (no crash)', () => {
+  workouts = [];
+  assertNoThrow(() => detectPlateau('Pull-ups'), 'plateau 0 sessions');
+  assertEqual(detectPlateau('Pull-ups'), false);
+});
+
+runTest('_bestSetVol with missing reps/kg fields → 0, not NaN', () => {
+  const w = { id:1, date: daysAgo(1), exercises: [{name:'Pull-ups', sets:[{}]}] };
+  const result = _bestSetVol([w], 'Pull-ups');
+  assertNotNaN(result, '_bestSetVol missing fields');
+  assertEqual(result, 0); // reps=0 → vol=0
+});
+
+runTest('freqGoalMsg: done=0 → non-empty motivating string', () => {
+  const msg = freqGoalMsg(0, 4);
+  assertTruthy(msg.length > 0, 'empty message');
+  assertTruthy(msg.includes('4'), 'should mention target');
+});
+
+runTest('freqGoalMsg: done=target → success message', () => {
+  const msg = freqGoalMsg(4, 4);
+  assertTruthy(msg.includes('🎉'), 'should have celebration emoji');
+});
+
+runTest('freqGoalMsg: done=target-1 → singular "One more"', () => {
+  const msg = freqGoalMsg(3, 4);
+  assertEqual(msg, 'One more to hit your goal!');
+});
+
+runTest('freqGoalMsg: done > target → still success (no negative message)', () => {
+  const msg = freqGoalMsg(6, 4); // exceeded goal
+  assertTruthy(msg.includes('🎉'), 'exceeded goal should show success');
+});
+
+/* ══════════════════════════════════════════════════════════
+   DATA CONSISTENCY
+   ══════════════════════════════════════════════════════════ */
+suite('Data Consistency');
+
+runTest('Export/re-import round-trip: JSON.stringify → parse preserves values', () => {
+  const original = [
+    makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:12,kg:5}]}]),
+    makeWorkout(daysAgo(7), [{name:'Bench press',sets:[{reps:8,kg:60}]}]),
+  ];
+  const json = JSON.stringify(original);
+  const restored = JSON.parse(json);
+  assertEqual(restored[0].exercises[0].sets[0].reps, '12');
+  assertEqual(restored[0].exercises[0].sets[0].kg, '5');
+  assertEqual(restored[1].exercises[0].name, 'Bench press');
+});
+
+runTest('Deleting a workout removes it from PR calculations', () => {
+  workouts = [
+    makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:15}]}]),
+    makeWorkout(daysAgo(7), [{name:'Pull-ups',sets:[{reps:10}]}]),
+    makeWorkout(daysAgo(14), [{name:'Pull-ups',sets:[{reps:12}]}]),
+  ];
+  // Simulate deleting the latest (highest) workout
+  workouts = workouts.slice(1);
+  assertEqual(getBestSetForExercise('Pull-ups'), 12);
+});
+
+runTest('After deleting all workouts: PRs = [], getBest = 0, count = 0', () => {
+  workouts = [];
+  assertDeepEqual(findNewPRs(), []);
+  assertEqual(getBestSetForExercise('Pull-ups'), 0);
+  assertEqual(countWorkoutsInPeriod('week'), 0);
+});
+
+runTest('Training plan with 0 exercises → no crash in goal/PR functions', () => {
+  workouts = [{ id: 1, date: daysAgo(1), exercises: [], duration: 0 }];
+  assertNoThrow(() => findNewPRs(), 'empty exercise list');
+  assertNoThrow(() => countWorkoutsInPeriod('week'), 'empty exercises count');
+});
+
+/* ══════════════════════════════════════════════════════════
+   DISPLAY SAFETY
+   ══════════════════════════════════════════════════════════ */
+suite('Display Safety');
+
+runTest('Exercise name with special chars: é, ü → intensity computed without crash', () => {
+  assertNoThrow(() => calcSetIntensity('Développé', 10, 0), 'accented chars');
+  // Falls back to {type:'bw',diff:3}
+  const r = calcSetIntensity('Développé', 10, 0);
+  assertEqual(r, 30);
+});
+
+runTest('Exercise name with HTML special chars: & < > " → no crash', () => {
+  assertNoThrow(() => calcSetIntensity('Press & Hold <knee>', 10, 0), 'HTML chars in name');
+});
+
+runTest('Very long exercise name (60 chars) → no crash in calculations', () => {
+  const longName = 'A'.repeat(60);
+  assertNoThrow(() => calcSetIntensity(longName, 10, 0), 'long name');
+  assertNoThrow(() => getBestSetForExercise(longName), 'long name getBest');
+});
+
+runTest('999 reps → intensity calculated correctly, no overflow', () => {
+  // Push-ups: 2 * 999 * 1 = 1998
+  const result = calcSetIntensity('Push-ups', 999, 0);
+  assertEqual(result, 1998);
+  assertNotNaN(result);
+  assertNotInfinity(result);
+});
+
+runTest('0 workouts → all functions return safe defaults', () => {
+  workouts = [];
+  assertNoThrow(() => {
+    const prs    = findNewPRs();
+    const count  = countWorkoutsInPeriod('week');
+    const best   = getBestSetForExercise('Pull-ups');
+    const plat   = detectPlateau('Pull-ups');
+    assertDeepEqual(prs, []);
+    assertEqual(count, 0);
+    assertEqual(best, 0);
+    assertEqual(plat, false);
+  }, 'all functions 0 workouts');
+});
+
+runTest('fmtInt(0) → "0" (no crash, no blank)', () => {
+  const r = fmtInt(0);
+  assertTruthy(r === '0', `Expected "0", got "${r}"`);
+});
+
+runTest('fmtInt with negative → still returns a string (defensive)', () => {
+  assertNoThrow(() => fmtInt(-500), 'negative fmtInt');
+});
+
+/* ══════════════════════════════════════════════════════════
+   DESIGN FLAW DETECTION
+   ══════════════════════════════════════════════════════════ */
+suite('Design Flaw Detection');
+
+runTest('[DESIGN] Weekly boundary: Sunday workout at 23:59 → NOT in next week', () => {
+  // Ensures Monday-boundary logic doesn't accidentally pull in Sunday
+  const now = new Date();
+  const day = now.getDay();
+  const back = day === 0 ? 6 : day - 1;
+  const lastSun = new Date(now.getFullYear(), now.getMonth(), now.getDate() - back - 1, 23, 59, 0);
+  workouts = [makeWorkout(lastSun.toISOString(), [{name:'Push-ups',sets:[{reps:10}]}])];
+  assertEqual(countWorkoutsInPeriod('week'), 0);
+});
+
+runTest('[DESIGN] Weighted exercise: zero weight should not silently produce weight=0 instead of 1', () => {
+  // If w||1 is missing, bench press with 0kg would give diff*r*0 = 0 (wrong)
+  const zeroWeight = calcSetIntensity('Bench press', 10, 0);
+  const oneKg      = calcSetIntensity('Bench press', 10, 1);
+  // They should be equal (both use weight=1 as minimum)
+  assertEqual(zeroWeight, oneKg);
+});
+
+runTest('[DESIGN] BW exercise with 0 added weight → uses (1 + 0/BW) = 1 multiplier', () => {
+  _mockBW = 75;
+  // diff=2, reps=10, kg=0 → base = 2 * 10 * (1 + 0/75) = 20
+  assertEqual(calcSetIntensity('Push-ups', 10, 0), 20);
+});
+
+runTest('[DESIGN] calcSetIntensity with non-numeric reps string → 0, not NaN', () => {
+  const r = calcSetIntensity('Push-ups', 'abc', 0);
+  assertEqual(r, 0);
+  assertNotNaN(r);
+});
+
+runTest('[DESIGN] findNewPRs with only 1 workout → returns [] (no first-timer treated as PR)', () => {
+  workouts = [makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:10}]}])];
+  const prs = findNewPRs();
+  assertDeepEqual(prs, []); // Need prior history to confirm PR
+});
+
+runTest('[DESIGN] filterWorkoutsByRange: "7" only keeps last 7 days (not 8)', () => {
+  const list = [
+    makeWorkout(daysAgo(6), [{name:'Push-ups',sets:[{reps:10}]}]),  // in
+    makeWorkout(daysAgo(7), [{name:'Push-ups',sets:[{reps:10}]}]),  // borderline ~in
+    makeWorkout(daysAgo(8), [{name:'Push-ups',sets:[{reps:10}]}]),  // out
+  ];
+  const filtered = filterWorkoutsByRange(list, '7');
+  // 8 days ago should be out
+  assertTruthy(filtered.length <= 2, `Expected ≤2, got ${filtered.length}`);
+  assertTruthy(filtered.length >= 1, 'Expected at least 1 result');
+});
+
+runTest('[DESIGN] Plateau needs exactly 3 matching sessions — not 2', () => {
+  // 2 identical → false; 3 identical → true
+  workouts = [
+    makeWorkout(daysAgo(1), [{name:'Pull-ups',sets:[{reps:10}]}]),
+    makeWorkout(daysAgo(8), [{name:'Pull-ups',sets:[{reps:10}]}]),
+  ];
+  assertEqual(detectPlateau('Pull-ups'), false);
+  workouts.push(makeWorkout(daysAgo(15), [{name:'Pull-ups',sets:[{reps:10}]}]));
+  assertEqual(detectPlateau('Pull-ups'), true);
+});
+
+/* ══════════════════════════════════════════════════════════
+   RENDER RESULTS
+   ══════════════════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  const container = document.getElementById('results');
+  let passed = 0;
+  let currentSuite = '';
+
+  _results.forEach(r => {
+    if (r.suite !== currentSuite) {
+      currentSuite = r.suite;
+      const hdr = document.createElement('div');
+      hdr.className = 'suite-header';
+      hdr.textContent = currentSuite;
+      container.appendChild(hdr);
+    }
+    const card = document.createElement('div');
+    const cls = r.pass ? 'pass' : 'fail';
+    card.className = `test-card ${cls}`;
+    const nameEl = document.createElement('div');
+    nameEl.className = 'test-icon';
+    const textEl = document.createElement('div');
+    const title = document.createElement('div');
+    title.className = 'test-name';
+    title.textContent = r.name;
+    textEl.appendChild(title);
+    if (r.detail) {
+      const det = document.createElement('div');
+      det.className = 'test-detail';
+      det.textContent = r.detail;
+      textEl.appendChild(det);
+    }
+    card.appendChild(nameEl);
+    card.appendChild(textEl);
+    container.appendChild(card);
+    if (r.pass) passed++;
+  });
+
+  const total = _results.length;
+  const sumEl = document.getElementById('summary-text');
+  sumEl.textContent = `${passed} / ${total} passed`;
+  sumEl.className = passed === total ? 'pass' : 'fail';
+
+  const copyBtn = document.getElementById('copy-btn');
+  if (passed < total) copyBtn.style.display = '';
+});
+
+function copyFailures() {
+  const failures = _results.filter(r => !r.pass)
+    .map(r => `[${r.suite}] ${r.name}\n  → ${r.detail}`)
+    .join('\n\n');
+  navigator.clipboard.writeText(failures).then(() => {
+    document.getElementById('copy-btn').textContent = 'Copied!';
+    setTimeout(() => { document.getElementById('copy-btn').textContent = 'Copy failing tests'; }, 2000);
+  });
+}
+
+/* Run all tests synchronously — they've already run at parse time above */
+/* Trigger render on load via the event listener above */
+</script>
+</body>
+</html>
