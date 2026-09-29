@@ -3587,6 +3587,91 @@
       padding: .375rem .875rem .5rem; font-size: .75rem; color: var(--tertiary);
       font-weight: 600; border-top: .5px solid var(--separator);
     }
+    /* ── Exercise Milestone goal cards ──────────────────── */
+    .ex-goal-card {
+      background: #1C1C1E;
+      border-radius: 1rem;
+      margin-bottom: .75rem;
+      overflow: hidden;
+    }
+    .ex-goal-top {
+      display: flex;
+      align-items: center;
+      gap: .625rem;
+      padding: .875rem 1rem;
+    }
+    .ex-goal-name {
+      flex: 1;
+      min-width: 0;
+      font-size: .9375rem;
+      font-weight: 600;
+      color: var(--label);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      position: relative;
+    }
+    .ex-pick-prompt {
+      flex: 1;
+      font-size: .9375rem;
+      font-weight: 500;
+      color: #007AFF;
+      position: relative;
+    }
+    .ex-goal-del {
+      background: none;
+      border: none;
+      color: var(--tertiary);
+      font-size: 1.25rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: .125rem .25rem;
+      flex-shrink: 0;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ex-goal-divider { height: .5px; background: var(--separator); margin: 0 1rem; }
+    .ex-goal-section { padding: .75rem 1rem .625rem; }
+    .ex-goal-label {
+      font-size: .6875rem;
+      font-weight: 600;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+      color: var(--tertiary);
+      margin-bottom: .5rem;
+    }
+    .ex-goal-progress-val {
+      display: flex;
+      align-items: baseline;
+      gap: .25rem;
+      margin-bottom: .5rem;
+    }
+    .ex-goal-bar-track {
+      height: 6px;
+      background: rgba(128,128,128,.18);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .ex-goal-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: #007AFF;
+      transition: width .4s ease, background .3s ease;
+    }
+    .ex-goal-target-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .ex-goal-target-label { font-size: .9375rem; color: var(--label); }
+    .ex-goal-hint {
+      font-size: .8125rem;
+      color: var(--tertiary);
+      font-style: italic;
+      line-height: 1.4;
+      margin-top: .5rem;
+    }
+
     /* ── Home greeting ──────────────────────────────────── */
     #home-greeting {
       font-size: 0.875rem;
@@ -4403,13 +4488,11 @@
     </div>
     <div id="gp-ex-subpage-body" style="display:none">
       <div class="settings-section-header">Goals</div>
-      <div class="gp-goal-card" style="margin:0 var(--gutter) .625rem;overflow:hidden">
-        <div id="gp-ex-list" style="border-bottom:0.5px solid var(--separator)"></div>
-        <div style="padding:.75rem 1rem">
-          <button onclick="_gpAddExGoal()" style="background:none;border:none;color:#007AFF;font-size:.9375rem;font-weight:600;font-family:inherit;cursor:pointer;padding:0">+ Add Exercise Goal</button>
-        </div>
+      <div id="gp-ex-list" style="padding:0 var(--gutter)"></div>
+      <div style="padding:.5rem var(--gutter) .25rem">
+        <button onclick="_gpAddExGoal()" style="background:none;border:none;color:#007AFF;font-size:.9375rem;font-weight:600;font-family:inherit;cursor:pointer;padding:.5rem 0;width:100%;text-align:left">+ Add Exercise Goal</button>
       </div>
-      <div style="padding:.25rem var(--gutter) 0;font-size:.75rem;color:var(--tertiary);line-height:1.5">Milestone goals never reset. Based on your best single set ever.</div>
+      <div style="padding:0 var(--gutter) .5rem;font-size:.75rem;color:var(--tertiary);line-height:1.5">Milestone goals never reset. Based on your best single set ever.</div>
     </div>
   </div>
 </div>
@@ -9566,23 +9649,20 @@
     const picker = document.getElementById('gp-ex-picker-' + idx);
     if (!picker) return;
     const name = picker.value;
-    const tb   = !!getExMeta(name).tb;
-    const unitHint = document.getElementById('gp-ex-unit-hint-' + idx);
-    if (unitHint) unitHint.textContent = tb ? 'seconds (best set)' : 'reps (best set)';
-    const sug      = _gpExSuggestion(name);
-    const hintEl   = document.getElementById('gp-ex-hint-' + idx);
-    const targetEl = document.getElementById('gp-ex-target-' + idx);
-    if (sug) {
-      if (hintEl) hintEl.textContent = sug.hint;
-      const goals = getExerciseGoals();
-      if (!goals[idx] || goals[idx].name !== name) {
-        if (targetEl) targetEl.value = sug.value;
-      }
-    } else {
-      if (hintEl) hintEl.textContent = '';
-    }
-    _gpSaveExGoalRow(idx);
-    _gpUpdateExProgress(idx);
+    if (!name) return;
+    const sug  = _gpExSuggestion(name);
+    /* Save with suggestion value if this is a new/unnamed row */
+    const goals = getExerciseGoals();
+    while (goals.length <= idx) goals.push({ name: '', target: 10, enabled: true });
+    const existing = goals[idx];
+    const isNew = !existing || !existing.name || existing.name !== name;
+    const target = isNew && sug ? sug.value : (existing && existing.target ? existing.target : (sug ? sug.value : 10));
+    goals[idx] = { name, target, enabled: existing ? existing.enabled !== false : true };
+    saveExerciseGoals(goals);
+    /* Re-render the list so progress/target UI appears for the new selection */
+    _gpRenderExList();
+    renderGoalsSection();
+    _gpRefreshOverview();
   }
 
   function _gpUpdateFreqProgress() {
@@ -9641,11 +9721,11 @@
     const val = document.getElementById('gp-ex-progress-val-' + idx);
     const tgt = document.getElementById('gp-ex-progress-target-' + idx);
     const bar = document.getElementById('gp-ex-bar-fill-' + idx);
-    const msg = document.getElementById('gp-ex-msg-' + idx);
+    const disp = document.getElementById('gp-ex-target-display-' + idx);
     if (val) val.textContent = current;
     if (tgt) tgt.textContent = ` / ${target} ${unit}`;
-    if (bar) { bar.style.width = pct + '%'; bar.classList.toggle('gp-reached', reached); }
-    if (msg) { msg.textContent = reached ? 'Goal reached! 🎉' : `Best: ${current} / ${target} ${unit}`; msg.classList.toggle('gp-reached', reached); }
+    if (bar) { bar.style.width = pct + '%'; bar.style.background = reached ? '#30D158' : '#007AFF'; }
+    if (disp) disp.textContent = target;
   }
 
   /* ── Smart suggestion pre-fill helpers ─────────────────── */
@@ -9860,6 +9940,8 @@
     goals[idx] = { name, target: target || 10, enabled };
     saveExerciseGoals(goals);
     _gpUpdateExProgress(idx);
+    const disp = document.getElementById('gp-ex-target-display-' + idx);
+    if (disp) disp.textContent = target || 10;
     renderGoalsSection();
     _gpRefreshOverview();
   }
@@ -9891,6 +9973,16 @@
     }, 80);
   }
 
+  function _gpExStep(idx, delta) {
+    const inp  = document.getElementById('gp-ex-target-' + idx);
+    const disp = document.getElementById('gp-ex-target-display-' + idx);
+    let val = parseInt((inp && inp.value) || '10', 10) + delta;
+    val = Math.max(1, Math.min(9999, val));
+    if (inp)  inp.value = val;
+    if (disp) disp.textContent = val;
+    _gpSaveExGoalRow(idx);
+  }
+
   function _gpRenderExList() {
     const masterEnabled = _getExMasterEnabled();
     const masterTog = document.getElementById('gp-ex-master-toggle');
@@ -9901,38 +9993,70 @@
     if (!container) return;
     const goals = getExerciseGoals();
     const names = _allExerciseNames();
+    const stepBtn = (icon, fn) => `<button onclick="${fn}" style="background:var(--fill);border:none;border-radius:.5rem;width:2.125rem;height:2.125rem;font-size:1.25rem;line-height:1;color:var(--label);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent" ontouchstart="">${icon}</button>`;
     if (goals.length === 0) { container.innerHTML = ''; return; }
     container.innerHTML = goals.map((g, idx) => {
       const enabled = g.enabled !== false;
       const selOpts = names.map(n => `<option value="${n}"${g.name === n ? ' selected' : ''}>${n}</option>`).join('');
-      const tb  = g.name ? !!getExMeta(g.name).tb : false;
-      const sug = g.name ? _gpExSuggestion(g.name) : null;
+      const tb      = g.name ? !!getExMeta(g.name).tb : false;
+      const unit    = tb ? 'secs' : 'reps';
+      const sug     = g.name ? _gpExSuggestion(g.name) : null;
       const current = g.name ? getBestSetForExercise(g.name) : 0;
       const target  = g.target || 10;
       const pct     = target > 0 ? Math.min(100, Math.round(current / target * 100)) : 0;
       const reached = current >= target && target > 0;
-      return `<div style="padding:.875rem 1rem;border-bottom:0.5px solid var(--separator)">
-        <div style="display:flex;align-items:center;gap:.625rem;margin-bottom:.625rem">
+      const barColor = reached ? '#30D158' : '#007AFF';
+
+      const topCenter = g.name
+        ? `<span class="ex-goal-name">${g.name}</span>`
+        : `<span class="ex-pick-prompt">Pick exercise →</span>`;
+
+      const progressBlock = g.name && enabled ? `
+        <div class="ex-goal-divider"></div>
+        <div class="ex-goal-section">
+          <div class="ex-goal-label">Progress</div>
+          <div class="ex-goal-progress-val">
+            <span id="gp-ex-progress-val-${idx}" style="font-size:2rem;font-weight:700;color:var(--label);font-variant-numeric:tabular-nums">${current}</span>
+            <span style="font-size:1.2rem;color:var(--tertiary);font-weight:400" id="gp-ex-progress-target-${idx}"> / ${target} ${unit}</span>
+          </div>
+          <div class="ex-goal-bar-track">
+            <div class="ex-goal-bar-fill" id="gp-ex-bar-fill-${idx}" style="width:${pct}%;background:${barColor}"></div>
+          </div>
+        </div>` : '';
+
+      const targetBlock = g.name ? `
+        <div class="ex-goal-divider"></div>
+        <div class="ex-goal-section">
+          <div class="ex-goal-label">Target</div>
+          <div class="ex-goal-target-row">
+            <span class="ex-goal-target-label">${tb ? 'Seconds' : 'Reps'}</span>
+            <div style="display:flex;align-items:center;gap:.375rem">
+              ${stepBtn('−', `_gpExStep(${idx},-1)`)}
+              <span id="gp-ex-target-display-${idx}" style="min-width:2.5rem;text-align:center;font-size:1rem;font-weight:600;color:var(--label);font-variant-numeric:tabular-nums">${target}</span>
+              <input type="number" id="gp-ex-target-${idx}" value="${target}" style="display:none" />
+              ${stepBtn('+', `_gpExStep(${idx},1)`)}
+            </div>
+          </div>
+          ${sug ? `<div class="ex-goal-hint">${sug.hint}</div>` : ''}
+        </div>` : '';
+
+      return `<div class="ex-goal-card">
+        <div class="ex-goal-top">
           <label class="settings-toggle" style="flex-shrink:0">
             <input type="checkbox" ${enabled ? 'checked' : ''} onchange="_gpExToggleChanged(${idx},this.checked)" />
             <div class="settings-toggle-track"></div>
           </label>
-          <select id="gp-ex-picker-${idx}" class="gp-ex-select" style="flex:1;min-width:0" onchange="_gpExPickerChanged(${idx})">
-            ${g.name ? '' : '<option value="">— pick exercise —</option>'}
-            ${selOpts}
-          </select>
-          <button onclick="_gpDeleteExGoal(${idx})" style="background:none;border:none;color:var(--tertiary);font-size:1.125rem;cursor:pointer;padding:.125rem .25rem;line-height:1;flex-shrink:0">×</button>
+          <div style="flex:1;min-width:0;position:relative">
+            ${topCenter}
+            <select id="gp-ex-picker-${idx}" onchange="_gpExPickerChanged(${idx})" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer">
+              ${g.name ? '' : '<option value="">— pick —</option>'}
+              ${selOpts}
+            </select>
+          </div>
+          <button class="ex-goal-del" onclick="_gpDeleteExGoal(${idx})">×</button>
         </div>
-        ${g.name ? `
-        <div class="gp-progress-val">Best: <span id="gp-ex-progress-val-${idx}">${current}</span><span class="gp-pv-target" id="gp-ex-progress-target-${idx}"> / ${target} ${tb ? 'secs' : 'reps'}</span></div>
-        <div class="gp-progress-bar-track"><div class="gp-progress-bar-fill${reached ? ' gp-reached' : ''}" id="gp-ex-bar-fill-${idx}" style="width:${pct}%"></div></div>
-        <div class="gp-progress-msg${reached ? ' gp-reached' : ''}" id="gp-ex-msg-${idx}">${reached ? 'Goal reached! 🎉' : `Best: ${current} / ${target} ${tb ? 'secs' : 'reps'}`}</div>
-        <div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem">
-          <span style="font-size:.8125rem;color:var(--secondary);min-width:3rem">${tb ? 'Seconds' : 'Reps'}</span>
-          <input type="number" id="gp-ex-target-${idx}" class="gp-num-input" min="1" max="9999" step="1" inputmode="numeric" value="${target}" oninput="_gpSaveExGoalRow(${idx})" />
-          <span class="gp-unit-hint" id="gp-ex-unit-hint-${idx}">${tb ? 'seconds (best set)' : 'reps (best set)'}</span>
-        </div>
-        <div class="gp-input-hint" id="gp-ex-hint-${idx}">${sug ? sug.hint : ''}</div>` : ''}
+        ${progressBlock}
+        ${targetBlock}
       </div>`;
     }).join('');
   }
