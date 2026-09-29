@@ -222,7 +222,7 @@
       color: var(--tertiary);
       text-transform: uppercase;
       letter-spacing: .6px;
-      padding: 1.375rem var(--gutter) 0.5rem;
+      padding: 1.5rem var(--gutter) 0.5rem;
     }
 
     /* ── Start / Repeat button row ───────────────────────── */
@@ -989,24 +989,16 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .workout-history-date {
-      font-size: 0.9375rem;
-      font-weight: 600;
-      letter-spacing: -.2px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -.3px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .workout-history-time { font-size: 0.8125rem; color: var(--tertiary); margin-top: 0.0625rem; }
-    .workout-history-meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
-    .workout-history-dur {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: var(--blue);
-      background: var(--dur-bg);
-      border-radius: 0.5rem;
-      padding: 0.25rem 0.625rem;
-      white-space: nowrap;
-    }
+    .workout-history-dur-inline { font-size: 0.75rem; color: var(--tertiary); margin-top: 0.25rem; }
+    .workout-history-meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; align-self: flex-start; }
     .btn-delete-workout {
       background: none;
       border: none;
@@ -2931,6 +2923,16 @@
       color: #fff;
       font-weight: 600;
     }
+    /* ── Sliding pill segmented control (Frequency Goal page) ── */
+    .freq-seg-btn {
+      flex: 1; background: none; border: none;
+      padding: .375rem .875rem; font-size: .875rem; font-weight: 500;
+      color: var(--secondary); cursor: pointer; font-family: inherit;
+      position: relative; z-index: 1; border-radius: .5rem;
+      transition: color 200ms; -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+    }
+    .freq-seg-btn.active { color: #fff; font-weight: 600; }
     .gp-ex-select {
       flex: 1;
       background: var(--fill);
@@ -3585,6 +3587,35 @@
       padding: .375rem .875rem .5rem; font-size: .75rem; color: var(--tertiary);
       font-weight: 600; border-top: .5px solid var(--separator);
     }
+    /* ── Home greeting ──────────────────────────────────── */
+    #home-greeting {
+      font-size: 0.875rem;
+      color: var(--tertiary);
+      font-weight: 400;
+      letter-spacing: .01em;
+      margin-bottom: 0.125rem;
+    }
+
+    /* ── Home action bar (fixed above tab-bar) ───────────── */
+    #home-action-bar {
+      position: fixed;
+      bottom: max(4rem, calc(3.25rem + env(safe-area-inset-bottom, 0px)));
+      left: 0; right: 0;
+      max-width: min(430px, 100%);
+      margin-left: auto; margin-right: auto;
+      z-index: 101;
+      background: rgba(20,20,20,0.72);
+      backdrop-filter: blur(24px) saturate(200%);
+      -webkit-backdrop-filter: blur(24px) saturate(200%);
+      border-top: 0.5px solid rgba(255,255,255,0.12);
+      padding: 0.625rem var(--gutter);
+      display: none;
+    }
+    #home-action-bar .btn-row { margin: 0; }
+    #home-screen .scroll-area {
+      padding-bottom: max(9rem, calc(8rem + env(safe-area-inset-bottom, 0px)));
+    }
+
     #highlights-section { display: none; }
     .highlight-card {
       background: var(--card);
@@ -3889,7 +3920,10 @@
 <div id="home-screen" class="screen active">
   <div class="scroll-area">
     <div class="nav-bar">
-      <div class="nav-bar-title">Summary</div>
+      <div>
+        <div id="home-greeting">Good morning 👋</div>
+        <div class="nav-bar-title">Summary</div>
+      </div>
       <button class="btn-settings-gear" onclick="openSettings()" aria-label="Settings">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"/>
@@ -3897,12 +3931,9 @@
         </svg>
       </button>
     </div>
-    <div class="btn-row">
-      <button class="btn-start" onclick="startWorkout()">Start Workout</button>
-      <button class="btn-repeat" id="btn-repeat" onclick="repeatLastWorkout()">↩ Repeat Last</button>
-    </div>
 
     <!-- Goals section (frequency + volume + exercise-specific) -->
+    <div id="goals-section-label" class="section-header" style="display:none">Goals</div>
     <div id="goals-section" style="display:none"></div>
 
     <div id="highlights-section">
@@ -4249,28 +4280,38 @@
     </div>
     <div id="gp-freq-subpage-body" style="display:none">
       <div class="settings-section-header">Progress</div>
-      <div class="gp-goal-card" style="margin:0 var(--gutter) .625rem">
-        <div class="gp-progress-val"><span id="gp-freq-progress-val">0</span><span class="gp-pv-target" id="gp-freq-progress-target"> / 4 this week</span></div>
-        <div class="gp-progress-bar-track"><div class="gp-progress-bar-fill" id="gp-freq-bar-fill" style="width:0%"></div></div>
-        <div class="gp-progress-msg" id="gp-freq-msg"></div>
+      <div class="settings-card" style="margin:0 var(--gutter) .625rem;padding:1rem 1.125rem">
+        <div style="display:flex;align-items:baseline;gap:.375rem;margin-bottom:.75rem">
+          <span id="gp-freq-progress-val" style="font-size:1.4rem;font-weight:700;color:var(--label);font-variant-numeric:tabular-nums">0</span>
+          <span id="gp-freq-progress-target" style="font-size:.9375rem;color:var(--tertiary);font-weight:400"> / 4 this week</span>
+        </div>
+        <div style="height:6px;background:rgba(128,128,128,.18);border-radius:3px;overflow:hidden;margin-bottom:.625rem">
+          <div id="gp-freq-bar-fill" style="height:100%;width:0%;background:#007AFF;border-radius:3px;transition:width .4s ease,background .3s ease"></div>
+        </div>
+        <div id="gp-freq-msg" style="font-size:.8125rem;color:var(--tertiary)"></div>
       </div>
       <div class="settings-section-header">Target</div>
       <div class="settings-card">
-        <div class="settings-row">
+        <div class="settings-row" style="padding:.625rem var(--gutter)">
           <div class="settings-row-label">Workouts</div>
-          <input type="number" id="gp-freq-count" class="settings-num-input" min="1" max="30" step="1" inputmode="numeric" value="4" oninput="saveFreqGoal()" />
-          <span class="settings-unit">per period</span>
+          <div style="display:flex;align-items:center;gap:.375rem;margin-left:auto">
+            <button onclick="_gpFreqStep(-1)" style="background:var(--fill);border:none;border-radius:.5rem;width:2.125rem;height:2.125rem;font-size:1.25rem;line-height:1;color:var(--label);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent" ontouchstart="">−</button>
+            <span id="gp-freq-count-display" style="min-width:2rem;text-align:center;font-size:1rem;font-weight:600;color:var(--label);font-variant-numeric:tabular-nums">4</span>
+            <input type="number" id="gp-freq-count" value="4" style="display:none" />
+            <button onclick="_gpFreqStep(1)" style="background:var(--fill);border:none;border-radius:.5rem;width:2.125rem;height:2.125rem;font-size:1.25rem;line-height:1;color:var(--label);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent" ontouchstart="">+</button>
+          </div>
         </div>
         <div class="settings-row-separator"></div>
-        <div class="settings-row">
+        <div class="settings-row" style="padding:.625rem var(--gutter)">
           <div class="settings-row-label">Period</div>
-          <div class="gp-period-seg" style="margin-left:auto">
-            <button class="gp-period-btn active" id="gp-freq-period-week" onclick="_gpSelectFreqPeriod('week',true)">Week</button>
-            <button class="gp-period-btn" id="gp-freq-period-month" onclick="_gpSelectFreqPeriod('month',true)">Month</button>
+          <div style="display:flex;background:var(--fill);border-radius:.625rem;padding:.125rem;position:relative;margin-left:auto;overflow:hidden">
+            <div id="freq-period-pill" style="position:absolute;top:.125rem;left:.125rem;height:calc(100% - .25rem);background:#007AFF;border-radius:.5rem;transition:transform 200ms ease-in-out,width 200ms ease-in-out;pointer-events:none"></div>
+            <button class="freq-seg-btn active" id="gp-freq-period-week" onclick="_gpSelectFreqPeriod('week',true)">Week</button>
+            <button class="freq-seg-btn" id="gp-freq-period-month" onclick="_gpSelectFreqPeriod('month',true)">Month</button>
           </div>
         </div>
       </div>
-      <div class="gp-input-hint" id="gp-freq-hint" style="padding:0 var(--gutter)"></div>
+      <div id="gp-freq-hint" style="padding:.5rem var(--gutter) 0;font-size:.8125rem;color:var(--tertiary);font-style:italic;line-height:1.4"></div>
     </div>
   </div>
 </div>
@@ -4329,14 +4370,27 @@
     <div class="settings-nav-title">Exercise Milestones</div>
   </div>
   <div class="settings-body">
-    <div class="settings-section-header">Goals</div>
-    <div class="gp-goal-card" style="margin:0 var(--gutter) .625rem;overflow:hidden">
-      <div id="gp-ex-list" style="border-bottom:0.5px solid var(--separator)"></div>
-      <div style="padding:.75rem 1rem">
-        <button onclick="_gpAddExGoal()" style="background:none;border:none;color:#007AFF;font-size:.9375rem;font-weight:600;font-family:inherit;cursor:pointer;padding:0">+ Add Exercise Goal</button>
+    <div class="settings-section-header">Enable</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div class="settings-row-icon icon-yellow">🏆</div>
+        <div class="settings-row-label">Exercise Milestones</div>
+        <label class="settings-toggle">
+          <input type="checkbox" id="gp-ex-master-toggle" onchange="_gpExMasterToggleChanged(this.checked)" />
+          <div class="settings-toggle-track"></div>
+        </label>
       </div>
     </div>
-    <div style="padding:.25rem var(--gutter) 0;font-size:.75rem;color:var(--tertiary);line-height:1.5">Milestone goals never reset. Based on your best single set ever.</div>
+    <div id="gp-ex-subpage-body" style="display:none">
+      <div class="settings-section-header">Goals</div>
+      <div class="gp-goal-card" style="margin:0 var(--gutter) .625rem;overflow:hidden">
+        <div id="gp-ex-list" style="border-bottom:0.5px solid var(--separator)"></div>
+        <div style="padding:.75rem 1rem">
+          <button onclick="_gpAddExGoal()" style="background:none;border:none;color:#007AFF;font-size:.9375rem;font-weight:600;font-family:inherit;cursor:pointer;padding:0">+ Add Exercise Goal</button>
+        </div>
+      </div>
+      <div style="padding:.25rem var(--gutter) 0;font-size:.75rem;color:var(--tertiary);line-height:1.5">Milestone goals never reset. Based on your best single set ever.</div>
+    </div>
   </div>
 </div>
 
@@ -4608,6 +4662,14 @@
     <div style="padding:.625rem var(--gutter) 0;font-size:.8125rem;color:var(--tertiary);line-height:1.5">
       Permanently deletes all workouts, plans, exercises, goals, and settings. This cannot be undone. Consider exporting first.
     </div>
+  </div>
+</div>
+
+<!-- Fixed action bar for Summary tab -->
+<div id="home-action-bar">
+  <div class="btn-row">
+    <button class="btn-start" onclick="startWorkout()">Start Workout</button>
+    <button class="btn-repeat" id="btn-repeat" onclick="repeatLastWorkout()">↩ Repeat Last</button>
   </div>
 </div>
 
@@ -5077,7 +5139,9 @@
     /* show/hide resume banner whenever we leave the workout screen */
     updateResumeBanner();
 
-    if (tab === 'home')      { renderRecent(); renderFreqGoal(); renderHighlights(); }
+    const actionBar = document.getElementById('home-action-bar');
+    if (actionBar) actionBar.style.display = tab === 'home' ? 'block' : 'none';
+    if (tab === 'home')      { _updateGreeting(); renderRecent(); renderFreqGoal(); renderHighlights(); }
     if (tab === 'history')   renderHistory();
     if (tab === 'progress')  renderProgress();
     if (tab === 'exercises') {
@@ -5097,6 +5161,8 @@
       document.getElementById('tab-' + t).classList.remove('active');
     });
     document.getElementById('workout-screen').classList.add('active');
+    const actionBar = document.getElementById('home-action-bar');
+    if (actionBar) actionBar.style.display = 'none';
     updateResumeBanner();
     // Show warmup card if warmup was completed before this workout
     _showWarmupWorkoutCard();
@@ -6422,10 +6488,10 @@
           <div class="workout-history-info">
             ${w.planName ? `<div class="workout-history-plan">📋 ${w.planName}</div>` : ''}
             <div class="workout-history-date">${dateStr}</div>
+            <div class="workout-history-dur-inline">Duration: ${durStr}</div>
             <div class="workout-history-time">${timeStr}</div>
           </div>
           <div class="workout-history-meta">
-            <div class="workout-history-dur">${durStr}</div>
             <button class="btn-delete-workout" onclick="event.stopPropagation();deleteWorkout(${w.id})" title="Delete workout">
               ${trashSVG}
             </button>
@@ -9014,27 +9080,31 @@
 
     const items = [];
 
+    const _iconPR  = '🏆';
+    const _iconNew = '<span style="color:#007AFF;font-size:1.25rem;line-height:1">✦</span>';
+    const _iconUp  = '<span style="color:#30D158;font-size:1.375rem;font-weight:700;line-height:1">↑</span>';
+
     // 1. New PRs — aggregate into one card
     const prs = findNewPRs();
     if (prs.length === 1) {
-      items.push({ icon: '🏆', title: `New PR: ${prs[0].label}!`, body: prs[0].name });
+      items.push({ icon: _iconPR, title: `New PR: ${prs[0].label}!`, body: prs[0].name });
     } else if (prs.length >= 2) {
       const names = prs.map(p => p.name);
       const preview = names.length <= 3
         ? names.join(', ')
         : names.slice(0, 2).join(', ') + ` +${names.length - 2} more`;
-      items.push({ icon: '🏆', title: `${prs.length} new PRs this session!`, body: preview });
+      items.push({ icon: _iconPR, title: `${prs.length} new PRs this session!`, body: preview });
     }
 
     // 2. First-time exercises — aggregate into one card
     const firsts = findFirstTimeExercises();
     if (firsts.length === 1) {
-      items.push({ icon: '✨', title: `First time: ${firsts[0]}`, body: 'New movement unlocked! 🚪' });
+      items.push({ icon: _iconNew, title: `First time: ${firsts[0]}`, body: 'New movement unlocked!' });
     } else if (firsts.length >= 2) {
       const preview = firsts.length <= 3
         ? firsts.join(', ')
         : firsts.slice(0, 2).join(', ') + ` +${firsts.length - 2} more`;
-      items.push({ icon: '✨', title: `Tried ${firsts.length} new exercises!`, body: preview });
+      items.push({ icon: _iconNew, title: `Tried ${firsts.length} new exercises!`, body: preview });
     }
 
     // 3. Workout streak
@@ -9049,7 +9119,7 @@
     if (items.length < 3) {
       const imp = findBiggestImprovement();
       if (imp && imp.pct >= 5) {
-        items.push({ icon: '📈', title: `+${imp.pct}% on ${imp.name}`, body: 'Keep pushing!' });
+        items.push({ icon: _iconUp, title: `+${imp.pct}% on ${imp.name}`, body: 'Keep pushing!' });
       }
     }
 
@@ -9397,7 +9467,6 @@
     if (!section) return;
     const freqGoal = getFreqGoal();
     const volGoal  = getVolumeGoal();
-    const exGoal   = getExerciseGoal();
     const cards = [];
     if (freqGoal && freqGoal.enabled !== false) {
       const done    = countWorkoutsInPeriod(freqGoal.period);
@@ -9419,20 +9488,25 @@
       const current = calcWeeklyIntensity();
       cards.push(_makeGoalCard('Weekly Volume ⚡', current, volGoal.target, 'intensity'));
     }
-    getExerciseGoals().forEach(g => {
-      if (g && g.enabled !== false && g.name && g.target) {
-        const tb      = !!getExMeta(g.name).tb;
-        const unit    = tb ? 'secs' : 'reps';
-        const current = getBestSetForExercise(g.name);
-        cards.push(_makeGoalCard(g.name + ' Milestone', current, g.target, unit));
-      }
-    });
+    if (_getExMasterEnabled()) {
+      getExerciseGoals().forEach(g => {
+        if (g && g.enabled !== false && g.name && g.target) {
+          const tb      = !!getExMeta(g.name).tb;
+          const unit    = tb ? 'secs' : 'reps';
+          const current = getBestSetForExercise(g.name);
+          cards.push(_makeGoalCard(g.name + ' Milestone', current, g.target, unit));
+        }
+      });
+    }
+    const label = document.getElementById('goals-section-label');
     if (cards.length === 0) {
       section.style.display = 'none';
       section.innerHTML = '';
+      if (label) label.style.display = 'none';
     } else {
       section.style.display = '';
       section.innerHTML = cards.join('');
+      if (label) label.style.display = '';
     }
   }
 
@@ -9441,9 +9515,30 @@
      ══════════════════════════════════════════════════════════ */
 
   function _gpSelectFreqPeriod(period, save) {
-    document.getElementById('gp-freq-period-week').classList.toggle('active', period === 'week');
-    document.getElementById('gp-freq-period-month').classList.toggle('active', period === 'month');
+    const weekBtn  = document.getElementById('gp-freq-period-week');
+    const monthBtn = document.getElementById('gp-freq-period-month');
+    if (weekBtn)  weekBtn.classList.toggle('active',  period === 'week');
+    if (monthBtn) monthBtn.classList.toggle('active', period === 'month');
+    /* Animate sliding pill */
+    requestAnimationFrame(() => {
+      const pill = document.getElementById('freq-period-pill');
+      const btn  = period === 'week' ? weekBtn : monthBtn;
+      if (pill && btn) {
+        pill.style.width     = btn.offsetWidth + 'px';
+        pill.style.transform = `translateX(${period === 'week' ? 0 : (weekBtn ? weekBtn.offsetWidth : 0)}px)`;
+      }
+    });
     if (save) saveFreqGoal();
+  }
+
+  function _gpFreqStep(delta) {
+    const inp  = document.getElementById('gp-freq-count');
+    const disp = document.getElementById('gp-freq-count-display');
+    let val = parseInt((inp && inp.value) || '4', 10) + delta;
+    val = Math.max(1, Math.min(30, val));
+    if (inp)  inp.value = val;
+    if (disp) disp.textContent = val;
+    saveFreqGoal();
   }
 
   /* Called when picker changes for a specific exercise goal row */
@@ -9484,8 +9579,8 @@
     const msg  = document.getElementById('gp-freq-msg');
     if (val) val.textContent = done;
     if (tgt) tgt.textContent = ` / ${target} ${period}`;
-    if (bar) { bar.style.width = pct + '%'; bar.classList.toggle('gp-reached', reached); }
-    if (msg) { msg.textContent = reached ? 'Goal reached! 🎉' : freqGoalMsg(done, target); msg.classList.toggle('gp-reached', reached); }
+    if (bar) { bar.style.width = pct + '%'; bar.style.background = reached ? '#30D158' : '#007AFF'; }
+    if (msg) { msg.textContent = reached ? '🎉 Goal reached — great work!' : freqGoalMsg(done, target); msg.style.color = reached ? '#30D158' : ''; }
   }
 
   function _gpUpdateVolProgress() {
@@ -9601,6 +9696,60 @@
     if (exEl)   exEl.textContent   = activeEx.length > 0 ? `${activeEx.length} active` : 'Off';
   }
 
+  /* ── Greeting ──────────────────────────────────────────── */
+  function _updateGreeting() {
+    const el = document.getElementById('home-greeting');
+    if (!el) return;
+    const h = new Date().getHours();
+    el.textContent = h < 12 ? 'Good morning 👋' : h < 18 ? 'Good afternoon 👋' : 'Good evening 👋';
+  }
+
+  /* ── Animated expand/collapse helper ───────────────────── */
+  function _animToggle(el, show) {
+    if (show) {
+      el.style.display = '';
+      el.style.overflow = 'hidden';
+      el.style.height = '0';
+      el.style.transition = '';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        el.style.transition = 'height 220ms ease-out';
+        el.style.height = el.scrollHeight + 'px';
+        el.addEventListener('transitionend', function h() {
+          el.style.height = el.style.overflow = el.style.transition = '';
+          el.removeEventListener('transitionend', h);
+        });
+      }));
+    } else {
+      el.style.overflow = 'hidden';
+      el.style.height = el.scrollHeight + 'px';
+      el.style.transition = '';
+      requestAnimationFrame(() => {
+        el.style.transition = 'height 220ms ease-out';
+        el.style.height = '0';
+        el.addEventListener('transitionend', function h() {
+          el.style.display = 'none';
+          el.style.height = el.style.overflow = el.style.transition = '';
+          el.removeEventListener('transitionend', h);
+        });
+      });
+    }
+  }
+
+  /* ── Exercise Milestones master toggle ──────────────────── */
+  function _getExMasterEnabled() {
+    return localStorage.getItem('exMasterEnabled') !== 'false';
+  }
+  function _setExMasterEnabled(v) {
+    localStorage.setItem('exMasterEnabled', v ? 'true' : 'false');
+  }
+  function _gpExMasterToggleChanged(checked) {
+    _setExMasterEnabled(checked);
+    const body = document.getElementById('gp-ex-subpage-body');
+    if (body) _animToggle(body, checked);
+    renderGoalsSection();
+    _gpRefreshOverview();
+  }
+
   /* Open Frequency Goal sub-page */
   function _gpOpenFreqPage() {
     const freqGoal = getFreqGoal();
@@ -9609,8 +9758,11 @@
     if (tog) tog.checked = freqOn;
     const body = document.getElementById('gp-freq-subpage-body');
     if (body) body.style.display = freqOn ? '' : 'none';
+    const count = (freqGoal && freqGoal.count) || 4;
     const countEl = document.getElementById('gp-freq-count');
-    if (countEl) countEl.value = freqGoal && freqGoal.count ? freqGoal.count : 4;
+    if (countEl) countEl.value = count;
+    const dispEl = document.getElementById('gp-freq-count-display');
+    if (dispEl) dispEl.textContent = count;
     _gpSelectFreqPeriod((freqGoal && freqGoal.period) || 'week');
     const hintEl = document.getElementById('gp-freq-hint');
     if (hintEl) { const sug = _gpFreqSuggestion(); hintEl.textContent = freqOn && sug ? sug.hint : ''; }
@@ -9701,6 +9853,11 @@
   }
 
   function _gpRenderExList() {
+    const masterEnabled = _getExMasterEnabled();
+    const masterTog = document.getElementById('gp-ex-master-toggle');
+    if (masterTog) masterTog.checked = masterEnabled;
+    const exBody = document.getElementById('gp-ex-subpage-body');
+    if (exBody) exBody.style.display = masterEnabled ? '' : 'none';
     const container = document.getElementById('gp-ex-list');
     if (!container) return;
     const goals = getExerciseGoals();
@@ -9750,7 +9907,7 @@
 
   function _freqGoalToggleChanged(checked) {
     const spBody = document.getElementById('gp-freq-subpage-body');
-    if (spBody) spBody.style.display = checked ? '' : 'none';
+    if (spBody) _animToggle(spBody, checked);
     if (!checked) {
       const goal = getFreqGoal();
       if (goal) { goal.enabled = false; saveFreqGoalData(goal); }
@@ -9765,6 +9922,8 @@
     const period = (existingGoal && existingGoal.period) || 'week';
     const countEl = document.getElementById('gp-freq-count');
     if (countEl) countEl.value = count;
+    const dispEl = document.getElementById('gp-freq-count-display');
+    if (dispEl) dispEl.textContent = count;
     _gpSelectFreqPeriod(period);
     const hintEl = document.getElementById('gp-freq-hint');
     if (hintEl) hintEl.textContent = sug ? sug.hint : '';
@@ -9776,7 +9935,7 @@
 
   function _volumeGoalToggleChanged(checked) {
     const spBody = document.getElementById('gp-vol-subpage-body');
-    if (spBody) spBody.style.display = checked ? '' : 'none';
+    if (spBody) _animToggle(spBody, checked);
     if (!checked) {
       const goal = getVolumeGoal();
       if (goal) { goal.enabled = false; saveVolumeGoalData(goal); }
@@ -10516,6 +10675,9 @@
   })();
 
   /* ── Init ───────────────────────────────────────────────── */
+  _updateGreeting();
+  const _initActionBar = document.getElementById('home-action-bar');
+  if (_initActionBar) _initActionBar.style.display = 'block';
   renderRecent();    /* also calls updateRepeatBtn() */
   renderFreqGoal();
   renderHighlights();
