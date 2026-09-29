@@ -126,13 +126,16 @@ function heightLeverFactor(name) {
 
 function calcSetIntensity(name, reps, kg) {
   const meta = getExMeta(name);
-  const raw  = parseFloat(reps) || 0;
-  const w    = parseFloat(kg)   || 0;
+  const rawReps = parseFloat(reps);
+  const rawKg   = parseFloat(kg);
+  const raw = (isFinite(rawReps) && rawReps > 0) ? rawReps : 0;
+  const w   = (isFinite(rawKg)   && rawKg   > 0) ? rawKg   : 0;
+  const diff = (isFinite(meta.diff) && meta.diff > 0) ? meta.diff : 1;
   if (!raw) return 0;
   const r = meta.tb ? raw / 6 : raw;
   const base = meta.type === 'w'
-    ? meta.diff * r * (w || 1)
-    : meta.diff * r * (1 + w / getUserBW());
+    ? diff * r * (w || 1)
+    : diff * r * (1 + w / getUserBW());
   return Math.round(base * heightLeverFactor(name));
 }
 
@@ -245,9 +248,10 @@ function detectPlateau(name, sessionCount = 3) {
 /* date range filter — mirrors Progress screen logic */
 function filterWorkoutsByRange(list, range) {
   if (!range || range === 'all') return list;
+  if (range === '30') return list.slice(-30);
   const now = Date.now();
   const msPerDay = 86400000;
-  const days = range === '7' ? 7 : range === '30' ? 30
+  const days = range === '7' ? 7
              : range === '3M' ? 90 : range === '6M' ? 180 : range === '1Y' ? 365 : null;
   if (!days) return list;
   const cutoff = now - days * msPerDay;
