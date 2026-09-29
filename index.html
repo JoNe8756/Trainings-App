@@ -3710,14 +3710,23 @@
     }
 
     /* ── Primary action buttons ─────────────────────────── */
-    /* Start Workout */
+    /* Start Workout — iOS Liquid Glass */
     .btn-start {
-      background: rgba(0,122,255,0.72) !important;
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255,255,255,0.18) !important;
-      box-shadow: 0 4px 18px rgba(0,80,255,0.30),
-                  inset 0 1px 0 rgba(255,255,255,0.28) !important;
+      background: linear-gradient(
+        160deg,
+        rgba(80,160,255,0.70) 0%,
+        rgba(0,100,255,0.60) 55%,
+        rgba(0,80,220,0.68) 100%
+      ) !important;
+      backdrop-filter: blur(28px) saturate(220%) brightness(1.08) !important;
+      -webkit-backdrop-filter: blur(28px) saturate(220%) brightness(1.08) !important;
+      border: 0.5px solid rgba(140,200,255,0.55) !important;
+      box-shadow:
+        0 6px 24px rgba(0,80,255,0.35),
+        inset 0 1.5px 0 rgba(255,255,255,0.55),
+        inset 0 -1px 0 rgba(0,50,180,0.30),
+        inset 1px 0 0 rgba(255,255,255,0.12),
+        inset -1px 0 0 rgba(255,255,255,0.08) !important;
     }
 
     /* Finish */
@@ -4343,21 +4352,29 @@
     </div>
     <div id="gp-vol-subpage-body" style="display:none">
       <div class="settings-section-header">Progress</div>
-      <div class="gp-goal-card" style="margin:0 var(--gutter) .625rem">
-        <div class="gp-progress-val">⚡ <span id="gp-vol-progress-val">0</span><span class="gp-pv-target" id="gp-vol-progress-target"> / 2,000 this week</span></div>
-        <div class="gp-progress-bar-track"><div class="gp-progress-bar-fill" id="gp-vol-bar-fill" style="width:0%"></div></div>
-        <div class="gp-progress-msg" id="gp-vol-msg"></div>
+      <div class="settings-card" style="margin:0 var(--gutter) .625rem;padding:1rem 1.125rem">
+        <div style="display:flex;align-items:baseline;gap:.375rem;margin-bottom:.75rem">
+          <span id="gp-vol-progress-val" style="font-size:1.4rem;font-weight:700;color:var(--label);font-variant-numeric:tabular-nums">0</span>
+          <span id="gp-vol-progress-target" style="font-size:.9375rem;color:var(--tertiary);font-weight:400"> / 2,000 ⚡ this week</span>
+        </div>
+        <div style="height:6px;background:rgba(128,128,128,.18);border-radius:3px;overflow:hidden;margin-bottom:.625rem">
+          <div id="gp-vol-bar-fill" style="height:100%;width:0%;background:#007AFF;border-radius:3px;transition:width .4s ease,background .3s ease"></div>
+        </div>
+        <div id="gp-vol-msg" style="font-size:.8125rem;color:var(--tertiary)"></div>
       </div>
       <div class="settings-section-header">Target</div>
       <div class="settings-card">
-        <div class="settings-row">
-          <div class="settings-row-label">⚡ Target</div>
-          <input type="number" id="gp-vol-target" class="settings-num-input" min="100" max="99999" step="100" inputmode="numeric" value="2000" style="width:5.5rem" oninput="saveVolumeGoal()" />
-          <span class="settings-unit">/ week</span>
+        <div class="settings-row" style="padding:.625rem var(--gutter)">
+          <div class="settings-row-label">⚡ Volume</div>
+          <div style="display:flex;align-items:center;gap:.375rem;margin-left:auto">
+            <button onclick="_gpVolStep(-100)" style="background:var(--fill);border:none;border-radius:.5rem;width:2.125rem;height:2.125rem;font-size:1.25rem;line-height:1;color:var(--label);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent" ontouchstart="">−</button>
+            <span id="gp-vol-target-display" style="min-width:3.5rem;text-align:center;font-size:1rem;font-weight:600;color:var(--label);font-variant-numeric:tabular-nums">2,000</span>
+            <input type="number" id="gp-vol-target" value="2000" style="display:none" />
+            <button onclick="_gpVolStep(100)" style="background:var(--fill);border:none;border-radius:.5rem;width:2.125rem;height:2.125rem;font-size:1.25rem;line-height:1;color:var(--label);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent" ontouchstart="">+</button>
+          </div>
         </div>
       </div>
-      <div class="gp-input-hint" id="gp-vol-hint" style="padding:0 var(--gutter)"></div>
-      <div style="padding:.25rem var(--gutter) 0;font-size:.75rem;color:var(--tertiary);line-height:1.5">Resets each Monday. Based on all workouts this week.</div>
+      <div id="gp-vol-hint" style="padding:.5rem var(--gutter) 0;font-size:.8125rem;color:var(--tertiary);font-style:italic;line-height:1.4"></div>
     </div>
   </div>
 </div>
@@ -9593,14 +9610,20 @@
     const target  = goal.target;
     const pct     = target > 0 ? Math.min(100, Math.round(current / target * 100)) : 0;
     const reached = current >= target && target > 0;
+    const left    = target - current;
     const val  = document.getElementById('gp-vol-progress-val');
     const tgt  = document.getElementById('gp-vol-progress-target');
     const bar  = document.getElementById('gp-vol-bar-fill');
     const msg  = document.getElementById('gp-vol-msg');
     if (val) val.textContent = fmtInt(current);
-    if (tgt) tgt.textContent = ` / ${fmtInt(target)} this week`;
-    if (bar) { bar.style.width = pct + '%'; bar.classList.toggle('gp-reached', reached); }
-    if (msg) { msg.textContent = reached ? 'Goal reached! 🎉' : `${fmtInt(current)} / ${fmtInt(target)} intensity this week`; msg.classList.toggle('gp-reached', reached); }
+    if (tgt) tgt.textContent = ` / ${fmtInt(target)} ⚡ this week`;
+    if (bar) { bar.style.width = pct + '%'; bar.style.background = reached ? '#30D158' : '#007AFF'; }
+    let msgText;
+    if (reached)      msgText = '🎉 Goal reached — great work!';
+    else if (current === 0) msgText = `Hit ⚡ ${fmtInt(target)} this week — let's go!`;
+    else if (pct >= 80)    msgText = `So close! ⚡ ${fmtInt(left)} more to go 💪`;
+    else                   msgText = `⚡ ${fmtInt(left)} more to hit your target — keep pushing!`;
+    if (msg) { msg.textContent = msgText; msg.style.color = reached ? '#30D158' : ''; }
   }
 
   function _gpUpdateExProgress(idx) {
@@ -9780,8 +9803,11 @@
     if (tog) tog.checked = volOn;
     const body = document.getElementById('gp-vol-subpage-body');
     if (body) body.style.display = volOn ? '' : 'none';
-    const targetEl = document.getElementById('gp-vol-target');
-    if (targetEl) targetEl.value = volGoal && volGoal.target ? volGoal.target : 2000;
+    const target = (volGoal && volGoal.target) || 2000;
+    const inp  = document.getElementById('gp-vol-target');
+    const disp = document.getElementById('gp-vol-target-display');
+    if (inp)  inp.value = target;
+    if (disp) disp.textContent = fmtInt(target);
     const hintEl = document.getElementById('gp-vol-hint');
     if (hintEl) { const sug = _gpVolSuggestion(); hintEl.textContent = volOn && sug ? sug.hint : ''; }
     if (volOn) _gpUpdateVolProgress();
@@ -9801,6 +9827,16 @@
     _gpUpdateFreqProgress();
     renderGoalsSection();
     _gpRefreshOverview();
+  }
+
+  function _gpVolStep(delta) {
+    const inp  = document.getElementById('gp-vol-target');
+    const disp = document.getElementById('gp-vol-target-display');
+    let val = (parseInt((inp && inp.value) || '2000', 10) + delta);
+    val = Math.max(100, Math.min(99900, Math.round(val / 100) * 100));
+    if (inp)  inp.value = val;
+    if (disp) disp.textContent = fmtInt(val);
+    saveVolumeGoal();
   }
 
   function saveVolumeGoal() {
@@ -9950,8 +9986,10 @@
     const sug = _gpVolSuggestion();
     const existingGoal = getVolumeGoal();
     const target = (existingGoal && existingGoal.target) || (sug && sug.value) || 2000;
-    const targetEl = document.getElementById('gp-vol-target');
-    if (targetEl) targetEl.value = target;
+    const inp  = document.getElementById('gp-vol-target');
+    const disp = document.getElementById('gp-vol-target-display');
+    if (inp)  inp.value = target;
+    if (disp) disp.textContent = fmtInt(target);
     const hintEl = document.getElementById('gp-vol-hint');
     if (hintEl) hintEl.textContent = sug ? sug.hint : '';
     saveVolumeGoalData({ target, enabled: true });
