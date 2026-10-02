@@ -5906,6 +5906,10 @@
     }
   }
   function logSet(exId, sid, btn) {
+    /* Dismiss keyboard first so the tap isn't intercepted by the keyboard overlay */
+    if (document.activeElement && document.activeElement !== document.body) {
+      document.activeElement.blur();
+    }
     /* ── Record perf data for this set ─────────────────────── */
     const exCard = document.getElementById(exId);
     const exName = exCard?.querySelector('.exercise-head input')?.value || '';
@@ -9219,15 +9223,18 @@
       if (t > 0) latestTotals[ex.name] = t;
     });
     let best = null;
-    for (let i = 1; i < Math.min(workouts.length, 10); i++) {
-      workouts[i].exercises.forEach(ex => {
-        if (!latestTotals[ex.name]) return;
-        const prev = ex.sets.reduce((s, st) => s + (parseInt(st.reps) || 0), 0);
-        if (!prev) return;
-        const pct = Math.round(((latestTotals[ex.name] - prev) / prev) * 100);
-        if (pct > 0 && (!best || pct > best.pct)) best = { name: ex.name, pct };
-      });
-    }
+    /* Compare each exercise against its immediately previous session (first match looking back) */
+    Object.keys(latestTotals).forEach(name => {
+      for (let i = 1; i < workouts.length; i++) {
+        const prevEx = (workouts[i].exercises || []).find(ex => (ex.name || '').trim() === name);
+        if (!prevEx) continue;
+        const prev = prevEx.sets.reduce((s, st) => s + (parseInt(st.reps) || 0), 0);
+        if (!prev) break;
+        const pct = Math.round(((latestTotals[name] - prev) / prev) * 100);
+        if (pct > 0 && (!best || pct > best.pct)) best = { name, pct };
+        break; /* only compare against the single most-recent previous session */
+      }
+    });
     return best;
   }
 
@@ -9282,9 +9289,10 @@
       }
     }
 
-    // 5. Fallback
     if (!items.length) {
-      items.push({ icon: '💪', title: `${workouts.length} workout${workouts.length !== 1 ? 's' : ''} logged`, body: 'Every session counts. Keep going!' });
+      section.style.display = 'none';
+      list.innerHTML = '';
+      return;
     }
 
     list.innerHTML = items.slice(0, 3).map(it => `
@@ -10975,6 +10983,19 @@
       });
       persistPlans();
     }
+  })();
+
+  /* ── Keyboard avoidance for workout screen ─────────────── */
+  (function _initKeyboardAvoidance() {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    function _adjustForKeyboard() {
+      const kbHeight = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
+      const scrollArea = document.querySelector('#workout-screen .scroll-area');
+      if (scrollArea) scrollArea.style.paddingBottom = kbHeight > 50 ? kbHeight + 'px' : '';
+    }
+    vv.addEventListener('resize', _adjustForKeyboard);
+    vv.addEventListener('scroll', _adjustForKeyboard);
   })();
 
   /* ── Init ───────────────────────────────────────────────── */
