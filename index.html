@@ -9108,7 +9108,7 @@
     } else {
       const next      = activePlanData.exercises[activePlanData.nextIndex];
       const remaining = activePlanData.exercises.length - activePlanData.nextIndex;
-      btn.textContent = `Next: ${next} (${remaining} left →)`;
+      btn.textContent = `Next: ${next.name} (${remaining} left →)`;
       btn.style.display = '';
     }
   }
