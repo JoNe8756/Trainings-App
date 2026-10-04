@@ -214,7 +214,6 @@
       font-weight: 600;
       letter-spacing: -.4px;
     }
-
     /* ── Section headers ──────────────────────────────────── */
     .section-header {
       font-size: 0.8125rem;
@@ -365,6 +364,115 @@
     .btn-repeat-tooltip.visible { opacity: 1; }
 
     /* ── Discard button ──────────────────────────────────── */
+    .btn-workout-hide {
+      background: none;
+      border: none;
+      color: var(--label2, #8e8e93);
+      font-size: 1.25rem;
+      font-weight: 300;
+      padding: 0;
+      cursor: pointer;
+      font-family: inherit;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-workout-hide:active { opacity: .55; }
+
+    .btn-workout-more {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #2C2C2E;
+      border: none;
+      color: #fff;
+      font-size: 1.25rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      letter-spacing: 0;
+    }
+    .btn-workout-more:active { opacity: .6; }
+
+    /* ── Workout action sheet ─────────────────────────────── */
+    #workout-sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      z-index: 200;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      transition: background .2s;
+    }
+    #workout-sheet-backdrop.open {
+      background: rgba(0,0,0,.52);
+      pointer-events: all;
+    }
+    #workout-sheet {
+      background: var(--card);
+      border-radius: 1.25rem;
+      width: 100%;
+      max-width: 340px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 40px rgba(0,0,0,.35);
+      transform: scale(.95) translateY(10px);
+      opacity: 0;
+      visibility: hidden;
+      transition: transform .22s cubic-bezier(.33,1,.68,1), opacity .18s, visibility 0s .22s;
+    }
+    #workout-sheet-backdrop.open #workout-sheet {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+      visibility: visible;
+      transition: transform .22s cubic-bezier(.33,1,.68,1), opacity .18s, visibility 0s;
+    }
+    #workout-sheet-main,
+    #workout-sheet-finish,
+    #workout-sheet-discard { display: flex; flex-direction: column; gap: 0.5rem; }
+    .ws-title {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--label);
+      text-align: left;
+      margin-bottom: 0.375rem;
+    }
+    .ws-btn {
+      background: var(--fill);
+      border: 1.5px solid transparent;
+      border-radius: 0.875rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.9375rem;
+      font-family: inherit;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: border-color .12s, background .12s, opacity .12s;
+      line-height: 1.35;
+      width: 100%;
+    }
+    .ws-btn:active { opacity: .7; }
+    .ws-finish { color: #30D158; }
+    .ws-discard { color: #FF3B30; }
+    .ws-cancel {
+      background: var(--fill);
+      border-color: transparent;
+      color: var(--secondary);
+    }
+    .ws-footer { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
+    .ws-footer .ws-btn { flex: 1; }
+
     .btn-discard {
       background: none;
       border: none;
@@ -419,6 +527,50 @@
       transition: background .15s, transform .1s;
     }
     .btn-pause:active { background: var(--fill-focus); transform: scale(0.93); }
+    #btn-rest-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      flex-shrink: 0;
+      margin-left: auto;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #btn-rest-toggle:active { opacity: .6; }
+    #btn-rest-toggle .rest-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      transition: background 200ms ease, color 200ms ease;
+      line-height: 1;
+      height: 26px;
+      box-sizing: border-box;
+    }
+    #btn-rest-toggle.rest-on  .rest-pill { background: #1C3A5E; color: #fff; }
+    #btn-rest-toggle.rest-off .rest-pill { background: #2C2C2E; color: #8E8E93; }
+    #btn-rest-toggle .rest-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      transition: background 200ms ease;
+    }
+    #btn-rest-toggle.rest-on  .rest-dot { background: #007AFF; }
+    #btn-rest-toggle.rest-off .rest-dot { display: none; }
+    #btn-rest-toggle .rest-off-mark {
+      font-size: 0.625rem;
+      line-height: 1;
+      opacity: 0.7;
+    }
+    #btn-rest-toggle.rest-on  .rest-off-mark { display: none; }
+    #btn-pause { margin-left: 0; }
 
     /* ── Pause overlay ────────────────────────────────────── */
     #pause-overlay {
@@ -512,6 +664,9 @@
       box-shadow: var(--shadow);
       margin: 0 var(--gutter) 0.75rem;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100svh - 290px);
     }
     .exercise-head {
       display: flex;
@@ -519,6 +674,7 @@
       gap: 0.625rem;
       padding: 0.875rem 1rem 0.75rem;
       border-bottom: 0.5px solid var(--separator);
+      flex-shrink: 0;
     }
     .exercise-head input[type="text"] {
       flex: 1;
@@ -550,9 +706,17 @@
     }
     .btn-delete-ex:hover { background: var(--fill); }
 
-    .sets-table { padding: 0 1rem 0.25rem; }
+    .sets-table {
+      padding: 0 1rem 0.25rem;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
 
     .sets-col-header {
+      flex-shrink: 0;
       display: grid;
       grid-template-columns: 2.25rem 1fr 1fr 3rem 2rem 2rem;
       gap: 0.5rem;
@@ -709,7 +873,7 @@
     }
     .set-input:focus { background: var(--fill-focus); }
     .set-input::placeholder { color: var(--tertiary); }
-    .set-input.set-input-prefill { color: var(--tertiary); -webkit-text-fill-color: var(--tertiary); }
+    .set-input.set-input-prefill { color: #5AC8FA; -webkit-text-fill-color: #5AC8FA; }
 
     .btn-delete-set {
       background: none;
@@ -1159,10 +1323,12 @@
     /* ── Resume-workout banner ──────────────────────────────── */
     #resume-banner {
       display: none;           /* shown via JS when workout is active */
-      position: absolute;
-      bottom: calc(max(4.25rem + env(safe-area-inset-bottom), 5rem) + 0.5rem);
+      position: fixed;
+      bottom: calc(max(4.25rem + env(safe-area-inset-bottom, 0px), 5rem) + 0.5rem);
       left: var(--gutter);
       right: var(--gutter);
+      max-width: calc(min(430px, 100%) - 2 * var(--gutter));
+      margin: 0 auto;
       z-index: 150;
       background: var(--blue);
       color: #fff;
@@ -1254,6 +1420,14 @@
     .chart-graph-label   { font-size: .6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--tertiary); padding: .375rem var(--gutter) 0; }
     .chart-graph-desc    { font-size: .6875rem; color: var(--tertiary); padding: .125rem var(--gutter) 0; opacity: .7; }
     canvas.chart-canvas  { display: block; }
+    .chart-tap-hint {
+      font-size: 0.6875rem;
+      color: var(--tertiary);
+      text-align: center;
+      padding: 0.25rem var(--gutter) 0.625rem;
+      opacity: 0.7;
+      transition: opacity 0.3s;
+    }
 
     /* ── Sticky progress nav bar ─────────────────────────── */
     #progress-screen .nav-bar,
@@ -1310,8 +1484,8 @@
     .progress-range-bar {
       position: sticky;
       top: 0; /* overridden by JS after nav height is known */
-      z-index: 10;
-      background: #000;
+      z-index: 20;
+      background: var(--bg, #000);
       padding: 0.5rem var(--gutter) 0.625rem;
       border-bottom: 0.5px solid var(--separator);
     }
@@ -4008,10 +4182,16 @@
     .tab-btn { transition: transform 150ms ease-out, color .15s; }
     .tab-btn:active { transform: scale(1.12); }
 
-    /* ── Exercise card expand/collapse ───────────────────── */
+    /* ── Exercise card sets scroll ───────────────────────── */
     .exercise-card .sets-body {
-      overflow: hidden;
-      transition: opacity 220ms ease-in-out;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    .exercise-card .ghost-hint,
+    .exercise-card .ex-intensity-total,
+    .exercise-card .btn-add-set {
+      flex-shrink: 0;
     }
 
     /* ── One-at-a-time exercise viewport ─────────────────── */
@@ -4022,6 +4202,7 @@
     #exercise-list {
       display: flex;
       flex-direction: row;
+      align-items: flex-start;
       will-change: transform;
       transition: transform 280ms ease-in-out;
     }
@@ -4041,18 +4222,28 @@
     #ex-progress-bar {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.375rem var(--gutter) 0.25rem;
+      gap: 8px;
+      padding: 6px var(--gutter) 8px;
+      position: sticky;
+      top: 0;
+      background: var(--bg, #000);
+      z-index: 5;
+    }
+    #ex-progress-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
     }
     #ex-progress-label {
-      font-size: 0.75rem;
-      font-weight: 600;
+      font-size: 0.6875rem;
+      font-weight: 500;
       color: var(--tertiary);
+      text-align: center;
       white-space: nowrap;
-      flex-shrink: 0;
     }
     #ex-progress-track {
-      flex: 1;
       height: 3px;
       background: var(--fill);
       border-radius: 2px;
@@ -4065,97 +4256,72 @@
       transition: width 280ms ease-in-out;
     }
     #ex-progress-name {
-      font-size: 0.75rem;
+      font-size: 0.6875rem;
       color: var(--tertiary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 40%;
-      flex-shrink: 1;
+      text-align: center;
     }
-    #ex-nav-row {
-      display: flex !important;
-      flex-direction: row !important;
-      align-items: center !important;
-      gap: 8px !important;
-      padding: 12px 16px 0 !important;
-    }
-    #btn-ex-prev {
+    #btn-ex-prev, #btn-ex-right {
       background: none !important;
       border: none !important;
       box-shadow: none !important;
       outline: none !important;
       color: #8E8E93 !important;
-      font-size: 1.375rem !important;
+      font-size: 32px !important;
       font-weight: 300 !important;
       font-family: inherit !important;
       cursor: pointer !important;
-      width: 32px !important;
-      height: 44px !important;
       flex-shrink: 0 !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
       -webkit-tap-highlight-color: transparent !important;
-      transition: opacity .12s !important;
+      transition: opacity .1s !important;
       padding: 0 !important;
+      width: 56px !important;
+      height: 56px !important;
     }
-    #btn-ex-prev:active { opacity: .55 !important; }
-    #btn-ex-next {
-      background: #34A853 !important;
-      color: #fff !important;
-      border: none !important;
-      box-shadow: none !important;
-      outline: none !important;
-      filter: none !important;
-      -webkit-filter: none !important;
-      border-radius: 12px !important;
-      font-size: 0.9375rem !important;
-      font-weight: 700 !important;
-      font-family: inherit !important;
-      cursor: pointer !important;
-      padding: 0 1rem !important;
-      height: 44px !important;
+    #btn-ex-prev:active, #btn-ex-right:active { opacity: .5 !important; }
+    @keyframes _ex-arrow-pulse {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    .ex-arrow-pulse { animation: _ex-arrow-pulse 150ms ease-out; }
+    #workout-bottom-bar {
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      max-width: min(430px, 100vw) !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+      background: #000 !important;
+      padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+      z-index: 30 !important;
+    }
+    #workout-screen:not(.active) #workout-bottom-bar { display: none !important; }
+
+    @keyframes _banner-land {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+    #resume-banner.banner-land { animation: _banner-land 300ms ease-out; }
+    /* Workout scroll: fills remaining space between fixed top and fixed bottom */
+    #workout-scroll {
       flex: 1 !important;
-      min-width: 0 !important;
-      transition: opacity .12s, transform .12s !important;
-      white-space: normal !important;
-      overflow: hidden !important;
-      display: -webkit-box !important;
-      -webkit-line-clamp: 2 !important;
-      -webkit-box-orient: vertical !important;
-      text-align: center !important;
-      line-height: 1.3 !important;
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      min-height: 0 !important;
+      padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
     }
-    #btn-ex-next:active { opacity: .82 !important; transform: scale(0.97) !important; }
-    #btn-ex-right {
-      background: none !important;
-      border: none !important;
-      box-shadow: none !important;
-      outline: none !important;
-      color: #8E8E93 !important;
-      font-size: 1.375rem !important;
-      font-weight: 300 !important;
-      font-family: inherit !important;
-      cursor: pointer !important;
-      width: 32px !important;
-      height: 44px !important;
-      flex-shrink: 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      -webkit-tap-highlight-color: transparent !important;
-      transition: opacity .12s !important;
-      padding: 0 !important;
-    }
-    #btn-ex-right:active { opacity: .55 !important; }
-    #btn-next-ex { display: none !important; position: absolute !important; pointer-events: none !important; opacity: 0 !important; }
     #ex-secondary-actions {
       display: flex !important;
       justify-content: space-between !important;
-      padding: 8px 16px max(1rem, env(safe-area-inset-bottom, 1rem)) !important;
+      padding: 8px 16px 10px !important;
       gap: 0 !important;
     }
     #ex-secondary-actions button {
@@ -4173,6 +4339,116 @@
     #ex-secondary-actions button:first-child { color: #007AFF !important; }
     #ex-secondary-actions button:last-child  { color: #FF3B30 !important; }
     #ex-secondary-actions button:active { opacity: .55 !important; }
+
+    /* ── Plan pre-workout summary overlay ───────────────── */
+    #plan-prestart {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: var(--bg, #000);
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+    #plan-prestart.open { display: flex; }
+    .pps-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: max(env(safe-area-inset-top, 0px), 20px) 16px 16px;
+      box-sizing: border-box;
+    }
+    .pps-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .pps-header-text {}
+    .pps-plan-name {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.15;
+      margin-bottom: 3px;
+    }
+    .pps-subtitle {
+      font-size: .9rem;
+      color: #8E8E93;
+    }
+    .pps-section-label {
+      font-size: .6875rem;
+      font-weight: 600;
+      color: #8E8E93;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin: 0 0 8px 4px;
+    }
+    .pps-card {
+      background: var(--card, #1C1C1E);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .pps-stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 36px;
+      border-bottom: .5px solid rgba(255,255,255,.08);
+    }
+    .pps-stat-row:last-child { border-bottom: none; }
+    .pps-stat-label { font-size: .8rem; color: #8E8E93; }
+    .pps-stat-val   { font-size: .9rem; font-weight: 500; color: #fff; }
+    .pps-ex-list { display: flex; flex-direction: column; }
+    .pps-ex-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: .5px solid rgba(255,255,255,.08);
+    }
+    .pps-ex-row:last-child { border-bottom: none; }
+    .pps-ex-name { color: #fff; font-size: .85rem; font-weight: 400; }
+    .pps-ex-sets { color: #8E8E93; font-size: .8rem; }
+    .pps-first-time { font-size: 1rem; color: #8E8E93; text-align: center; padding: 16px 0; }
+    .pps-footer {
+      padding: 12px 16px max(env(safe-area-inset-bottom, 0px), 20px);
+      background: var(--bg, #000);
+      box-sizing: border-box;
+      display: flex;
+      gap: 10px;
+    }
+    .pps-cancel-btn {
+      height: 52px;
+      width: 30%;
+      flex-shrink: 0;
+      background: #2C2C2E;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity .1s;
+    }
+    .pps-cancel-btn:active { opacity: .7; }
+    .pps-start-btn {
+      flex: 1;
+      height: 52px;
+      background: #34A853;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.0625rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity .1s;
+    }
+    .pps-start-btn:active { opacity: .82; }
 
     /* ── Chevron rotation (progress categories) ──────────── */
     .prog-cat-chevron {
@@ -4301,9 +4577,9 @@
 <!-- ═══════════════ WORKOUT SCREEN ═══════════════ -->
 <div id="workout-screen" class="screen">
   <div class="nav-bar-compact" id="workout-nav">
-    <button class="btn-discard" onclick="discardWorkout()" title="Discard workout">Discard</button>
+    <button class="btn-workout-hide" onclick="minimiseWorkout()" title="Hide workout" style="font-size:28px;font-weight:300;min-width:44px;min-height:44px;padding:0;display:flex;align-items:center;justify-content:center;">⌄</button>
     <h1>Active Workout</h1>
-    <button class="btn-finish" onclick="finishWorkout()">Finish</button>
+    <button class="btn-workout-more" onclick="_openWorkoutSheet()" title="More options">⋯</button>
   </div>
   <div id="plan-banner" class="plan-banner" style="display:none"></div>
   <div class="timer-block">
@@ -4312,8 +4588,12 @@
       <div id="timer">00:00</div>
     </div>
     <div class="timer-dot"></div>
+    <button id="btn-rest-toggle" onclick="_toggleSessionRest()" title="Toggle rest timer"><span class="rest-pill">Rest <span class="rest-off-mark">✕</span><span class="rest-dot"></span></span></button>
     <button class="btn-pause" id="btn-pause" onclick="togglePauseWorkout()" title="Pause workout">⏸</button>
   </div>
+  <!-- Pre-workout plan summary (shown before exercises during plan workouts) -->
+  <div id="plan-prestart"></div>
+
   <div class="scroll-area" id="workout-scroll">
     <!-- Warmup + Killer Set summary cards sit above regular exercises -->
     <div id="workout-warmup-card" class="wsc-card" style="display:none">
@@ -4333,31 +4613,55 @@
       <div class="wsc-body" id="wsc-killer-body" style="display:none"></div>
     </div>
 
-    <!-- Exercise progress indicator -->
+    <!-- Navigation + progress row (above exercise card) -->
     <div id="ex-progress-bar">
-      <span id="ex-progress-label">1 / 1</span>
-      <div id="ex-progress-track"><div id="ex-progress-fill"></div></div>
-      <span id="ex-progress-name"></span>
+      <button id="btn-ex-prev" onclick="_exNavPrev()">‹</button>
+      <div id="ex-progress-center">
+        <span id="ex-progress-label">1 / 1</span>
+        <div id="ex-progress-track"><div id="ex-progress-fill"></div></div>
+        <span id="ex-progress-name"></span>
+      </div>
+      <button id="btn-ex-right" onclick="_exNavNext()">›</button>
     </div>
 
     <!-- Swipeable exercise viewport -->
     <div id="ex-viewport">
       <div id="exercise-list"></div>
     </div>
+  </div>
 
-    <!-- Navigation -->
-    <div id="ex-nav-row">
-      <button id="btn-ex-prev" onclick="_exNavPrev()">‹</button>
-      <button id="btn-ex-next" onclick="_exNavNext()">Next →</button>
-      <button id="btn-ex-right" onclick="_exNavNext()">›</button>
-    </div>
-    <!-- Plan next-ex: kept for JS refs only, never shown -->
-    <button id="btn-next-ex" style="display:none;position:absolute;pointer-events:none;opacity:0" onclick="planNextExercise()"></button>
-
-    <!-- Secondary actions -->
+  <!-- Fixed bottom action bar -->
+  <div id="workout-bottom-bar">
     <div id="ex-secondary-actions">
       <button onclick="addExercise()">+ Add Exercise</button>
       <button onclick="openKillerSet()">💀 Killer Set</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ WORKOUT ACTION SHEET ═══════════ -->
+<div id="workout-sheet-backdrop" onclick="if(event.target===this)_closeWorkoutSheet()">
+  <div id="workout-sheet">
+    <div id="workout-sheet-main">
+      <button class="ws-btn ws-finish" onclick="_wsFinish()">🏁 Finish Workout</button>
+      <button class="ws-btn ws-discard" onclick="_wsDiscard()">🗑 Discard Workout</button>
+      <div class="ws-footer">
+        <button class="ws-btn ws-cancel" onclick="_closeWorkoutSheet()">Cancel</button>
+      </div>
+    </div>
+    <div id="workout-sheet-finish" style="display:none">
+      <div class="ws-title">Save and finish this workout?</div>
+      <button class="ws-btn ws-finish" onclick="_doFinishWorkout()">Finish Workout</button>
+      <div class="ws-footer">
+        <button class="ws-btn ws-cancel" onclick="_wsBack()">Go Back</button>
+      </div>
+    </div>
+    <div id="workout-sheet-discard" style="display:none">
+      <div class="ws-title">Are you sure? This will delete all progress.</div>
+      <button class="ws-btn ws-discard" onclick="_doDiscardWorkout()">Yes, Discard</button>
+      <div class="ws-footer">
+        <button class="ws-btn ws-cancel" onclick="_wsBack()">Go Back</button>
+      </div>
     </div>
   </div>
 </div>
@@ -5124,6 +5428,7 @@
   let _workoutPausedAt = 0; /* Date.now() when last pause began, 0 = not paused */
   let exerciseCount  = 0;
   let _workoutActive = false;  /* true while a workout is in progress */
+  let _sessionRestEnabled = null; /* null = follow global setting; true/false = session override */
 
   /* ── Exercise library ───────────────────────────────────── */
   const DEFAULT_EX_LIB = {
@@ -5461,11 +5766,13 @@
     const w    = (isFinite(rawKg)   && rawKg   > 0) ? rawKg   : 0;
     const diff = (isFinite(meta.diff) && meta.diff > 0) ? meta.diff : 1;
     if (!raw) return 0;
-    const r = meta.tb ? raw / 6 : raw;  /* isometric: 6 s ≈ 1 dynamic rep */
+    const r    = meta.tb ? raw / 6 : raw;
+    const bw   = Math.max(getUserBW() || 0, 1);  // never divide by zero
     const base = meta.type === 'w'
       ? diff * r * (w || 1)
-      : diff * r * (1 + w / getUserBW());
-    return Math.round(base * heightLeverFactor(name));
+      : diff * r * (1 + w / bw);
+    const result = Math.round(base * heightLeverFactor(name));
+    return isFinite(result) ? result : 0;
   }
   function calcSessionIntensity(name, sets) {
     return sets.reduce((s, st) =>
@@ -5497,6 +5804,10 @@
     document.getElementById('warmup-overlay')?.classList.remove('open');
     document.getElementById('start-choice')?.classList.remove('open');
 
+    /* Always show tab bar when viewing a tab */
+    const tabBar = document.querySelector('.tab-bar');
+    if (tabBar) tabBar.style.display = '';
+
     ['home', 'progress', 'history', 'exercises'].forEach(t => {
       document.getElementById(t + '-screen').classList.remove('active');
       document.getElementById('tab-' + t).classList.remove('active');
@@ -5514,7 +5825,7 @@
     updateResumeBanner();
 
     const fab = document.getElementById('home-fab-wrap');
-    if (fab) fab.style.display = tab === 'home' ? 'flex' : 'none';
+    if (fab) fab.style.display = (tab === 'home' && !_workoutActive) ? 'flex' : 'none';
     if (tab === 'home')      { _updateGreeting(); renderRecent(); renderFreqGoal(); renderHighlights(); }
     if (tab === 'history')   renderHistory();
     if (tab === 'progress')  renderProgress();
@@ -5529,7 +5840,7 @@
   }
 
   /* Show the workout screen (used by resume and initial start) */
-  function showWorkoutScreen() {
+  function showWorkoutScreen(targetIdx) {
     ['home', 'progress', 'history', 'exercises'].forEach(t => {
       document.getElementById(t + '-screen').classList.remove('active');
       document.getElementById('tab-' + t).classList.remove('active');
@@ -5537,16 +5848,77 @@
     document.getElementById('workout-screen').classList.add('active');
     const fab = document.getElementById('home-fab-wrap');
     if (fab) fab.style.display = 'none';
+    const tabBar = document.querySelector('.tab-bar');
+    if (tabBar) tabBar.style.display = 'none';
     updateResumeBanner();
-    // Show warmup card if warmup was completed before this workout
     _showWarmupWorkoutCard();
-    _exCurrentIdx = _exGetCards().length - 1;
+    _updateRestToggleBtn();
+    const cards = _exGetCards();
+    if (targetIdx !== undefined && targetIdx !== null) {
+      _exCurrentIdx = Math.max(0, Math.min(targetIdx, cards.length - 1));
+    } else {
+      _exCurrentIdx = Math.max(0, cards.length - 1);
+    }
     _exNavUpdate();
   }
 
-  /* Resume: switch back to workout screen */
+  /* Resume: switch back to workout screen, restoring saved exercise index */
   function resumeWorkout() {
-    showWorkoutScreen();
+    const saved = parseInt(localStorage.getItem('activeWorkoutExerciseIndex'), 10);
+    const targetIdx = isFinite(saved) ? saved : null;
+
+    const ws = document.getElementById('workout-screen');
+    /* Reset any stale positioning before showing */
+    ws.style.transform = 'none';
+    ws.style.top = '';
+    ws.style.margin = '';
+
+    /* Start with opacity 0, switch screen, then fade in */
+    ws.style.opacity = '0';
+    ws.style.transition = '';
+    showWorkoutScreen(targetIdx);
+
+    /* Reset scroll position */
+    const scrollEl = document.getElementById('workout-scroll');
+    if (scrollEl) scrollEl.scrollTop = 0;
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        ws.style.transition = 'opacity 250ms ease-out';
+        ws.style.opacity = '1';
+        ws.addEventListener('transitionend', () => {
+          ws.style.transition = '';
+          ws.style.opacity = '';
+        }, { once: true });
+      });
+    });
+  }
+
+  /* Minimise workout — save exercise index, cross-fade to Summary tab */
+  function minimiseWorkout() {
+    localStorage.setItem('activeWorkoutExerciseIndex', String(_exCurrentIdx));
+
+    const ws = document.getElementById('workout-screen');
+    ws.style.transition = 'opacity 250ms ease-in';
+    ws.style.opacity = '0';
+    ws.style.pointerEvents = 'none';
+
+    setTimeout(() => {
+      ws.style.transition = '';
+      ws.style.opacity = '';
+      ws.style.pointerEvents = '';
+      const tabBar = document.querySelector('.tab-bar');
+      if (tabBar) tabBar.style.display = '';
+      showTab('home');
+      /* Banner land pulse */
+      const banner = document.getElementById('resume-banner');
+      if (banner && banner.classList.contains('visible')) {
+        banner.classList.remove('banner-land');
+        void banner.offsetWidth;
+        banner.classList.add('banner-land');
+        banner.addEventListener('animationend', () => banner.classList.remove('banner-land'), { once: true });
+      }
+    }, 250);
   }
 
   /* Update visibility of the floating resume banner */
@@ -5601,6 +5973,10 @@
   /* Recalculate immediately when page becomes visible again */
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && _workoutActive && !_workoutPaused) _tickTimer();
+    if (!document.hidden && _rest) {
+      if (Date.now() >= _rest.endsAt) { _restComplete(); }
+      else { _restUpdateLabel(); }
+    }
   });
 
   /* ── Pause / resume ─────────────────────────────────────── */
@@ -5867,6 +6243,7 @@
     exerciseCount  = 0;
     activePlanData = null;
     _workoutActive = true;
+    _sessionRestEnabled = null;
     _killerRoutine = [];
     _killerResults = [];
     _killerStep    = 0;
@@ -5874,7 +6251,6 @@
     document.getElementById('exercise-list').innerHTML = '';
     document.getElementById('timer').textContent = '00:00';
     document.getElementById('plan-banner').style.display = 'none';
-    document.getElementById('btn-next-ex').style.display = 'none';
     startTimer();
     persistActiveWorkout();
     showWorkoutScreen();
@@ -5903,7 +6279,6 @@
     document.getElementById('exercise-list').innerHTML = '';
     document.getElementById('timer').textContent = '00:00';
     document.getElementById('plan-banner').style.display = 'none';
-    document.getElementById('btn-next-ex').style.display = 'none';
     startTimer();
 
     names.forEach(name => createExCard(name));
@@ -5932,8 +6307,9 @@
     const div = document.createElement('div');
     div.className = 'exercise-card';
     div.id = id;
-    if (tb)       div.dataset.tb     = '1';
-    if (isKiller) div.dataset.killer = '1';
+    if (tb)           div.dataset.tb      = '1';
+    if (isKiller)     div.dataset.killer  = '1';
+    if (activePlanData && numSets >= 1) div.dataset.planSets = String(numSets);
     div.innerHTML = `
       ${isKiller ? '<div class="ex-killer-tag">💀 Killer Set</div>' : ''}
       <div class="exercise-head">
@@ -5959,6 +6335,7 @@
     document.getElementById('exercise-list').appendChild(div);
     const setsToAdd = Math.max(1, numSets);
     for (let i = 0; i < setsToAdd; i++) addSet(id);
+    _syncAddSetBtn(id);
     persistActiveWorkout();
     _exCurrentIdx = _exGetCards().length - 1;
     _exNavUpdate();
@@ -6014,51 +6391,46 @@
     const fill = document.getElementById('ex-progress-fill');
     if (fill) fill.style.width = `${((_exCurrentIdx + 1) / total) * 100}%`;
 
-    /* prev chevron — hidden (no space reserved) on first exercise */
     const prevBtn = document.getElementById('btn-ex-prev');
-    if (prevBtn) prevBtn.style.visibility = _exCurrentIdx === 0 ? 'hidden' : 'visible';
+    if (prevBtn) { prevBtn.style.opacity = _exCurrentIdx === 0 ? '0' : ''; prevBtn.style.pointerEvents = _exCurrentIdx === 0 ? 'none' : ''; }
 
-    /* next button — show when next card exists OR plan has more exercises */
-    const nextBtn = document.getElementById('btn-ex-next');
     const rightBtn = document.getElementById('btn-ex-right');
     const hasNextCard = _exCurrentIdx < total - 1;
-    const hasPlanNext = !!(activePlanData && activePlanData.nextIndex < activePlanData.exercises.length);
-    const hasNext = hasNextCard || hasPlanNext;
-    if (nextBtn) {
-      if (!hasNext) {
-        nextBtn.style.display = 'none';
-      } else {
-        nextBtn.style.display = '';
-        nextBtn.style.opacity = '';
-        if (hasNextCard) {
-          const nextName = cards[_exCurrentIdx + 1]?.querySelector('.exercise-head input')?.value || '';
-          const remaining = total - _exCurrentIdx - 1 + (hasPlanNext ? activePlanData.exercises.length - activePlanData.nextIndex : 0);
-          nextBtn.textContent = nextName ? `Next: ${nextName} (${remaining} left →)` : 'Next Exercise →';
-        } else {
-          const next = activePlanData.exercises[activePlanData.nextIndex];
-          const remaining = activePlanData.exercises.length - activePlanData.nextIndex;
-          nextBtn.textContent = `Next: ${next.name} (${remaining} left →)`;
-        }
-      }
-    }
-    if (rightBtn) rightBtn.style.visibility = hasNext ? 'visible' : 'hidden';
+    if (rightBtn) { rightBtn.style.opacity = hasNextCard ? '' : '0'; rightBtn.style.pointerEvents = hasNextCard ? '' : 'none'; }
   }
 
-  function _exNavNext() {
+  function _exArrowPulse(btnId) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.classList.remove('ex-arrow-pulse');
+    void btn.offsetWidth; /* reflow to restart animation */
+    btn.classList.add('ex-arrow-pulse');
+    btn.addEventListener('animationend', () => btn.classList.remove('ex-arrow-pulse'), { once: true });
+  }
+
+  function _exNavNext(fromSwipe) {
     const cards = _exGetCards();
-    if (_exCurrentIdx < cards.length - 1) {
-      _exCurrentIdx++;
-      _exNavUpdate();
-    } else if (activePlanData && activePlanData.nextIndex < activePlanData.exercises.length) {
-      planNextExercise();
-    }
+    if (_exCurrentIdx >= cards.length - 1) return;
+    if (!fromSwipe) _exArrowPulse('btn-ex-right');
+    _exCurrentIdx++;
+    _exNavUpdate();
+    _exScrollReset();
   }
 
-  function _exNavPrev() {
-    if (_exCurrentIdx > 0) { _exCurrentIdx--; _exNavUpdate(); }
+  function _exNavPrev(fromSwipe) {
+    if (_exCurrentIdx <= 0) return;
+    if (!fromSwipe) _exArrowPulse('btn-ex-prev');
+    _exCurrentIdx--;
+    _exNavUpdate();
+    _exScrollReset();
   }
 
-  function _exNavGoTo(idx) { _exCurrentIdx = idx; _exNavUpdate(); }
+  function _exScrollReset() {
+    const s = document.getElementById('workout-scroll');
+    if (s) s.scrollTop = 0;
+  }
+
+  function _exNavGoTo(idx) { _exCurrentIdx = idx; _exNavUpdate(); _exScrollReset(); }
 
   /* Touch swipe on the exercise list */
   (function _initExSwipe() {
@@ -6078,7 +6450,31 @@
     list.addEventListener('touchend', e => {
       if (isVertical) return;
       const dx = e.changedTouches[0].clientX - startX;
-      if (Math.abs(dx) > 40) { if (dx < 0) _exNavNext(); else _exNavPrev(); }
+      if (Math.abs(dx) < 60) return;
+      const goNext = dx < 0; /* swipe left = next */
+      const cards = _exGetCards();
+      if (goNext && _exCurrentIdx >= cards.length - 1) return;
+      if (!goNext && _exCurrentIdx <= 0) return;
+      const viewport = document.getElementById('ex-viewport');
+      const cardW = viewport ? viewport.offsetWidth : 0;
+      const slideOut = goNext ? -cardW * 0.3 : cardW * 0.3;
+      /* slide current card out */
+      list.style.transition = 'transform 200ms ease-in, opacity 200ms ease-in';
+      list.style.transform = `translateX(${-_exCurrentIdx * cardW + slideOut}px)`;
+      list.style.opacity = '0';
+      setTimeout(() => {
+        list.style.transition = 'none';
+        list.style.opacity = '';
+        if (goNext) _exNavNext(true); else _exNavPrev(true);
+        /* slide new card in from opposite side */
+        const fromX = goNext ? cardW * 0.3 : -cardW * 0.3;
+        list.style.transform = `translateX(${-_exCurrentIdx * cardW + fromX}px)`;
+        requestAnimationFrame(() => {
+          list.style.transition = 'transform 200ms ease-out';
+          list.style.transform = `translateX(${-_exCurrentIdx * cardW}px)`;
+        });
+        setTimeout(() => { list.style.transition = ''; }, 210);
+      }, 200);
     }, { passive: true });
   })();
 
@@ -6146,8 +6542,22 @@
   }
 
   /* ── Add / remove set ───────────────────────────────────── */
+  function _syncAddSetBtn(exId) {
+    const card = document.getElementById(exId);
+    if (!card) return;
+    const planSets = parseInt(card.dataset.planSets, 10);
+    if (!isFinite(planSets)) return; /* no limit — always show */
+    const count = card.querySelectorAll('.sets-body .set-row').length;
+    const btn = card.querySelector('.btn-add-set');
+    if (btn) btn.style.display = count >= planSets ? 'none' : '';
+  }
+
   function addSet(exId) {
+    const card   = document.getElementById(exId);
+    const planSets = card ? parseInt(card.dataset.planSets, 10) : NaN;
     const body   = document.querySelector('#' + exId + ' .sets-body');
+    /* respect plan set count limit */
+    if (isFinite(planSets) && body.children.length >= planSets) return;
     const setNum = body.children.length + 1;
     const sid    = 'set-' + Date.now() + '-' + setNum;
     const row    = document.createElement('div');
@@ -6175,16 +6585,20 @@
     // wire up real-time intensity + persistence on each input
     row.querySelectorAll('.set-input').forEach(inp => {
       inp.addEventListener('focus', () => {
+        if (inp.dataset.prefilled) inp.select();
+      });
+      inp.addEventListener('input', () => {
         inp.classList.remove('set-input-prefill');
         delete inp.dataset.prefilled;
+        updateExIntensity(exId); updateGhostHint(exId); persistActiveWorkout(); _applySetStates(exId);
       });
-      inp.addEventListener('input', () => { updateExIntensity(exId); updateGhostHint(exId); persistActiveWorkout(); _applySetStates(exId); });
     });
     renumberSets(exId);
     updateExIntensity(exId);
     updateGhostHint(exId);
     persistActiveWorkout();
     _applySetStates(exId);
+    _syncAddSetBtn(exId);
   }
 
   function removeSet(sid, exId) {
@@ -6194,6 +6608,7 @@
     updateGhostHint(exId);
     persistActiveWorkout();
     _applySetStates(exId);
+    _syncAddSetBtn(exId);
   }
 
   function renumberSets(exId) {
@@ -6222,7 +6637,7 @@
   }
 
   /* ── Rest timer ─────────────────────────────────────────── */
-  let _rest = null; /* { interval, secs, totalSecs, exId, exName, startedAt, btn } */
+  let _rest = null; /* { interval, endsAt, totalSecs, exId, exName, btn } */
   let _lastCompletedRest = null; /* { exId, secs } — set when timer expires naturally */
 
   const REST_DEFAULT_SECS = 90;
@@ -6270,29 +6685,55 @@
     } catch(e) {}
   }
   function _fmtSecs(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
+
+  function _restRemainingSecs() {
+    if (!_rest) return 0;
+    return Math.max(0, Math.round((_rest.endsAt - Date.now()) / 1000));
+  }
+
   function _restUpdateLabel() {
     if (!_rest) return;
+    const secs = _restRemainingSecs();
     const cd = document.getElementById('rest-card-countdown');
-    if (cd) cd.textContent = _fmtSecs(_rest.secs);
+    if (cd) cd.textContent = _fmtSecs(secs);
     const barEl = document.getElementById('rest-card-bar');
-    if (barEl && _rest.totalSecs) barEl.style.width = (_rest.secs / _rest.totalSecs * 100) + '%';
+    if (barEl && _rest.totalSecs) barEl.style.width = (secs / _rest.totalSecs * 100) + '%';
   }
-  function _restAdjust(delta) {
+
+  function _restComplete() {
     if (!_rest) return;
-    const newSecs = Math.max(15, _rest.secs + delta);
-    const diff = newSecs - _rest.secs;
-    _rest.secs = newSecs;
-    if (diff > 0) _rest.totalSecs += diff;
-    _restUpdateLabel();
-  }
-  function _restClear() {
-    if (!_rest) return;
-    /* store how long they actually rested before caller clears state */
-    const elapsed = _rest.totalSecs - _rest.secs;
-    _lastCompletedRest = { exId: _rest.exId, secs: elapsed };
+    _restBeep();
+    try { navigator.vibrate?.(300); } catch(e) {}
+    _lastCompletedRest = { exId: _rest.exId, secs: _rest.totalSecs };
     clearInterval(_rest.interval);
     if (_rest.btn) _rest.btn.classList.remove('logged');
     _rest = null;
+    localStorage.removeItem('activeRestEndsAt');
+    const card = document.getElementById('rest-card');
+    if (card) {
+      card.classList.remove('active');
+      setTimeout(() => { const c = document.getElementById('rest-card'); if (c) c.remove(); }, 300);
+    }
+  }
+
+  function _restAdjust(delta) {
+    if (!_rest) return;
+    const remaining = _restRemainingSecs();
+    const newSecs = Math.max(15, remaining + delta);
+    _rest.endsAt = Date.now() + newSecs * 1000;
+    if (delta > 0) _rest.totalSecs += delta;
+    localStorage.setItem('activeRestEndsAt', String(_rest.endsAt));
+    _restUpdateLabel();
+  }
+
+  function _restClear() {
+    if (!_rest) return;
+    const elapsed = _rest.totalSecs - _restRemainingSecs();
+    _lastCompletedRest = { exId: _rest.exId, secs: Math.max(0, elapsed) };
+    clearInterval(_rest.interval);
+    if (_rest.btn) _rest.btn.classList.remove('logged');
+    _rest = null;
+    localStorage.removeItem('activeRestEndsAt');
     const card = document.getElementById('rest-card');
     if (card) {
       card.classList.remove('active');
@@ -6309,7 +6750,7 @@
     const exName = exCard?.querySelector('.exercise-head input')?.value || '';
     let restTaken = null;
     if (_rest && _rest.exId === exId) {
-      restTaken = _rest.totalSecs - _rest.secs;
+      restTaken = _rest.totalSecs - _restRemainingSecs();
     } else if (_lastCompletedRest && _lastCompletedRest.exId === exId) {
       restTaken = _lastCompletedRest.secs;
     }
@@ -6328,15 +6769,30 @@
     _restClear();
     if (btn) btn.classList.add('logged');
     const _loggedRow = btn?.closest('.set-row');
-    if (_loggedRow) { _loggedRow.classList.add('set-done'); _loggedRow.classList.remove('set-active', 'set-future', 'set-upcoming'); }
+    if (_loggedRow) {
+      /* accept any prefilled values as confirmed */
+      _loggedRow.querySelectorAll('.set-input').forEach(i => {
+        i.classList.remove('set-input-prefill');
+        delete i.dataset.prefilled;
+      });
+      _loggedRow.classList.add('set-done');
+      _loggedRow.classList.remove('set-active', 'set-future', 'set-upcoming');
+    }
     _applySetStates(exId);
+    updateExIntensity(exId);
 
-    /* auto-add next set if this was the last row */
+    /* auto-add next set if this was the last row and plan set count not yet reached */
     if (_loggedRow) {
       const allRows = Array.from(document.querySelectorAll('#' + exId + ' .sets-body .set-row'));
-      if (allRows[allRows.length - 1] === _loggedRow) {
+      const isLastRow = allRows[allRows.length - 1] === _loggedRow;
+      const card2 = document.getElementById(exId);
+      const planSets = card2 ? parseInt(card2.dataset.planSets, 10) : NaN;
+      const totalRows = allRows.length;
+      console.log(`[logSet] isLastRow=${isLastRow} planSets=${planSets} totalRows=${totalRows}`);
+      if (isLastRow && (!isFinite(planSets) || totalRows < planSets)) {
         addSet(exId);
       }
+      _syncAddSetBtn(exId);
     }
 
     if (!_getRestTimerEnabled()) return;
@@ -6366,29 +6822,17 @@
     if (setRow) setRow.after(rc);
     else exCard?.querySelector('.sets-list')?.append(rc);
 
-    _rest = { interval: null, secs: dur, totalSecs: dur, exId, exName, btn: btn || null };
+    const endsAt = Date.now() + dur * 1000;
+    localStorage.setItem('activeRestEndsAt', String(endsAt));
+    _rest = { interval: null, endsAt, totalSecs: dur, exId, exName, btn: btn || null };
     _restUpdateLabel();
     requestAnimationFrame(() => requestAnimationFrame(() => rc.classList.add('active')));
 
     _rest.interval = setInterval(() => {
       if (!_rest) return;
-      _rest.secs--;
-      if (_rest.secs <= 0) {
-        _restBeep();
-        try { navigator.vibrate?.(300); } catch(e) {}
-        _lastCompletedRest = { exId: _rest.exId, secs: _rest.totalSecs };
-        clearInterval(_rest.interval);
-        if (_rest.btn) _rest.btn.classList.remove('logged');
-        _rest = null;
-        const card = document.getElementById('rest-card');
-        if (card) {
-          card.classList.remove('active');
-          setTimeout(() => { const c = document.getElementById('rest-card'); if (c) c.remove(); }, 300);
-        }
-        return;
-      }
+      if (Date.now() >= _rest.endsAt) { _restComplete(); return; }
       _restUpdateLabel();
-    }, 1000);
+    }, 250);
   }
 
   /* ── Workout confirmation overlay ──────────────────────── */
@@ -6433,17 +6877,36 @@
     if (cb) cb();
   }
 
-  function finishWorkout() {
-    _wConfirm({
-      title: 'Finish Workout?',
-      msg: 'This will save your session and end the workout.',
-      okLabel: 'Finish',
-      okColor: 'blue',
-      onOk: _doFinishWorkout
-    });
+  /* ── Workout action sheet ───────────────────────────────── */
+  function _openWorkoutSheet() {
+    document.getElementById('workout-sheet-main').style.display = '';
+    document.getElementById('workout-sheet-finish').style.display = 'none';
+    document.getElementById('workout-sheet-discard').style.display = 'none';
+    document.getElementById('workout-sheet-backdrop').classList.add('open');
+  }
+  function _closeWorkoutSheet() {
+    document.getElementById('workout-sheet-backdrop').classList.remove('open');
+  }
+  function _wsBack() {
+    document.getElementById('workout-sheet-main').style.display = '';
+    document.getElementById('workout-sheet-finish').style.display = 'none';
+    document.getElementById('workout-sheet-discard').style.display = 'none';
+  }
+  function _wsFinish() {
+    document.getElementById('workout-sheet-main').style.display = 'none';
+    document.getElementById('workout-sheet-finish').style.display = '';
+  }
+  function _wsDiscard() {
+    document.getElementById('workout-sheet-main').style.display = 'none';
+    document.getElementById('workout-sheet-discard').style.display = '';
   }
 
+  function finishWorkout() { _openWorkoutSheet(); _wsFinish(); }
+
+  function discardWorkout() { _openWorkoutSheet(); _wsDiscard(); }
+
   function _doFinishWorkout() {
+    document.getElementById('workout-sheet-backdrop').classList.remove('open');
     _workoutPaused   = false;
     document.getElementById('pause-overlay')?.classList.remove('open');
     clearInterval(timerInterval);
@@ -6497,7 +6960,7 @@
     _killerStep      = 0;
     clearActiveWorkout();
     document.getElementById('plan-banner').style.display = 'none';
-    document.getElementById('btn-next-ex').style.display  = 'none';
+    document.getElementById('plan-prestart')?.classList.remove('open');
     _wscHideAll();
 
     renderFreqGoal();
@@ -6506,17 +6969,8 @@
   }
 
   /* ── Discard active workout ─────────────────────────────── */
-  function discardWorkout() {
-    _wConfirm({
-      title: 'Discard Workout?',
-      msg: 'Your progress will be lost.',
-      okLabel: 'Discard',
-      okColor: 'red',
-      onOk: _doDiscardWorkout
-    });
-  }
-
   function _doDiscardWorkout() {
+    document.getElementById('workout-sheet-backdrop').classList.remove('open');
     _workoutPaused   = false;
     _workoutStartTs  = 0;
     _workoutPausedMs = 0;
@@ -6533,7 +6987,7 @@
     clearActiveWorkout();
     document.getElementById('exercise-list').innerHTML = '';
     document.getElementById('plan-banner').style.display = 'none';
-    document.getElementById('btn-next-ex').style.display  = 'none';
+    document.getElementById('plan-prestart')?.classList.remove('open');
     _wscHideAll();
     showTab('home');
   }
@@ -6605,6 +7059,7 @@
   /* Remove the active workout snapshot */
   function clearActiveWorkout() {
     localStorage.removeItem('activeWorkout');
+    localStorage.removeItem('activeWorkoutExerciseIndex');
     document.getElementById('resume-banner').classList.remove('visible');
   }
 
@@ -6621,7 +7076,7 @@
     exerciseCount  = 0;
     document.getElementById('exercise-list').innerHTML = '';
 
-    snap.exercises.forEach(ex => {
+    snap.exercises.forEach((ex, exIdx) => {
       if (ex.killer) return;  // killer set is now shown as a compact card, not individual cards
       exerciseCount++;
       const id  = 'ex-' + Date.now() + '-' + exerciseCount;
@@ -6630,6 +7085,12 @@
       div.className = 'exercise-card';
       div.id = id;
       if (tb)       div.dataset.tb     = '1';
+      /* restore plan set count so auto-add limit still applies after page refresh */
+      if (activePlanData) {
+        const planEx = activePlanData.exercises[exIdx];
+        const ps = planEx ? (planEx.sets || 1) : ex.sets?.length;
+        if (ps >= 1) div.dataset.planSets = String(ps);
+      }
       div.innerHTML = `
         <div class="exercise-head">
           <input type="text" placeholder="Exercise name" value="${(ex.name || '').replace(/"/g, '&quot;')}"
@@ -6679,6 +7140,7 @@
       updateExIntensity(id);
       updateGhostHint(id);
       _applySetStates(id);
+      _syncAddSetBtn(id);
     });
 
     /* Restore Killer Set compact card */
@@ -6695,7 +7157,8 @@
     }
 
     /* Restore plan UI */
-    if (activePlanData) { updatePlanBanner(); updateNextExBtn(); }
+    if (activePlanData) { updatePlanBanner(); }
+    document.getElementById('plan-prestart')?.classList.remove('open');
 
     /* Resume timer — use saved timestamps if available, fall back to timerSeconds */
     if (snap.workoutStartTs) {
@@ -7187,12 +7650,13 @@
   function _rerangeAllCharts(rangeKey) {
     document.querySelectorAll('#progress-charts .chart-card').forEach(card => {
       if (!card._chartData) return;
-      /* only redraw cards that are currently visible (category not collapsed) */
       if (card.offsetParent !== null) _redrawCharts(card, rangeKey);
     });
-    /* update pending draws so lazy-expanded folders use the new range */
+    /* redraw warmup card if visible */
+    const wuCard = document.getElementById('warmup-progress-card');
+    if (wuCard && wuCard.offsetParent !== null) _redrawWarmupCharts(rangeKey);
     _progCatPending.forEach((pending, cat) => {
-      _progCatPending.set(cat, pending); /* already stored; draw will use _getProgressRange() */
+      _progCatPending.set(cat, pending);
     });
   }
 
@@ -7200,14 +7664,20 @@
     const { name, sessions, maxSets } = card._chartData;
     const filtered = _filterSessions(sessions, rangeKey);
     const w1 = document.getElementById('wrap-' + CSS.escape(name));
-    const w2 = document.getElementById('int-wrap-' + CSS.escape(name));
     if (w1) w1.innerHTML = '';
-    if (w2) w2.innerHTML = '';
     const sub = card.querySelector('.chart-card-subtitle');
     if (sub) sub.textContent = filtered.length === 1
       ? 'Log another session to see your trend'
       : `${filtered.length} sessions`;
-    _drawChartForMode(name, filtered, maxSets);
+    _drawChartForMode(name, filtered, maxSets, _progressMode);
+  }
+
+  /* Redraw all visible exercise chart cards in the current global mode */
+  function _redrawAllVisibleCharts() {
+    document.querySelectorAll('#progress-charts .chart-card').forEach(card => {
+      if (!card._chartData || card.offsetParent === null) return;
+      _redrawCharts(card, _getProgressRange());
+    });
   }
 
   function _buildChartCard(name, sessions) {
@@ -7221,6 +7691,7 @@
     const escapedName = CSS.escape(name);
     const card = document.createElement('div');
     card.className = 'chart-card';
+    const hintDismissed = !!localStorage.getItem('chartTapHintDone');
     card.innerHTML = `
       <div class="chart-card-header">
         <div>
@@ -7228,14 +7699,28 @@
           <div class="chart-card-subtitle">${subtitle}</div>
         </div>
       </div>
-      <div class="chart-graph-label">Best Set</div>
-      <div class="chart-graph-desc">Best set per session — reps and intensity</div>
-      <div class="chart-wrap" id="wrap-${escapedName}"></div>
-      <div class="chart-graph-label" style="margin-top:.5rem">Session Total</div>
-      <div class="chart-graph-desc">Combined intensity of all sets per session</div>
-      <div class="chart-wrap" id="int-wrap-${escapedName}"></div>`;
+      <div class="chart-wrap" id="wrap-${escapedName}" style="cursor:pointer"></div>
+      ${hintDismissed ? '' : `<div class="chart-tap-hint" id="hint-${escapedName}">Tap graph to switch view</div>`}`;
 
     card._chartData = { name, sessions, maxSets };
+
+    /* wire tap-to-toggle — updates global mode and redraws all visible charts */
+    requestAnimationFrame(() => {
+      const wrap = document.getElementById('wrap-' + escapedName);
+      if (!wrap) return;
+      wrap.addEventListener('click', () => {
+        _progressMode = _progressMode === 'reps' ? 'intensity' : 'reps';
+        _redrawAllVisibleCharts();
+        /* dismiss hint on first tap */
+        if (!localStorage.getItem('chartTapHintDone')) {
+          localStorage.setItem('chartTapHintDone', '1');
+          document.querySelectorAll('.chart-tap-hint').forEach(h => {
+            h.style.opacity = '0'; setTimeout(() => h.remove(), 300);
+          });
+        }
+      });
+    });
+
     return { card, maxSets };
   }
 
@@ -7406,6 +7891,9 @@
       savedCollapsed ? (savedCollapsed[cat] !== undefined ? savedCollapsed[cat] : true)
                      : cat !== mostRecentCat;
 
+    /* Strength Warmup folder at top */
+    _renderWarmupProgressFolder(container);
+
     /* Render one folder per category that has data */
     [...EX_CATS, 'Other'].forEach(cat => {
       const group = catGroups[cat];
@@ -7444,7 +7932,7 @@
         requestAnimationFrame(() => {
           const rk = _getProgressRange();
           pending.forEach(({ name, sessions, maxSets }) => {
-            _drawChartForMode(name, _filterSessions(sessions, rk), maxSets);
+            _drawChartForMode(name, _filterSessions(sessions, rk), maxSets, _progressMode);
           });
           _progCatPending.delete(cat);
         });
@@ -7507,19 +7995,22 @@
       setTimeout(() => {
         const rk = _getProgressRange();
         pending.forEach(({ name, sessions, maxSets }) => {
-          _drawChartForMode(name, _filterSessions(sessions, rk), maxSets);
+          _drawChartForMode(name, _filterSessions(sessions, rk), maxSets, _progressMode);
         });
       }, 230);
     }
   }
 
-  /* ── Dispatch: always draw both stacked graphs ─────────── */
-  function _drawChartForMode(name, sessions, maxSets) {
-    drawBestSetChart(name, sessions);
-    drawSessionTotalChart(name, sessions);
+  /* ── Dispatch: draw the selected graph ──────────────────── */
+  function _drawChartForMode(name, sessions, maxSets, mode) {
+    if ((mode || 'reps') === 'intensity') {
+      drawSessionTotalChart(name, sessions);
+    } else {
+      drawBestSetChart(name, sessions);
+    }
   }
 
-  /* ── Graph 1: Best Set — dual-line (reps + best-set intensity) ── */
+  /* ── Graph 1: Reps — single blue line, left axis only ── */
   function drawBestSetChart(name, sessions) {
     const wrap = document.getElementById('wrap-' + CSS.escape(name));
     if (!wrap) return;
@@ -7539,29 +8030,21 @@
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    /* data */
     const bestReps = sessions.map(s =>
       Math.max(0, ...s.sets.map(st => parseFloat(st.reps) || 0)));
-    const bestSetInt = sessions.map((s, si) => {
-      const maxR = bestReps[si];
-      const bs = s.sets.find(st => (parseFloat(st.reps) || 0) === maxR) || s.sets[0];
-      return bs ? calcSetIntensity(name, parseFloat(bs.reps) || 0, parseFloat(bs.kg) || 0) : 0;
-    });
 
-    const PAD = { top: 38, right: 44, bottom: 50, left: 44 };
-    const cW  = W - PAD.left - PAD.right;
-    const cH  = H - PAD.top  - PAD.bottom;
+    const PAD  = { top: 28, right: 20, bottom: 50, left: 44 };
+    const cW   = W - PAD.left - PAD.right;
+    const cH   = H - PAD.top  - PAD.bottom;
+    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-    const repTicks = niceYTicks(0, Math.max(...bestReps, 1), 4);
-    const intTicks = niceYTicks(0, Math.max(...bestSetInt, 1), 4);
-    const repMin = repTicks[0], repMax = repTicks[repTicks.length - 1];
-    const intMin = intTicks[0], intMax = intTicks[intTicks.length - 1];
+    const yTicks = niceYTicks(0, Math.max(...bestReps, 1), 4);
+    const yMin   = yTicks[0];
+    const yMax   = yTicks[yTicks.length - 1];
 
-    const xOf    = i => sessions.length === 1 ? PAD.left + cW / 2
-                      : PAD.left + (i / (sessions.length - 1)) * cW;
-    const yOfRep = r => PAD.top + (1 - (r - repMin) / (repMax - repMin)) * cH;
-    const yOfInt = v => PAD.top + (1 - (v - intMin) / (intMax - intMin)) * cH;
-    const clamp  = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+    const xOf = i => sessions.length === 1 ? PAD.left + cW / 2
+                   : PAD.left + (i / (sessions.length - 1)) * cW;
+    const yOf = v => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * cH;
 
     const labelColor = dark ? 'rgba(160,160,168,0.85)' : 'rgba(60,60,67,0.50)';
     const gridColor  = dark ? 'rgba(255,255,255,0.10)' : 'rgba(60,60,67,0.08)';
@@ -7573,33 +8056,24 @@
     ctx.save();
     ctx.strokeStyle = gridColor;
     ctx.lineWidth   = 0.5;
-    repTicks.forEach(t => {
+    yTicks.forEach(t => {
       ctx.beginPath();
-      ctx.moveTo(PAD.left, yOfRep(t));
-      ctx.lineTo(PAD.left + cW, yOfRep(t));
+      ctx.moveTo(PAD.left, yOf(t));
+      ctx.lineTo(PAD.left + cW, yOf(t));
       ctx.stroke();
     });
     ctx.restore();
 
-    /* left y labels — reps (blue) */
+    /* left y labels */
     ctx.save();
     ctx.fillStyle    = blue;
     ctx.font         = '400 10px -apple-system, sans-serif';
     ctx.textAlign    = 'right';
     ctx.textBaseline = 'middle';
-    repTicks.forEach(t => ctx.fillText(t, PAD.left - 6, yOfRep(t)));
+    yTicks.forEach(t => ctx.fillText(t, PAD.left - 6, yOf(t)));
     ctx.restore();
 
-    /* right y labels — intensity (gold) */
-    ctx.save();
-    ctx.fillStyle    = gold;
-    ctx.font         = '400 10px -apple-system, sans-serif';
-    ctx.textAlign    = 'left';
-    ctx.textBaseline = 'middle';
-    intTicks.forEach(t => ctx.fillText(fmtInt(t), PAD.left + cW + 8, yOfInt(t)));
-    ctx.restore();
-
-    /* x labels — deduplicate when all dates are the same or only one session */
+    /* x labels */
     ctx.save();
     ctx.fillStyle    = labelColor;
     ctx.font         = '400 10px -apple-system, sans-serif';
@@ -7616,73 +8090,48 @@
 
     /* axis labels */
     ctx.save();
-    ctx.fillStyle = labelColor;
-    ctx.font      = '400 9px -apple-system, sans-serif';
-    /* x axis label: "Date" */
+    ctx.fillStyle    = labelColor;
+    ctx.font         = '400 9px -apple-system, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'bottom';
     ctx.fillText('Date', PAD.left + cW / 2, H - 4);
-    /* left y axis label: "Reps" — rotated, sits outside left pad */
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.translate(9, PAD.top + cH / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.fillText('Reps', 0, 0);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    /* right y axis label: "Intensity ⚡" — 16px clearance from numbers */
-    ctx.translate(W - 10, PAD.top + cH / 2);
-    ctx.rotate(Math.PI / 2);
-    ctx.fillText('Intensity ⚡', 0, 0);
     ctx.restore();
 
-    const repPts = bestReps.map((r, i) => ({ x: xOf(i), y: yOfRep(r) }));
-    const intPts = bestSetInt.map((v, i) => ({ x: xOf(i), y: yOfInt(v) }));
+    const pts = bestReps.map((r, i) => ({ x: xOf(i), y: yOf(r) }));
 
-    /* intensity area + line (gold, behind reps) */
-    if (intPts.length > 1) {
-      const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
-      grad.addColorStop(0, hexAlpha(gold, 0.10));
-      grad.addColorStop(1, hexAlpha(gold, 0));
-      ctx.beginPath();
-      ctx.moveTo(intPts[0].x, yOfInt(intMin));
-      intPts.forEach(p => ctx.lineTo(p.x, p.y));
-      ctx.lineTo(intPts[intPts.length - 1].x, yOfInt(intMin));
-      ctx.closePath();
-      ctx.fillStyle = grad;
-      ctx.fill();
-      ctx.beginPath();
-      ctx.strokeStyle = gold;
-      ctx.lineWidth   = 2;
-      ctx.lineJoin    = 'round';
-      intPts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-      ctx.stroke();
-    }
-
-    /* reps area + line (blue) */
-    if (repPts.length > 1) {
+    /* area fill */
+    if (pts.length > 1) {
       const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
       grad.addColorStop(0, hexAlpha(blue, 0.13));
       grad.addColorStop(1, hexAlpha(blue, 0));
       ctx.beginPath();
-      ctx.moveTo(repPts[0].x, yOfRep(repMin));
-      repPts.forEach(p => ctx.lineTo(p.x, p.y));
-      ctx.lineTo(repPts[repPts.length - 1].x, yOfRep(repMin));
+      ctx.moveTo(pts[0].x, yOf(yMin));
+      pts.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(pts[pts.length - 1].x, yOf(yMin));
       ctx.closePath();
       ctx.fillStyle = grad;
       ctx.fill();
+    }
+
+    /* main line */
+    if (pts.length > 1) {
       ctx.beginPath();
       ctx.strokeStyle = blue;
       ctx.lineWidth   = 2;
       ctx.lineJoin    = 'round';
-      repPts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
       ctx.stroke();
     }
 
-    /* trend line on reps */
-    if (repPts.length > 1) {
-      const trendColor = dark ? 'rgba(255,255,255,0.28)' : 'rgba(60,60,67,0.20)';
+    /* trend line */
+    if (pts.length > 1) {
       ctx.save();
-      ctx.strokeStyle = trendColor;
+      ctx.strokeStyle = dark ? 'rgba(255,255,255,0.28)' : 'rgba(60,60,67,0.20)';
       ctx.lineWidth   = 1.5;
       ctx.setLineDash([4, 3]);
       ctx.lineJoin    = 'round';
@@ -7690,26 +8139,15 @@
       bestReps.forEach((_, i) => {
         const win = bestReps.slice(Math.max(0, i - 6), i + 1);
         const avg = win.reduce((s, v) => s + v, 0) / win.length;
-        i === 0 ? ctx.moveTo(xOf(i), yOfRep(clamp(avg, repMin, repMax)))
-                : ctx.lineTo(xOf(i), yOfRep(clamp(avg, repMin, repMax)));
+        i === 0 ? ctx.moveTo(xOf(i), yOf(clamp(avg, yMin, yMax)))
+                : ctx.lineTo(xOf(i), yOf(clamp(avg, yMin, yMax)));
       });
       ctx.stroke();
       ctx.restore();
     }
 
-    /* intensity dots */
-    intPts.forEach(p => {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
-      ctx.fillStyle   = dotFill;
-      ctx.fill();
-      ctx.strokeStyle = gold;
-      ctx.lineWidth   = 2;
-      ctx.stroke();
-    });
-
-    /* reps dots */
-    repPts.forEach(p => {
+    /* dots */
+    pts.forEach(p => {
       ctx.beginPath();
       ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
       ctx.fillStyle   = dotFill;
@@ -7719,56 +8157,42 @@
       ctx.stroke();
     });
 
-    /* PR marker on reps */
+    /* PR dot */
     const prVal = Math.max(...bestReps);
     if (prVal > 0) {
       const prIdx = bestReps.lastIndexOf(prVal);
-      const prX   = xOf(prIdx);
-      const prY   = yOfRep(prVal);
       ctx.beginPath();
-      ctx.arc(prX, prY, 5.5, 0, Math.PI * 2);
-      ctx.fillStyle = gold;
+      ctx.arc(xOf(prIdx), yOf(prVal), 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#FF2D55';
       ctx.fill();
     }
 
-    /* mini legend — top CENTER, 14px above chart area */
+    /* mode indicator */
     ctx.save();
     ctx.font         = '500 9px -apple-system, sans-serif';
-    ctx.textBaseline = 'middle';
-    const lY   = PAD.top - 18;
-    const dotR = 3, gap = 5, spacing = 16;
-    const repLabelW = ctx.measureText('Reps').width;
-    const intLabelW = ctx.measureText('Intensity').width;
-    /* total width of: ● gap "Reps" spacing ● gap "Intensity" */
-    const totalLegW = dotR * 2 + gap + repLabelW + spacing + dotR * 2 + gap + intLabelW;
-    let lCur = PAD.left + cW / 2 - totalLegW / 2;
-    ctx.fillStyle = blue;
-    ctx.beginPath(); ctx.arc(lCur + dotR, lY, dotR, 0, Math.PI * 2); ctx.fill();
-    lCur += dotR * 2 + gap;
-    ctx.fillText('Reps', lCur, lY);
-    lCur += repLabelW + spacing;
-    ctx.fillStyle = gold;
-    ctx.beginPath(); ctx.arc(lCur + dotR, lY, dotR, 0, Math.PI * 2); ctx.fill();
-    lCur += dotR * 2 + gap;
-    ctx.fillText('Intensity', lCur, lY);
+    ctx.fillStyle    = labelColor;
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Reps', PAD.left + cW, PAD.top - 14);
     ctx.restore();
   }
 
-  /* ── Graph 2: Session Total — single green line ─────────── */
+  /* ── Graph 2: Session Total — gold intensity line ─────────── */
   function drawSessionTotalChart(name, sessions) {
-    const wrap = document.getElementById('int-wrap-' + CSS.escape(name));
+    const wrap = document.getElementById('wrap-' + CSS.escape(name));
     if (!wrap) return;
 
     const totals = sessions.map(s => calcSessionIntensity(name, s.sets));
     if (totals.every(v => v === 0)) {
-      wrap.innerHTML = '<div style="text-align:center;padding:.75rem 0 .875rem;font-size:.8125rem;color:var(--tertiary)">Log weight or reps to see volume</div>';
+      wrap.innerHTML = '<div style="text-align:center;padding:.75rem 0 .875rem;font-size:.8125rem;color:var(--tertiary)">Log weight or reps to see intensity</div>';
       return;
     }
 
-    const dark = isDark();
-    const dpr  = window.devicePixelRatio || 1;
-    const W    = wrap.clientWidth;
-    const H    = Math.min(180, Math.max(120, Math.round(W * 0.38)));
+    const dark  = isDark();
+    const dpr   = window.devicePixelRatio || 1;
+    const W     = wrap.clientWidth;
+    const H     = Math.min(220, Math.max(140, Math.round(W * 0.48)));
+    const color = '#FFD700';
 
     const canvas = document.createElement('canvas');
     canvas.className = 'chart-canvas';
@@ -7780,10 +8204,10 @@
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    const PAD  = { top: 14, right: 44, bottom: 50, left: 44 };
-    const cW   = W - PAD.left - PAD.right;
-    const cH   = H - PAD.top  - PAD.bottom;
-    const color = '#30D158';
+    const PAD    = { top: 28, right: 20, bottom: 50, left: 44 };
+    const cW     = W - PAD.left - PAD.right;
+    const cH     = H - PAD.top  - PAD.bottom;
+    const clamp  = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
     const yTicks = niceYTicks(0, Math.max(...totals, 1), 4);
     const yMin   = yTicks[0];
@@ -7796,6 +8220,7 @@
     const labelColor = dark ? 'rgba(160,160,168,0.85)' : 'rgba(60,60,67,0.50)';
     const gridColor  = dark ? 'rgba(255,255,255,0.10)' : 'rgba(60,60,67,0.08)';
     const dotFill    = dark ? '#242426' : '#FFFFFF';
+    const trendColor = dark ? 'rgba(255,255,255,0.28)' : 'rgba(60,60,67,0.20)';
 
     /* grid */
     ctx.save();
@@ -7821,29 +8246,32 @@
     ctx.font         = '400 10px -apple-system, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'top';
-    const xIdxs = pickLabelIdxs(sessions.length, 5);
-    sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9); });
+    const allSameDate = sessions.every(s => s.label === sessions[0].label);
+    if (allSameDate) {
+      ctx.fillText(sessions[0].label, PAD.left + cW / 2, H - PAD.bottom + 9);
+    } else {
+      const xIdxs = pickLabelIdxs(sessions.length, 5);
+      sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9); });
+    }
     ctx.restore();
 
     /* axis labels */
     ctx.save();
-    ctx.fillStyle = labelColor;
-    ctx.font      = '400 9px -apple-system, sans-serif';
-    /* x axis label: "Date" */
+    ctx.fillStyle    = labelColor;
+    ctx.font         = '400 9px -apple-system, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'bottom';
     ctx.fillText('Date', PAD.left + cW / 2, H - 4);
-    /* left y axis label: "Total Intensity ⚡" */
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.translate(10, PAD.top + cH / 2);
+    ctx.translate(9, PAD.top + cH / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText('Total Intensity ⚡', 0, 0);
+    ctx.fillText('Intensity', 0, 0);
     ctx.restore();
 
     const pts = totals.map((v, i) => ({ x: xOf(i), y: yOf(v) }));
 
-    /* area + line */
+    /* area fill */
     if (pts.length > 1) {
       const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
       grad.addColorStop(0, hexAlpha(color, 0.15));
@@ -7855,12 +8283,34 @@
       ctx.closePath();
       ctx.fillStyle = grad;
       ctx.fill();
+    }
+
+    /* main line */
+    if (pts.length > 1) {
       ctx.beginPath();
       ctx.strokeStyle = color;
       ctx.lineWidth   = 2;
       ctx.lineJoin    = 'round';
       pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
       ctx.stroke();
+    }
+
+    /* trend line */
+    if (pts.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = trendColor;
+      ctx.lineWidth   = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.lineJoin    = 'round';
+      ctx.beginPath();
+      totals.forEach((_, i) => {
+        const win = totals.slice(Math.max(0, i - 6), i + 1);
+        const avg = win.reduce((a, v) => a + v, 0) / win.length;
+        i === 0 ? ctx.moveTo(xOf(i), yOf(clamp(avg, yMin, yMax)))
+                : ctx.lineTo(xOf(i), yOf(clamp(avg, yMin, yMax)));
+      });
+      ctx.stroke();
+      ctx.restore();
     }
 
     /* dots */
@@ -7873,6 +8323,465 @@
       ctx.lineWidth   = 2.5;
       ctx.stroke();
     });
+
+    /* PR dot (highest intensity) */
+    const prVal = Math.max(...totals);
+    if (prVal > 0) {
+      const prIdx = totals.lastIndexOf(prVal);
+      ctx.beginPath();
+      ctx.arc(xOf(prIdx), yOf(prVal), 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#FF2D55';
+      ctx.fill();
+    }
+
+    /* mode indicator — top-right, muted */
+    ctx.save();
+    ctx.font         = '500 9px -apple-system, sans-serif';
+    ctx.fillStyle    = labelColor;
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText('⚡ Intensity', PAD.left + cW, PAD.top - 14);
+    ctx.restore();
+  }
+
+  /* ── Strength Warmup progress ─────────────────────────────── */
+  function _getWarmupSessions(rangeKey) {
+    const times = _getStrengthTimes().filter(t => t.secs > 0);
+    let filtered = times;
+    if (rangeKey !== 'all') {
+      if (rangeKey === '30') {
+        filtered = times.slice(-30);
+      } else {
+        const now = new Date();
+        let cutoff;
+        if (rangeKey === '3M') cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        else if (rangeKey === '6M') cutoff = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+        else if (rangeKey === '1Y') cutoff = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        else if (rangeKey === '5Y') cutoff = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
+        if (cutoff) filtered = times.filter(t => new Date(t.date) >= cutoff);
+      }
+    }
+    return filtered.map(t => {
+      const d = new Date(t.date);
+      return { secs: t.secs, date: t.date, label: d.getDate() + ' ' + d.toLocaleDateString('en-US', { month: 'short' }) };
+    });
+  }
+
+  function _renderWarmupProgressFolder(container) {
+    const allSessions = _getWarmupSessions('all');
+    if (!allSessions.length) return;
+
+    const isCollapsed = (() => {
+      try { const s = JSON.parse(localStorage.getItem('progCatCollapsed') || '{}'); return s['__warmup__'] !== false; }
+      catch(e) { return false; }
+    })();
+
+    const folder = document.createElement('div');
+    folder.className = 'prog-cat-folder';
+    folder.id = 'warmup-progress-folder';
+
+    const header = document.createElement('div');
+    header.className = 'prog-cat-header';
+    header.innerHTML = `<span class="prog-cat-name">🔥 Strength Warmup</span><span class="prog-cat-chevron${isCollapsed ? '' : ' open'}">▸</span>`;
+    header.addEventListener('click', () => _toggleWarmupFolder());
+    folder.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'prog-cat-body';
+    body.id = 'prog-cat-body-__warmup__';
+    if (isCollapsed) { body.style.display = 'none'; body.style.height = '0px'; }
+    folder.appendChild(body);
+    container.appendChild(folder);
+
+    const card = _buildWarmupCard(allSessions);
+    body.appendChild(card);
+
+    if (!isCollapsed) {
+      /* defer until layout is complete so canvas has width */
+      setTimeout(() => _drawWarmupCharts(_getWarmupSessions(_getProgressRange())), 0);
+    }
+  }
+
+  function _toggleWarmupFolder() {
+    const body   = document.getElementById('prog-cat-body-__warmup__');
+    const folder = document.getElementById('warmup-progress-folder');
+    if (!body || !folder) return;
+    const expanding = body.style.display === 'none' || body.style.height === '0px';
+    const chevron = folder.querySelector('.prog-cat-chevron');
+    if (chevron) chevron.classList.toggle('open', expanding);
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem('progCatCollapsed') || '{}'); } catch(e) {}
+    saved['__warmup__'] = !expanding;
+    localStorage.setItem('progCatCollapsed', JSON.stringify(saved));
+    if (expanding) {
+      body.style.display = '';
+      body.style.opacity = '0';
+      const h = body.scrollHeight;
+      body.style.height = '0px';
+      requestAnimationFrame(() => {
+        body.style.height  = h + 'px';
+        body.style.opacity = '1';
+        setTimeout(() => { body.style.height = 'auto'; }, 225);
+      });
+      /* draw charts on first expand */
+      setTimeout(() => _drawWarmupCharts(_getWarmupSessions(_getProgressRange())), 230);
+    } else {
+      body.style.height  = body.scrollHeight + 'px';
+      body.style.opacity = '0';
+      requestAnimationFrame(() => {
+        body.style.height = '0px';
+        setTimeout(() => { body.style.display = 'none'; }, 220);
+      });
+    }
+  }
+
+  function _buildWarmupCard(allSessions) {
+    const fmtT = s => `${Math.floor(s/60) > 0 ? Math.floor(s/60) + 'm ' : ''}${s%60}s`;
+    const valid = allSessions.filter(s => s.secs > 0);
+    const avg   = valid.length ? Math.round(valid.reduce((a, s) => a + s.secs, 0) / valid.length) : 0;
+    const best  = valid.length ? Math.min(...valid.map(s => s.secs)) : 0;
+    const count = valid.length;
+
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.id = 'warmup-progress-card';
+    card.innerHTML = `
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Strength Warmup</div>
+          <div class="chart-card-subtitle">${count} session${count !== 1 ? 's' : ''} completed</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:1.25rem;padding:.75rem 1rem .25rem">
+        <div class="week-sum-stat">
+          <div class="week-sum-stat-val" style="font-size:1.125rem;color:#FF9500">${avg ? fmtT(avg) : '—'}</div>
+          <div class="week-sum-stat-lbl">Average</div>
+        </div>
+        <div class="week-sum-stat">
+          <div class="week-sum-stat-val" style="font-size:1.125rem;color:#FFD700">${best ? fmtT(best) : '—'}</div>
+          <div class="week-sum-stat-lbl">Best</div>
+        </div>
+        <div class="week-sum-stat">
+          <div class="week-sum-stat-val" style="font-size:1.125rem">${count}</div>
+          <div class="week-sum-stat-lbl">Sessions</div>
+        </div>
+      </div>
+      <div class="chart-graph-label">Session Time</div>
+      <div class="chart-graph-desc">Duration of each completed warmup</div>
+      <div class="chart-wrap" id="warmup-wrap-time"></div>
+      <div class="chart-graph-label" style="margin-top:.5rem">vs Average</div>
+      <div class="chart-graph-desc">Session time vs rolling average — spot improvement or regression</div>
+      <div class="chart-wrap" id="warmup-wrap-avg"></div>`;
+    return card;
+  }
+
+  function _redrawWarmupCharts(rangeKey) {
+    const wrap1 = document.getElementById('warmup-wrap-time');
+    const wrap2 = document.getElementById('warmup-wrap-avg');
+    if (wrap1) wrap1.innerHTML = '';
+    if (wrap2) wrap2.innerHTML = '';
+    const sessions = _getWarmupSessions(rangeKey);
+    _drawWarmupCharts(sessions);
+  }
+
+  function _drawWarmupCharts(sessions) {
+    if (!sessions.length) return;
+    _drawWarmupTimeChart(sessions);
+    _drawWarmupAvgChart(sessions);
+  }
+
+  function _drawWarmupTimeChart(sessions) {
+    const wrap = document.getElementById('warmup-wrap-time');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const dark   = isDark();
+    const dpr    = window.devicePixelRatio || 1;
+    const W      = wrap.clientWidth;
+    const H      = Math.min(220, Math.max(140, Math.round(W * 0.48)));
+    const orange = '#FF9500';
+    const gold   = '#FFD700';
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'chart-canvas';
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    wrap.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const secs  = sessions.map(s => s.secs);
+    const PAD   = { top: 28, right: 20, bottom: 50, left: 44 };
+    const cW    = W - PAD.left - PAD.right;
+    const cH    = H - PAD.top  - PAD.bottom;
+
+    const yTicks = niceYTicks(0, Math.max(...secs, 30), 4);
+    const yMin   = yTicks[0];
+    const yMax   = yTicks[yTicks.length - 1];
+    const xOf    = i => sessions.length === 1 ? PAD.left + cW / 2 : PAD.left + (i / (sessions.length - 1)) * cW;
+    const yOf    = v => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * cH;
+    const clamp  = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+    const labelColor = dark ? 'rgba(160,160,168,0.85)' : 'rgba(60,60,67,0.50)';
+    const gridColor  = dark ? 'rgba(255,255,255,0.10)' : 'rgba(60,60,67,0.08)';
+    const dotFill    = dark ? '#242426' : '#FFFFFF';
+
+    /* grid */
+    ctx.save();
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth   = 0.5;
+    yTicks.forEach(t => {
+      ctx.beginPath(); ctx.moveTo(PAD.left, yOf(t)); ctx.lineTo(PAD.left + cW, yOf(t)); ctx.stroke();
+    });
+    ctx.restore();
+
+    /* y labels — format as time */
+    const fmtT = s => `${Math.floor(s/60) > 0 ? Math.floor(s/60) + 'm' : s + 's'}`;
+    ctx.save();
+    ctx.fillStyle    = orange;
+    ctx.font         = '400 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    yTicks.forEach(t => ctx.fillText(fmtT(t), PAD.left - 6, yOf(t)));
+    ctx.restore();
+
+    /* x labels */
+    ctx.save();
+    ctx.fillStyle    = labelColor;
+    ctx.font         = '400 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    const xIdxs = pickLabelIdxs(sessions.length, 5);
+    sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9); });
+    ctx.restore();
+
+    /* axis label */
+    ctx.save();
+    ctx.fillStyle    = labelColor;
+    ctx.font         = '400 9px -apple-system, sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('Date', PAD.left + cW / 2, H - 4);
+    ctx.restore();
+
+    const pts = secs.map((v, i) => ({ x: xOf(i), y: yOf(v) }));
+
+    /* area fill */
+    if (pts.length > 1) {
+      const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
+      grad.addColorStop(0, hexAlpha(orange, 0.18));
+      grad.addColorStop(1, hexAlpha(orange, 0));
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, yOf(yMin));
+      pts.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(pts[pts.length - 1].x, yOf(yMin));
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    /* main line */
+    if (pts.length > 1) {
+      ctx.beginPath();
+      ctx.strokeStyle = orange;
+      ctx.lineWidth   = 2;
+      ctx.lineJoin    = 'round';
+      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    }
+
+    /* trend line (dashed) */
+    if (pts.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = dark ? 'rgba(255,255,255,0.28)' : 'rgba(60,60,67,0.20)';
+      ctx.lineWidth   = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.lineJoin    = 'round';
+      ctx.beginPath();
+      secs.forEach((_, i) => {
+        const win = secs.slice(Math.max(0, i - 6), i + 1);
+        const avg = win.reduce((a, v) => a + v, 0) / win.length;
+        i === 0 ? ctx.moveTo(xOf(i), yOf(clamp(avg, yMin, yMax)))
+                : ctx.lineTo(xOf(i), yOf(clamp(avg, yMin, yMax)));
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* dots */
+    pts.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle   = dotFill;
+      ctx.fill();
+      ctx.strokeStyle = orange;
+      ctx.lineWidth   = 2.5;
+      ctx.stroke();
+    });
+
+    /* Best (fastest = min seconds) marker */
+    const bestVal = Math.min(...secs);
+    if (bestVal > 0) {
+      const bestIdx = secs.indexOf(bestVal);
+      const bx = xOf(bestIdx);
+      const by = yOf(bestVal);
+      ctx.beginPath();
+      ctx.arc(bx, by, 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = gold;
+      ctx.fill();
+      /* "Best" label */
+      ctx.save();
+      ctx.fillStyle    = gold;
+      ctx.font         = '600 9px -apple-system, sans-serif';
+      ctx.textAlign    = bx > W / 2 ? 'right' : 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('Best', bx + (bx > W / 2 ? -8 : 8), by - 2);
+      ctx.restore();
+    }
+  }
+
+  function _drawWarmupAvgChart(sessions) {
+    const wrap = document.getElementById('warmup-wrap-avg');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const dark   = isDark();
+    const dpr    = window.devicePixelRatio || 1;
+    const W      = wrap.clientWidth;
+    const H      = Math.min(180, Math.max(120, Math.round(W * 0.38)));
+    const orange = '#FF9500';
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'chart-canvas';
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    wrap.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const secs   = sessions.map(s => s.secs);
+    /* cumulative rolling average up to each point */
+    const avgs   = secs.map((_, i) => {
+      const win = secs.slice(Math.max(0, i - 6), i + 1);
+      return Math.round(win.reduce((a, v) => a + v, 0) / win.length);
+    });
+
+    const allVals = [...secs, ...avgs];
+    const PAD     = { top: 14, right: 20, bottom: 50, left: 44 };
+    const cW      = W - PAD.left - PAD.right;
+    const cH      = H - PAD.top  - PAD.bottom;
+
+    const yTicks  = niceYTicks(0, Math.max(...allVals, 30), 4);
+    const yMin    = yTicks[0];
+    const yMax    = yTicks[yTicks.length - 1];
+    const xOf     = i => sessions.length === 1 ? PAD.left + cW / 2 : PAD.left + (i / (sessions.length - 1)) * cW;
+    const yOf     = v => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * cH;
+
+    const labelColor  = dark ? 'rgba(160,160,168,0.85)' : 'rgba(60,60,67,0.50)';
+    const gridColor   = dark ? 'rgba(255,255,255,0.10)' : 'rgba(60,60,67,0.08)';
+    const dotFill     = dark ? '#242426' : '#FFFFFF';
+    const avgColor    = dark ? 'rgba(255,255,255,0.45)' : 'rgba(60,60,67,0.35)';
+
+    const fmtT = s => `${Math.floor(s/60) > 0 ? Math.floor(s/60) + 'm' : s + 's'}`;
+
+    /* grid */
+    ctx.save();
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth   = 0.5;
+    yTicks.forEach(t => {
+      ctx.beginPath(); ctx.moveTo(PAD.left, yOf(t)); ctx.lineTo(PAD.left + cW, yOf(t)); ctx.stroke();
+    });
+    ctx.restore();
+
+    /* y labels */
+    ctx.save();
+    ctx.fillStyle    = orange;
+    ctx.font         = '400 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    yTicks.forEach(t => ctx.fillText(fmtT(t), PAD.left - 6, yOf(t)));
+    ctx.restore();
+
+    /* x labels */
+    ctx.save();
+    ctx.fillStyle    = labelColor;
+    ctx.font         = '400 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    const xIdxs = pickLabelIdxs(sessions.length, 5);
+    sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9); });
+    ctx.restore();
+
+    /* axis labels */
+    ctx.save();
+    ctx.fillStyle    = labelColor;
+    ctx.font         = '400 9px -apple-system, sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('Date', PAD.left + cW / 2, H - 4);
+    ctx.restore();
+
+    const pts    = secs.map((v, i) => ({ x: xOf(i), y: yOf(v) }));
+    const avgPts = avgs.map((v, i) => ({ x: xOf(i), y: yOf(v) }));
+
+    /* rolling avg line (muted, dashed) */
+    if (avgPts.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = avgColor;
+      ctx.lineWidth   = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.lineJoin    = 'round';
+      ctx.beginPath();
+      avgPts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* session line (orange, solid) */
+    if (pts.length > 1) {
+      ctx.beginPath();
+      ctx.strokeStyle = orange;
+      ctx.lineWidth   = 2;
+      ctx.lineJoin    = 'round';
+      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    }
+
+    /* session dots */
+    pts.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle   = dotFill;
+      ctx.fill();
+      ctx.strokeStyle = orange;
+      ctx.lineWidth   = 2;
+      ctx.stroke();
+    });
+
+    /* mini legend */
+    ctx.save();
+    ctx.font         = '500 9px -apple-system, sans-serif';
+    ctx.textBaseline = 'middle';
+    const lY    = PAD.top - 10;
+    const dotR  = 3, gap = 4, spacing = 14;
+    const lbW1  = ctx.measureText('Session').width;
+    const lbW2  = ctx.measureText('Avg (7-session)').width;
+    const totW  = dotR * 2 + gap + lbW1 + spacing + dotR * 2 + gap + lbW2;
+    let lCur    = PAD.left + cW / 2 - totW / 2;
+    ctx.fillStyle = orange;
+    ctx.beginPath(); ctx.arc(lCur + dotR, lY, dotR, 0, Math.PI * 2); ctx.fill();
+    lCur += dotR * 2 + gap;
+    ctx.fillText('Session', lCur, lY);
+    lCur += lbW1 + spacing;
+    ctx.fillStyle = avgColor;
+    ctx.beginPath(); ctx.arc(lCur + dotR, lY, dotR, 0, Math.PI * 2); ctx.fill();
+    lCur += dotR * 2 + gap;
+    ctx.fillText('Avg (7-session)', lCur, lY);
+    ctx.restore();
   }
 
   /* ── Canvas chart (legacy reps-only, kept for reference) ── */
@@ -8792,8 +9701,22 @@
     document.querySelectorAll('#exercise-list .exercise-card').forEach(card => updateGhostHint(card.id));
   }
 
-  function _getRestTimerEnabled() { return localStorage.getItem('restTimerEnabled') !== '0'; }
+  function _getRestTimerEnabled() {
+    return _sessionRestEnabled !== null ? _sessionRestEnabled : localStorage.getItem('restTimerEnabled') !== '0';
+  }
   function _setRestTimerEnabled(on) { localStorage.setItem('restTimerEnabled', on ? '1' : '0'); }
+
+  function _updateRestToggleBtn() {
+    const toggle = document.getElementById('btn-rest-toggle');
+    if (!toggle) return;
+    toggle.classList.toggle('rest-on', _getRestTimerEnabled());
+  }
+
+  function _toggleSessionRest() {
+    _sessionRestEnabled = !_getRestTimerEnabled();
+    if (!_sessionRestEnabled) _restClear();
+    _updateRestToggleBtn();
+  }
 
   function getExPR(name, tb) {
     let best = null;
@@ -9471,6 +10394,7 @@
 
     exerciseCount  = 0;
     _workoutActive = true;
+    _sessionRestEnabled = null;
     _killerRoutine = [];
     _killerResults = [];
     _killerStep    = 0;
@@ -9482,20 +10406,10 @@
     showWorkoutScreen();
 
     const normEx = plan.exercises.map(_normPlanEx);
-    activePlanData = { planName: plan.name, exercises: normEx, nextIndex: 1 };
-    createExCard(normEx[0].name, false, normEx[0].sets);
+    activePlanData = { planName: plan.name, exercises: normEx, nextIndex: normEx.length };
+    normEx.forEach(ex => createExCard(ex.name, false, ex.sets));
     updatePlanBanner();
-    updateNextExBtn();
-    persistActiveWorkout();
-  }
-
-  /* ── Next exercise (plan mode) ───────────────────────────── */
-  function planNextExercise() {
-    if (!activePlanData || activePlanData.nextIndex >= activePlanData.exercises.length) return;
-    const ex = _normPlanEx(activePlanData.exercises[activePlanData.nextIndex++]);
-    createExCard(ex.name, false, ex.sets);
-    updateNextExBtn();
-    updatePlanBanner();
+    _showPlanPrestart(plan);
     persistActiveWorkout();
   }
 
@@ -9509,8 +10423,83 @@
     banner.style.display = '';
   }
 
-  function updateNextExBtn() {
-    _exNavUpdate(); // btn-next-ex is hidden via CSS; nav row is the only Next button now
+  function _showPlanPrestart(plan) {
+    const el = document.getElementById('plan-prestart');
+    if (!el) return;
+
+    const fmtDur = s => { const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m` : '<1m'; };
+    const fmtInt = n => n >= 10000 ? `${Math.round(n / 1000)}k` : n.toLocaleString();
+    const fmtDate = iso => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    const last = workouts.find(w => w.planName === plan.name);
+
+    /* Last session stats */
+    let lastSessionHtml = '';
+    if (last) {
+      const totalIntensity = (last.exercises || []).reduce((sum, ex) =>
+        sum + (ex.sets || []).reduce((s2, set) => {
+          const v = calcSetIntensity(ex.name, set.reps, set.kg);
+          return s2 + (isFinite(v) ? v : 0);
+        }, 0), 0);
+      lastSessionHtml = `
+        <div class="pps-section-label">Last Session</div>
+        <div class="pps-card">
+          <div class="pps-stat-row"><span class="pps-stat-label">Last trained</span><span class="pps-stat-val">${fmtDate(last.date)}</span></div>
+          <div class="pps-stat-row"><span class="pps-stat-label">Duration</span><span class="pps-stat-val">${fmtDur(last.duration || 0)}</span></div>
+          <div class="pps-stat-row"><span class="pps-stat-label">Intensity ⚡</span><span class="pps-stat-val">${totalIntensity > 0 ? fmtInt(totalIntensity) : '—'}</span></div>
+        </div>`;
+    } else {
+      lastSessionHtml = `
+        <div class="pps-card"><div class="pps-first-time">First time with this plan — let's go! 💪</div></div>`;
+    }
+
+    /* Plan exercise list (from plan definition, not last session) */
+    const normEx = plan.exercises.map(_normPlanEx);
+    const exRows = normEx.map(ex =>
+      `<div class="pps-ex-row">
+        <span class="pps-ex-name">${ex.name}</span>
+        <span class="pps-ex-sets">${ex.sets} set${ex.sets !== 1 ? 's' : ''}</span>
+      </div>`
+    ).join('');
+
+    el.innerHTML = `
+      <div class="pps-scroll">
+        <div class="pps-header">
+          <div class="pps-header-text">
+            <div class="pps-plan-name">${plan.name}</div>
+            <div class="pps-subtitle">Training Plan</div>
+          </div>
+        </div>
+        ${lastSessionHtml}
+        <div class="pps-section-label">Exercises</div>
+        <div class="pps-card">
+          <div class="pps-ex-list">${exRows}</div>
+        </div>
+      </div>
+      <div class="pps-footer">
+        <button class="pps-cancel-btn" onclick="_cancelPlanPrestart()">Cancel</button>
+        <button class="pps-start-btn" onclick="_dismissPlanPrestart()">Start</button>
+      </div>`;
+
+    el.classList.add('open');
+    const bar = document.getElementById('workout-bottom-bar');
+    if (bar) bar.style.setProperty('display', 'none', 'important');
+  }
+
+  function _dismissPlanPrestart() {
+    const el = document.getElementById('plan-prestart');
+    if (el) el.classList.remove('open');
+    const bar = document.getElementById('workout-bottom-bar');
+    if (bar) bar.style.removeProperty('display');
+    _exCurrentIdx = 0;
+    _exNavUpdate();
+  }
+
+  function _cancelPlanPrestart() {
+    document.getElementById('plan-prestart')?.classList.remove('open');
+    const bar = document.getElementById('workout-bottom-bar');
+    if (bar) bar.style.removeProperty('display');
+    _doDiscardWorkout();
   }
 
   /* ── Summary highlights ────────────────────────────────────── */
@@ -11069,7 +12058,7 @@
   /* ── Complete screen ─────────────────────────────────────── */
   function _warmupRenderComplete(elapsedSecs) {
     const times  = _getStrengthTimes();
-    const past   = times.slice(0, -1).slice(-15); /* last 15, exclude current */
+    const past   = times.slice(0, -1).slice(-15).filter(t => t.secs > 0); /* last 15, exclude current, exclude zero-duration entries */
     let compareHTML = '';
     if (past.length >= 1) {
       const avg   = Math.round(past.reduce((a, t) => a + t.secs, 0) / past.length);
@@ -11387,7 +12376,7 @@
     if (!vv) return;
     function _adjustForKeyboard() {
       const kbHeight = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
-      const scrollArea = document.querySelector('#workout-screen .scroll-area');
+      const scrollArea = document.getElementById('workout-scroll');
       if (scrollArea) scrollArea.style.paddingBottom = kbHeight > 50 ? kbHeight + 'px' : '';
     }
     vv.addEventListener('resize', _adjustForKeyboard);
@@ -11396,9 +12385,6 @@
 
   /* ── Init ───────────────────────────────────────────────── */
   _updateGreeting();
-  const _initFab = document.getElementById('home-fab-wrap');
-  if (_initFab) _initFab.style.display = 'flex';
-
   renderRecent();    /* also calls updateRepeatBtn() */
   renderFreqGoal();
   renderHighlights();
@@ -11412,6 +12398,10 @@
 
   /* ── Restore in-progress workout on page load ───────────── */
   restoreActiveWorkout();
+
+  /* Show FAB only if no active workout (restoreActiveWorkout may have set _workoutActive) */
+  const _initFab = document.getElementById('home-fab-wrap');
+  if (_initFab) _initFab.style.display = _workoutActive ? 'none' : 'flex';
 
   /* ── Splash ─────────────────────────────────────────────── */
   (function initSplash() {
