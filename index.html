@@ -3980,7 +3980,19 @@
     }
     .highlight-icon  { font-size: 1.625rem; flex-shrink: 0; line-height: 1; }
     .highlight-title { font-size: 0.9375rem; font-weight: 600; letter-spacing: -.2px; line-height: 1.2; }
-    .highlight-body  { font-size: 0.8125rem; color: var(--tertiary); margin-top: 0.125rem; line-height: 1.35; }
+    .highlight-body {
+      font-size: 0.8125rem; color: var(--tertiary); margin-top: 0.125rem; line-height: 1.35;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+    }
+    .highlight-body.hl-expanded { display: block; overflow: visible; }
+    .hl-expand-btn {
+      background: none; border: none; padding: 0; margin-top: 0.125rem;
+      font-size: 0.75rem; color: var(--blue); cursor: pointer; font-family: inherit;
+      display: none;
+    }
 
     /* ── Workout confirmation overlay ────────────────────── */
     #wc-overlay {
@@ -4299,7 +4311,7 @@
       margin-left: auto !important;
       margin-right: auto !important;
       background: #000 !important;
-      padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px) !important;
       z-index: 30 !important;
     }
     #workout-screen:not(.active) #workout-bottom-bar { display: none !important; }
@@ -4316,7 +4328,7 @@
       overflow-y: auto !important;
       -webkit-overflow-scrolling: touch !important;
       min-height: 0 !important;
-      padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+      padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 20px) !important;
     }
     #ex-secondary-actions {
       display: flex !important;
@@ -5336,6 +5348,23 @@
     </div>
     <div style="padding:.625rem var(--gutter) 0;font-size:.8125rem;color:var(--tertiary);line-height:1.5">
       Permanently deletes all workouts, plans, exercises, goals, and settings. This cannot be undone. Consider exporting first.
+    </div>
+  </div>
+</div>
+
+<!-- Post-workout summary overlay -->
+<div id="post-workout-screen" style="display:none;position:fixed;inset:0;z-index:500;background:#000;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+  <div style="display:flex;flex-direction:column;min-height:100%;max-width:430px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 2.5rem) 1.25rem 0;box-sizing:border-box;">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+      <div style="font-size:4rem;line-height:1;text-align:center;">🏆</div>
+      <div style="margin-top:1rem;font-size:2rem;font-weight:700;color:#fff;text-align:center;letter-spacing:-.5px;line-height:1.15">Workout Complete</div>
+      <div style="margin-top:.375rem;font-size:.875rem;color:#8E8E93;text-align:center;">Great work today</div>
+      <div id="pw-stats" style="width:100%;margin-top:1.75rem;display:flex;flex-direction:column;gap:10px;"></div>
+      <div id="pw-highlights" style="width:100%;margin-top:10px;"></div>
+      <div id="pw-message" style="margin-top:1.5rem;font-size:.9375rem;font-style:italic;color:#8E8E93;text-align:center;line-height:1.55;padding:0 .5rem;"></div>
+    </div>
+    <div style="display:flex;justify-content:center;padding:1.75rem 0 calc(1.75rem + env(safe-area-inset-bottom,0px));flex-shrink:0;">
+      <button onclick="_closePostWorkout()" style="width:80%;height:52px;background:#007AFF;color:#fff;border:none;border-radius:999px;font-size:1.0625rem;font-weight:600;font-family:inherit;cursor:pointer;letter-spacing:-.2px;padding-bottom:env(safe-area-inset-bottom,0px);">Done</button>
     </div>
   </div>
 </div>
@@ -6545,19 +6574,17 @@
   function _syncAddSetBtn(exId) {
     const card = document.getElementById(exId);
     if (!card) return;
-    const planSets = parseInt(card.dataset.planSets, 10);
-    if (!isFinite(planSets)) return; /* no limit — always show */
-    const count = card.querySelectorAll('.sets-body .set-row').length;
     const btn = card.querySelector('.btn-add-set');
-    if (btn) btn.style.display = count >= planSets ? 'none' : '';
+    if (!btn) return;
+    if (!card.dataset.planSets) { btn.style.display = ''; return; } /* no plan — always show */
+    /* plan exercise: show only when every existing row is confirmed */
+    const totalRows = card.querySelectorAll('.sets-body .set-row').length;
+    const doneCount = card.querySelectorAll('.sets-body .set-row.set-done').length;
+    btn.style.display = (totalRows > 0 && doneCount >= totalRows) ? '' : 'none';
   }
 
   function addSet(exId) {
-    const card   = document.getElementById(exId);
-    const planSets = card ? parseInt(card.dataset.planSets, 10) : NaN;
     const body   = document.querySelector('#' + exId + ' .sets-body');
-    /* respect plan set count limit */
-    if (isFinite(planSets) && body.children.length >= planSets) return;
     const setNum = body.children.length + 1;
     const sid    = 'set-' + Date.now() + '-' + setNum;
     const row    = document.createElement('div');
@@ -6771,28 +6798,23 @@
     const _loggedRow = btn?.closest('.set-row');
     if (_loggedRow) {
       /* accept any prefilled values as confirmed */
-      _loggedRow.querySelectorAll('.set-input').forEach(i => {
-        i.classList.remove('set-input-prefill');
-        delete i.dataset.prefilled;
-      });
+      const _cIns = _loggedRow.querySelectorAll('.set-input');
+      _cIns.forEach(i => { i.classList.remove('set-input-prefill'); delete i.dataset.prefilled; });
+      /* snapshot confirmed values so intensity reads are stable after DOM state changes */
+      _loggedRow.dataset.confirmedKg   = _cIns[0]?.value || '';
+      _loggedRow.dataset.confirmedReps = _cIns[1]?.value || '';
       _loggedRow.classList.add('set-done');
       _loggedRow.classList.remove('set-active', 'set-future', 'set-upcoming');
     }
     _applySetStates(exId);
     updateExIntensity(exId);
+    _syncAddSetBtn(exId);
 
-    /* auto-add next set if this was the last row and plan set count not yet reached */
-    if (_loggedRow) {
+    /* auto-add next set only for non-plan exercises (plan exercises use "Add Set" button) */
+    if (_loggedRow && !document.getElementById(exId)?.dataset.planSets) {
       const allRows = Array.from(document.querySelectorAll('#' + exId + ' .sets-body .set-row'));
       const isLastRow = allRows[allRows.length - 1] === _loggedRow;
-      const card2 = document.getElementById(exId);
-      const planSets = card2 ? parseInt(card2.dataset.planSets, 10) : NaN;
-      const totalRows = allRows.length;
-      console.log(`[logSet] isLastRow=${isLastRow} planSets=${planSets} totalRows=${totalRows}`);
-      if (isLastRow && (!isFinite(planSets) || totalRows < planSets)) {
-        addSet(exId);
-      }
-      _syncAddSetBtn(exId);
+      if (isLastRow) addSet(exId);
     }
 
     if (!_getRestTimerEnabled()) return;
@@ -6918,10 +6940,18 @@
       const timeBased = !!card.dataset.tb;
       const sets      = [];
       card.querySelectorAll('.sets-body .set-row').forEach(row => {
-        const inputs = row.querySelectorAll('input');
+        const inputs   = row.querySelectorAll('input');
+        const isDone   = row.classList.contains('set-done');
         const isFuture = row.classList.contains('set-future');
-        const kg   = (isFuture || inputs[0].dataset.prefilled) ? '' : (inputs[0].value || '0');
-        const reps = (isFuture || inputs[1].dataset.prefilled) ? '' : (inputs[1].value || '0');
+        let kg, reps;
+        if (isDone) {
+          /* always use the snapshot captured at confirmation — immune to any DOM state */
+          kg   = row.dataset.confirmedKg   || '';
+          reps = row.dataset.confirmedReps || '';
+        } else {
+          kg   = (isFuture || inputs[0].dataset.prefilled) ? '' : (inputs[0].value || '0');
+          reps = (isFuture || inputs[1].dataset.prefilled) ? '' : (inputs[1].value || '0');
+        }
         sets.push({ kg, reps, tb: timeBased || undefined });
       });
       exercises.push({ name, sets });
@@ -6964,7 +6994,125 @@
     _wscHideAll();
 
     renderFreqGoal();
-    showToast('Workout saved 💪');
+    _showPostWorkout(workout);
+  }
+
+  /* ── Post-workout summary ───────────────────────────────── */
+  const _PW_MSGS = [
+    "Let's go. That was fire.",
+    "You didn't come this far to only come this far.",
+    "That session just hit different.",
+    "Full send. Every time.",
+    "Every rep counts. You just proved it.",
+    "That wasn't easy. That's exactly the point.",
+    "Breathe. You earned this moment.",
+    "Slow progress is still progress.",
+    "The body achieves what the mind believes.",
+    "Rest now. You've done the work.",
+    "Progress is quiet. But it's happening.",
+    "Discipline looks exactly like what you just did.",
+    "Look at what you're capable of.",
+    "That took guts. You've got plenty.",
+    "This version of you is better than last week's.",
+    "You made time when you didn't have to. That's character.",
+    "Stronger than yesterday. That's all that matters.",
+    "Not everyone did what you just did today.",
+    "You showed up. The rest is just details.",
+    "Muscles confused. Mission accomplished.",
+    "Your future self just said thank you.",
+    "Gravity tried. You won.",
+    "Beast mode: activated. Recovery mode: incoming.",
+    "Done. Logged. Unstoppable.",
+    "{{duration}} of pure effort. That's what dedication looks like.",
+    "{{exercises}} exercises down. Nothing can stop you now.",
+    "{{sets}} sets completed. Every single one mattered.",
+    "⚡ {{intensity}} intensity today. You're building something special.",
+    "{{exercises}} exercises, {{sets}} sets, zero excuses. Legendary.",
+    "{{duration}} in the gym and you gave it everything. Respect.",
+    "{{sets}} sets logged. The data doesn't lie — you're improving.",
+    "{{duration}} of work that most people wouldn't even start.",
+    "{{exercises}} exercises crushed. Same time next session?",
+    "Hard sessions build the best results. Well done.",
+    "Another one in the books. Keep stacking.",
+    "You'll thank yourself for this one later.",
+    "Consistency beats motivation every time. Today was consistency.",
+    "One more session closer to the best version of you.",
+    "The work is done. Go recover like a champion.",
+    "You'll thank yourself for this one later.",
+  ];
+
+  function _showPostWorkout(w) {
+    const mins = Math.floor(w.duration / 60), secs = w.duration % 60;
+    const durStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+    const exCount  = (w.exercises || []).filter(e => !e.killer).length;
+    const setCount = (w.exercises || []).reduce((s, ex) =>
+      s + (ex.sets || []).filter(st => (parseFloat(st.reps) || 0) > 0 || (parseFloat(st.kg) || 0) > 0).length, 0);
+    const totalInt = (w.exercises || []).reduce((s, ex) =>
+      s + (ex.sets || []).reduce((ss, st) =>
+        ss + calcSetIntensity(ex.name, parseFloat(st.reps) || 0, parseFloat(st.kg) || 0), 0), 0);
+    const intStr = totalInt > 0 ? fmtInt(totalInt) : '—';
+
+    /* total volume: kg × reps, only for sets where kg was explicitly entered */
+    const totalVol = Math.round((w.exercises || []).reduce((s, ex) =>
+      s + (ex.sets || []).reduce((ss, st) => {
+        const kg = parseFloat(st.kg);
+        const r  = parseFloat(st.reps) || 0;
+        if (!(isFinite(kg) && kg > 0) || r <= 0) return ss;
+        return ss + kg * r;
+      }, 0), 0));
+    const volStr = totalVol > 0 ? `${totalVol} kg` : '—';
+
+    /* stat rows */
+    const stat = (icon, label, val) =>
+      `<div style="background:#1C1C1E;border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:.625rem;">
+          <span style="font-size:1.125rem;line-height:1">${icon}</span>
+          <span style="font-size:.875rem;color:#8E8E93;text-transform:uppercase;letter-spacing:.5px;font-weight:500">${label}</span>
+        </div>
+        <div style="font-size:1.5rem;font-weight:700;color:#fff;letter-spacing:-.3px">${val}</div>
+      </div>`;
+    document.getElementById('pw-stats').innerHTML =
+      stat('🕐', 'Duration',     durStr) +
+      stat('⚡', 'Intensity',    intStr) +
+      stat('🏋️', 'Exercises',   exCount) +
+      stat('📋', 'Sets',         setCount) +
+      stat('⚖️', 'Total Volume', volStr);
+
+    /* highlights */
+    const prs     = findNewPRs ? findNewPRs()              : [];
+    const firsts  = findFirstTimeExercises ? findFirstTimeExercises() : [];
+    const hlParts = [];
+    if (prs.length)    hlParts.push(`🏆 ${prs.length} new PR${prs.length > 1 ? 's' : ''}: ${prs.map(p => p.name).join(', ')}`);
+    if (firsts.length) hlParts.push(`✦ First time: ${firsts.join(', ')}`);
+    const hlEl = document.getElementById('pw-highlights');
+    hlEl.innerHTML = hlParts.length
+      ? hlParts.map(h => `<div style="background:#1C1C1E;border-radius:12px;padding:14px 20px;font-size:.875rem;color:#fff;">${h}</div>`).join('<div style="height:10px"></div>')
+      : '';
+
+    /* motivational message */
+    const lastIdx = parseInt(localStorage.getItem('pwLastMsgIdx') || '-1', 10);
+    let idx;
+    do { idx = Math.floor(Math.random() * _PW_MSGS.length); } while (idx === lastIdx && _PW_MSGS.length > 1);
+    localStorage.setItem('pwLastMsgIdx', String(idx));
+    const msg = _PW_MSGS[idx]
+      .replace(/\{\{duration\}\}/g, durStr)
+      .replace(/\{\{exercises\}\}/g, exCount)
+      .replace(/\{\{sets\}\}/g, setCount)
+      .replace(/\{\{intensity\}\}/g, intStr);
+    document.getElementById('pw-message').textContent = `"${msg}"`;
+
+    /* show screen */
+    const tabBar = document.querySelector('.tab-bar');
+    if (tabBar) tabBar.style.display = 'none';
+    const el = document.getElementById('post-workout-screen');
+    el.scrollTop = 0;
+    el.style.display = 'block';
+  }
+
+  function _closePostWorkout() {
+    document.getElementById('post-workout-screen').style.display = 'none';
+    const tabBar = document.querySelector('.tab-bar');
+    if (tabBar) tabBar.style.display = '';
     showTab('home');
   }
 
@@ -7032,7 +7180,14 @@
       const sets   = [];
       card.querySelectorAll('.sets-body .set-row').forEach(row => {
         const inputs = row.querySelectorAll('input');
-        sets.push({ kg: inputs[0]?.value || '', reps: inputs[1]?.value || '' });
+        const isDone = row.classList.contains('set-done');
+        sets.push({
+          kg:   inputs[0]?.value || '',
+          reps: inputs[1]?.value || '',
+          done: isDone || undefined,
+          confirmedKg:   isDone ? (row.dataset.confirmedKg   || '') : undefined,
+          confirmedReps: isDone ? (row.dataset.confirmedReps || '') : undefined,
+        });
       });
       exercises.push({ name, tb, sets, ...(killer && { killer: true }) });
     });
@@ -7133,6 +7288,12 @@
             </svg>
           </button>`;
         body.appendChild(row);
+        /* restore confirmed state so _applySetStates doesn't wipe done rows */
+        if (setData.done) {
+          row.classList.add('set-done');
+          row.dataset.confirmedKg   = setData.confirmedKg   ?? setData.kg   ?? '';
+          row.dataset.confirmedReps = setData.confirmedReps ?? setData.reps ?? '';
+        }
         row.querySelectorAll('.set-input').forEach(inp => {
           inp.addEventListener('input', () => { updateExIntensity(id); updateGhostHint(id); persistActiveWorkout(); _applySetStates(id); });
         });
@@ -7186,6 +7347,26 @@
   }
 
   /* ── Render: recent (home) ──────────────────────────────── */
+  function _recentCard(w) {
+    const d       = new Date(w.date);
+    const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const mins    = Math.floor(w.duration / 60);
+    const secs    = w.duration % 60;
+    const durStr  = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+    return `
+      <div class="workout-history-card" onclick="openWorkoutDetail(${w.id})" style="cursor:pointer">
+        <div class="workout-history-head">
+          <div class="workout-history-info">
+            ${w.planName ? `<div class="workout-history-plan">📋 ${w.planName}</div>` : ''}
+            <div class="workout-history-date">${dateStr}</div>
+            <div class="workout-history-dur-inline">Duration: ${durStr}</div>
+            <div class="workout-history-time">${timeStr}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
   function renderRecent() {
     const el = document.getElementById('recent-list');
     if (!workouts.length) {
@@ -7193,7 +7374,7 @@
       updateRepeatBtn();
       return;
     }
-    el.innerHTML = workouts.slice(0, 1).map(w => workoutCard(w)).join('');
+    el.innerHTML = _recentCard(workouts[0]);
     updateRepeatBtn();
   }
 
@@ -9243,9 +9424,15 @@
     const name = (card.querySelector('.exercise-head input[type="text"]')?.value || '').trim();
     let total  = 0;
     card.querySelectorAll('.sets-body .set-row').forEach(row => {
-      const ins = row.querySelectorAll('.set-input');
-      const v   = calcSetIntensity(name, parseFloat(ins[1]?.value) || 0, parseFloat(ins[0]?.value) || 0);
-      total += v;
+      const ins    = row.querySelectorAll('.set-input');
+      const isDone = row.classList.contains('set-done');
+      /* use snapshot values for confirmed sets so live DOM state never corrupts them */
+      const kg   = isDone ? (parseFloat(row.dataset.confirmedKg)   || 0)
+                          : (parseFloat(ins[0]?.value)             || 0);
+      const reps = isDone ? (parseFloat(row.dataset.confirmedReps) || 0)
+                          : (parseFloat(ins[1]?.value)             || 0);
+      const v = calcSetIntensity(name, reps, kg);
+      if (isDone) total += v;   /* only confirmed sets count toward the exercise total */
       const badge = row.querySelector('.set-intensity-badge');
       if (badge) badge.textContent = v > 0 ? fmtInt(v) : '';
     });
@@ -10680,16 +10867,35 @@
       return;
     }
 
-    list.innerHTML = items.slice(0, 3).map(it => `
+    list.innerHTML = items.slice(0, 3).map((it, idx) => `
       <div class="highlight-card">
         <div class="highlight-icon">${it.icon}</div>
-        <div>
+        <div style="min-width:0;flex:1">
           <div class="highlight-title">${it.title}</div>
-          <div class="highlight-body">${it.body}</div>
+          <div class="highlight-body" id="hl-body-${idx}">${it.body}</div>
+          <button class="hl-expand-btn" id="hl-btn-${idx}" onclick="_hlToggle(${idx})">See more</button>
         </div>
       </div>`).join('');
 
     section.style.display = 'block';
+    /* after layout: show expand button only when body text is actually clipped */
+    requestAnimationFrame(() => {
+      items.slice(0, 3).forEach((_, idx) => {
+        const body = document.getElementById('hl-body-' + idx);
+        const btn  = document.getElementById('hl-btn-'  + idx);
+        if (body && btn && body.scrollHeight > body.clientHeight + 1) {
+          btn.style.display = 'block';
+        }
+      });
+    });
+  }
+
+  function _hlToggle(idx) {
+    const body = document.getElementById('hl-body-' + idx);
+    const btn  = document.getElementById('hl-btn-'  + idx);
+    if (!body || !btn) return;
+    const expanded = body.classList.toggle('hl-expanded');
+    btn.textContent = expanded ? 'See less' : 'See more';
   }
 
   /* ══════════════════════════════════════════════════════════
