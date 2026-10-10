@@ -9058,7 +9058,7 @@
 
   /* ── Strength Warmup progress ─────────────────────────────── */
   function _getWarmupSessions(rangeKey) {
-    const times = _getStrengthTimes().filter(t => t.secs > 0);
+    const times = _getLinkedStrengthTimes().filter(t => t.secs > 0);
     let filtered = times;
     if (rangeKey !== 'all') {
       if (rangeKey === '30') {
@@ -12600,6 +12600,18 @@
     localStorage.setItem('warmupStrengthTimes', JSON.stringify(arr.slice(-16)));
   }
 
+  /* Warmup times that belong to workout sessions still present in History.
+     Each finished workout stores its strength-warmup time under w.warmup.elapsed,
+     so reading straight from the live `workouts` list means a deleted workout's
+     warmup time is excluded automatically and the average recalculates the moment
+     a workout is removed. Returned oldest-first to match the standalone array. */
+  function _getLinkedStrengthTimes() {
+    return workouts
+      .filter(w => w && w.warmup && typeof w.warmup.elapsed === 'number' && w.warmup.elapsed > 0)
+      .map(w => ({ date: w.date, secs: w.warmup.elapsed }))
+      .reverse();
+  }
+
   /* ── Entry ───────────────────────────────────────────────── */
   function startWithWarmup(planId) {
     closeStartChoice();
@@ -12797,8 +12809,9 @@
 
   /* ── Complete screen ─────────────────────────────────────── */
   function _warmupRenderComplete(elapsedSecs) {
-    const times  = _getStrengthTimes();
-    const past   = times.slice(0, -1).slice(-15).filter(t => t.secs > 0); /* last 15, exclude current, exclude zero-duration entries */
+    /* Only compare against warmups from workouts still in History. The current
+       workout hasn't been saved yet, so these are purely past sessions. */
+    const past   = _getLinkedStrengthTimes().slice(-15).filter(t => t.secs > 0); /* last 15, exclude zero-duration entries */
     let compareHTML = '';
     if (past.length >= 1) {
       const avg   = Math.round(past.reduce((a, t) => a + t.secs, 0) / past.length);
