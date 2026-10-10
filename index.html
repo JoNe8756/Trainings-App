@@ -689,6 +689,14 @@
       font-family: inherit;
     }
     .exercise-head input[type="text"]::placeholder { color: var(--tertiary); font-weight: 400; }
+    .ex-rest-rec {
+      font-size: 0.8125rem;
+      color: #8E8E93;
+      padding: 0.25rem 1rem 0.375rem;
+      min-height: 0;
+      flex-shrink: 0;
+    }
+    .ex-rest-rec:empty { display: none; }
 
     .btn-delete-ex {
       background: none;
@@ -3825,6 +3833,24 @@
     .wd-wsc-val  { font-weight: 700; color: var(--label); }
     .wd-wsc-unit { font-size: .75rem; color: var(--tertiary); min-width: 2.25rem; }
     /* exercise sections */
+    .wd-section-hdr {
+      font-size: .6875rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .55px; color: #8E8E93;
+      padding: .875rem var(--gutter) .375rem;
+    }
+    .wd-rank-list {
+      margin: 0 var(--gutter) .25rem;
+      background: var(--card); border-radius: var(--radius-card);
+      box-shadow: var(--shadow); overflow: hidden;
+    }
+    .wd-rank-row {
+      display: flex; align-items: center; gap: .625rem;
+      padding: .625rem .875rem;
+    }
+    .wd-rank-sep { border-top: .5px solid var(--separator); }
+    .wd-rank-pos { font-size: .75rem; font-weight: 700; color: #8E8E93; min-width: 1.75rem; }
+    .wd-rank-name { flex: 1; font-size: .9375rem; color: var(--label); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wd-rank-val { font-size: .8125rem; font-weight: 600; color: #8E8E93; }
     .wd-ex-section {
       margin: .625rem var(--gutter) 0;
       background: var(--card); border-radius: var(--radius-card);
@@ -3834,6 +3860,13 @@
       font-size: .9375rem; font-weight: 600; color: var(--label);
       padding: .625rem .875rem .3125rem;
     }
+    .wd-ex-name-btn {
+      display: flex; align-items: center; width: 100%;
+      background: none; border: none; text-align: left;
+      font-family: inherit; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .wd-ex-name-btn:active { opacity: .6; }
     /* Table: [Set#] [KG] [Reps] [⚡]
        1.5rem fixed | 3rem fixed | 1fr flex | 2.75rem fixed
        Fits comfortably from 320px upwards. */
@@ -4786,6 +4819,20 @@
   </div>
 </div>
 
+<!-- ═══════════════ REST STATS MODAL ════════════════ -->
+<div id="rest-stats-backdrop" onclick="_restStatsClose()" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:flex-end;justify-content:center;">
+  <div id="rest-stats-sheet" onclick="event.stopPropagation()" style="width:100%;max-width:430px;max-height:90svh;overflow-y:auto;background:#1C1C1E;border-radius:20px 20px 0 0;padding:0 0 calc(env(safe-area-inset-bottom,0px) + 2rem);box-sizing:border-box;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:1.375rem 1.25rem .875rem;">
+      <div>
+        <div style="font-size:1.25rem;font-weight:700;color:#fff;letter-spacing:-.4px;line-height:1.2">Rest Stats</div>
+        <div id="rest-stats-subtitle" style="font-size:.8125rem;color:#8E8E93;margin-top:.25rem"></div>
+      </div>
+      <button onclick="_restStatsClose()" style="background:#2C2C2E;border:none;border-radius:50%;width:2rem;height:2rem;font-size:.875rem;color:#8E8E93;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;flex-shrink:0;margin-top:.125rem">✕</button>
+    </div>
+    <div id="rest-stats-body" style="padding:0 1.25rem"></div>
+  </div>
+</div>
+
 <!-- ═══════════════ DIFF EDITOR ════════════════ -->
 <div id="diff-editor" onclick="_diffEditorBgClick(event)">
   <div class="diff-editor-sheet">
@@ -5254,12 +5301,25 @@
         <div class="settings-row-icon icon-blue">⏱</div>
         <div class="settings-row-label" style="flex:1">
           Rest Timer
-          <div style="font-size:.75rem;color:var(--tertiary);margin-top:.1rem">Show countdown between sets</div>
+          <div style="font-size:.75rem;color:var(--tertiary);margin-top:.1rem">Show break timer between sets</div>
         </div>
         <label class="settings-toggle">
           <input type="checkbox" id="rest-timer-toggle" onchange="_setRestTimerEnabled(this.checked)" />
           <div class="settings-toggle-track"></div>
         </label>
+      </div>
+      <div id="break-timer-mode-row" class="settings-row" style="border-top:0.5px solid var(--separator);flex-direction:column;align-items:flex-start;gap:.625rem">
+        <div style="display:flex;align-items:center;gap:.625rem;width:100%">
+          <div class="settings-row-icon icon-blue">⏲</div>
+          <div class="settings-row-label" style="flex:1">
+            Break Timer Mode
+            <div style="font-size:.75rem;color:var(--tertiary);margin-top:.1rem">Stopwatch counts up; Countdown counts down</div>
+          </div>
+        </div>
+        <div id="break-mode-seg" style="display:flex;width:100%;background:rgba(255,255,255,0.08);border-radius:9px;padding:2px;box-sizing:border-box;">
+          <button id="break-mode-sw"  onclick="_setBreakTimerMode('stopwatch')"  style="flex:1;padding:.35rem 0;border:none;border-radius:7px;font-size:.8125rem;font-weight:600;font-family:inherit;cursor:pointer;transition:background 180ms,color 180ms">Stopwatch</button>
+          <button id="break-mode-cd"  onclick="_setBreakTimerMode('countdown')"  style="flex:1;padding:.35rem 0;border:none;border-radius:7px;font-size:.8125rem;font-weight:600;font-family:inherit;cursor:pointer;transition:background 180ms,color 180ms">Countdown</button>
+        </div>
       </div>
     </div>
   </div>
@@ -5744,6 +5804,7 @@
           <span class="diff-badge" style="background:${diffColor};margin-left:.125rem">${diff}/10</span>
         </div>
       </div>
+      ${(() => { const rec = _calcOptimalRestRec(name); return rec != null ? `<div class="detail-card" style="margin-bottom:.875rem"><button onclick="_restStatsOpen(${qs(name)})" style="width:100%;background:none;border:none;cursor:pointer;font-family:inherit;display:flex;justify-content:space-between;align-items:center;padding:.75rem 0;-webkit-tap-highlight-color:transparent"><span style="font-size:.875rem;color:#8E8E93">💤 Optimal Rest</span><div style="display:flex;align-items:center;gap:.375rem"><span style="font-size:.875rem;color:#fff;font-weight:600">${_fmtRestRec(rec)}</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="#8E8E93" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg></div></button></div>` : ''; })()}
       ${howHTML ? `<div style="font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.65px;color:var(--tertiary);padding:0 var(--gutter) .375rem">How to Perform</div>
       <div class="detail-card">${howHTML}<div style="height:.5rem"></div></div>` : ''}
       ${cuesHTML ? `<div style="font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.65px;color:var(--tertiary);padding:.25rem var(--gutter) .375rem">Key Form Cues</div>
@@ -6002,9 +6063,15 @@
   /* Recalculate immediately when page becomes visible again */
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && _workoutActive && !_workoutPaused) _tickTimer();
-    if (!document.hidden && _rest) {
-      if (Date.now() >= _rest.endsAt) { _restComplete(); }
-      else { _restUpdateLabel(); }
+    if (!document.hidden) {
+      if (_rest) {
+        if (Date.now() >= _rest.endsAt) { _restComplete(); }
+        else { _restUpdateLabel(); }
+      } else if (_sw) {
+        _swUpdateLabel();
+      } else {
+        _restRestore();
+      }
     }
   });
 
@@ -6350,6 +6417,7 @@
           </svg>
         </button>
       </div>
+      <div class="ex-rest-rec"></div>
       <div class="sets-table">
         <div class="sets-col-header">
           <span>Set</span><span>kg</span><span>${tb ? 'Secs' : 'Reps'}</span><span>⚡</span><span></span><span></span>
@@ -6365,6 +6433,7 @@
     const setsToAdd = Math.max(1, numSets);
     for (let i = 0; i < setsToAdd; i++) addSet(id);
     _syncAddSetBtn(id);
+    _updateRestRec(id);
     persistActiveWorkout();
     _exCurrentIdx = _exGetCards().length - 1;
     _exNavUpdate();
@@ -6441,6 +6510,7 @@
     const cards = _exGetCards();
     if (_exCurrentIdx >= cards.length - 1) return;
     if (!fromSwipe) _exArrowPulse('btn-ex-right');
+    if (_sw) _swStop();
     _exCurrentIdx++;
     _exNavUpdate();
     _exScrollReset();
@@ -6449,6 +6519,7 @@
   function _exNavPrev(fromSwipe) {
     if (_exCurrentIdx <= 0) return;
     if (!fromSwipe) _exArrowPulse('btn-ex-prev');
+    if (_sw) _swStop();
     _exCurrentIdx--;
     _exNavUpdate();
     _exScrollReset();
@@ -6666,8 +6737,27 @@
   /* ── Rest timer ─────────────────────────────────────────── */
   let _rest = null; /* { interval, endsAt, totalSecs, exId, exName, btn } */
   let _lastCompletedRest = null; /* { exId, secs } — set when timer expires naturally */
+  let _sw   = null; /* stopwatch: { interval, startedAt, exId, exName, setRow, btn } */
 
   const REST_DEFAULT_SECS = 90;
+
+  function _getBreakTimerMode() { return localStorage.getItem('breakTimerMode') || 'stopwatch'; }
+  function _setBreakTimerMode(m) {
+    localStorage.setItem('breakTimerMode', m);
+    _syncBreakModeUI();
+  }
+  function _syncBreakModeUI() {
+    const mode = _getBreakTimerMode();
+    const swBtn = document.getElementById('break-mode-sw');
+    const cdBtn = document.getElementById('break-mode-cd');
+    const row   = document.getElementById('break-timer-mode-row');
+    if (row) row.style.display = _getRestTimerEnabled() ? '' : 'none';
+    if (!swBtn || !cdBtn) return;
+    swBtn.style.background = mode === 'stopwatch' ? '#007AFF' : 'transparent';
+    swBtn.style.color      = mode === 'stopwatch' ? '#fff'    : 'var(--tertiary)';
+    cdBtn.style.background = mode === 'countdown'  ? '#007AFF' : 'transparent';
+    cdBtn.style.color      = mode === 'countdown'  ? '#fff'    : 'var(--tertiary)';
+  }
 
   /* ── Rest performance data ──────────────────────────────── */
   function _getRestPerfData(name) {
@@ -6695,6 +6785,211 @@
     const qualifying = bucketAvgs.filter(x => x.avg >= threshold).sort((a, b) => a.b - b.b);
     if (!qualifying.length) return null;
     return Math.round(qualifying[0].b / 15) * 15;
+  }
+
+  /* ── Optimal rest recommendation (shown on exercise card) ── */
+  const _REST_BUCKETS = [
+    { min: 0,   max: 30,       mid: 15  },
+    { min: 30,  max: 60,       mid: 45  },
+    { min: 60,  max: 90,       mid: 75  },
+    { min: 90,  max: 120,      mid: 105 },
+    { min: 120, max: 150,      mid: 135 },
+    { min: 150, max: 180,      mid: 165 },
+    { min: 180, max: 210,      mid: 195 },
+    { min: 210, max: 240,      mid: 225 },
+    { min: 240, max: Infinity, mid: 255 },
+  ];
+
+  function _calcOptimalRestRec(name) {
+    /* Harvest from full workout history (covers stopwatch-recorded rests) */
+    const points = [];
+    for (const w of workouts) {
+      for (const ex of (w.exercises || [])) {
+        if (ex.name !== name) continue;
+        for (const s of (ex.sets || [])) {
+          const rest = s.restSecs != null ? s.restSecs : null;
+          const reps = parseFloat(s.reps) || 0;
+          const kg   = parseFloat(s.kg)   || 0;
+          if (rest == null || rest < 5 || rest > 900 || reps <= 0) continue;
+          points.push({ rest, perf: kg > 0 ? reps * kg : reps });
+        }
+      }
+    }
+    /* Also include live restPerf points (from countdown mid-session saves) */
+    for (const d of _getRestPerfData(name)) {
+      if (d.rest >= 5 && d.rest <= 900 && d.reps > 0)
+        points.push({ rest: d.rest, perf: d.weight > 0 ? d.reps * d.weight : d.reps });
+    }
+    if (points.length < 2) return null;
+
+    const avgOf = arr => arr.reduce((a, v) => a + v, 0) / arr.length;
+    let best = null;
+    for (const bk of _REST_BUCKETS) {
+      const vals = points.filter(p => p.rest >= bk.min && p.rest < bk.max).map(p => p.perf);
+      if (vals.length === 0) continue;
+      const efficiency = avgOf(vals) / bk.mid;
+      if (best === null || efficiency > best.efficiency) best = { mid: bk.mid, efficiency };
+    }
+    return best ? best.mid : null;
+  }
+
+  function _fmtRestRec(secs) {
+    if (secs < 60) return `~${secs}s`;
+    const m = Math.floor(secs / 60), s = secs % 60;
+    return s > 0 ? `~${m}m ${s}s` : `~${m}m`;
+  }
+
+  function _updateRestRec(exId) {
+    const card = document.getElementById(exId);
+    if (!card) return;
+    const el = card.querySelector('.ex-rest-rec');
+    if (!el) return;
+    const name = card.querySelector('.exercise-head input')?.value?.trim() || '';
+    if (!name) { el.textContent = ''; return; }
+    const secs = _calcOptimalRestRec(name);
+    el.textContent = secs != null ? `💤 Optimal rest: ${_fmtRestRec(secs)}` : '';
+  }
+
+  /* ── Rest stats modal ───────────────────────────────────── */
+  function _restStatsPoints(name) {
+    const pts = [];
+    for (const w of workouts) {
+      for (const ex of (w.exercises || [])) {
+        if (ex.name !== name) continue;
+        for (const s of (ex.sets || [])) {
+          const rest = s.restSecs != null ? s.restSecs : null;
+          const reps = parseFloat(s.reps) || 0;
+          const kg   = parseFloat(s.kg)   || 0;
+          if (rest == null || rest < 5 || rest > 900 || reps <= 0) continue;
+          pts.push({ rest, perf: kg > 0 ? reps * kg : reps, reps, kg });
+        }
+      }
+    }
+    for (const d of _getRestPerfData(name)) {
+      if (d.rest >= 5 && d.rest <= 900 && d.reps > 0)
+        pts.push({ rest: d.rest, perf: d.weight > 0 ? d.reps * d.weight : d.reps, reps: d.reps, kg: d.weight });
+    }
+    return pts;
+  }
+
+  function _restStatsOpen(name) {
+    const pts = _restStatsPoints(name);
+    if (pts.length < 2) return;
+
+    const optMid = _calcOptimalRestRec(name);
+    const avgOf  = arr => arr.reduce((a, v) => a + v, 0) / arr.length;
+
+    /* ── Summary stats ── */
+    const rests = pts.map(p => p.rest);
+    const avg   = Math.round(avgOf(rests));
+    const min   = Math.min(...rests);
+    const max   = Math.max(...rests);
+
+    /* ── Bucket data ── */
+    const bucketData = [];
+    for (const bk of _REST_BUCKETS) {
+      const bPts = pts.filter(p => p.rest >= bk.min && p.rest < bk.max);
+      if (!bPts.length) continue;
+      const avgPerf = avgOf(bPts.map(p => p.perf));
+      const avgReps = avgOf(bPts.map(p => p.reps));
+      const eff     = avgPerf / bk.mid;
+      const isOpt   = bk.mid === optMid;
+      bucketData.push({ bk, count: bPts.length, avgReps: Math.round(avgReps * 10) / 10, eff, isOpt });
+    }
+
+    /* ── Build label for bucket ── */
+    const bkLabel = bk => bk.max === Infinity ? `${bk.min}s+` : `${bk.min}-${bk.max}s`;
+
+    /* ── Render ── */
+    document.getElementById('rest-stats-subtitle').textContent = name;
+
+    const maxCount = Math.max(...bucketData.map(b => b.count));
+
+    /* summary stat column */
+    const statCol = (label, val) =>
+      `<div style="flex:1;text-align:center">
+        <div style="font-size:.6875rem;color:#8E8E93;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.375rem">${label}</div>
+        <div style="font-size:1.75rem;font-weight:700;color:#fff;letter-spacing:-.5px;line-height:1">${_fmtRestRec(val).replace('~','')}</div>
+      </div>`;
+    const sep = `<div style="width:.5px;background:#2C2C2E;align-self:stretch"></div>`;
+
+    /* efficiency list rows */
+    const effRows = bucketData.map((b, i) =>
+      `<div style="display:flex;align-items:center;padding:.875rem 0;${i > 0 ? 'border-top:.5px solid #2C2C2E;' : ''}">
+        <div style="flex:1;font-size:.9375rem;color:#fff">${bkLabel(b.bk)}</div>
+        <div style="font-size:.8125rem;color:#8E8E93;margin-right:1rem">${b.avgReps} reps</div>
+        <div style="font-size:.9375rem;font-weight:${b.isOpt ? '700' : '400'};color:${b.isOpt ? '#007AFF' : '#8E8E93'}">${b.eff.toFixed(3)}<span style="font-size:.6875rem;font-weight:400;color:#8E8E93"> r/s</span></div>
+      </div>`).join('');
+
+    document.getElementById('rest-stats-body').innerHTML = `
+      <div style="display:flex;align-items:center;padding:.75rem 0 1.5rem;border-bottom:.5px solid #2C2C2E">
+        ${statCol('Avg', avg)}${sep}${statCol('Min', min)}${sep}${statCol('Max', max)}
+      </div>
+      <div style="font-size:.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#8E8E93;margin-top:1.25rem;margin-bottom:.625rem">Distribution</div>
+      <canvas id="rest-stats-canvas" style="width:100%;display:block;margin-bottom:1.5rem"></canvas>
+      <div style="font-size:.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#8E8E93;margin-bottom:.25rem">Efficiency by Rest Duration</div>
+      <div>${effRows}</div>`;
+
+    /* ── Draw canvas histogram ── */
+    requestAnimationFrame(() => {
+      const canvas = document.getElementById('rest-stats-canvas');
+      if (!canvas) return;
+      const dpr  = window.devicePixelRatio || 1;
+      const W    = canvas.parentElement.clientWidth;
+      const LBL_H = 22;
+      const H    = 150 + LBL_H;
+      canvas.style.width  = W + 'px';
+      canvas.style.height = H + 'px';
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const PAD = { top: 8, right: 0, bottom: LBL_H, left: 0 };
+      const cW  = W - PAD.left - PAD.right;
+      const cH  = H - PAD.top  - PAD.bottom;
+      const n   = bucketData.length;
+      const gap   = cW / n;
+      const barW  = Math.max(4, gap * 0.60);
+
+      /* subtle grid lines only */
+      const ticks = 3;
+      for (let i = 1; i <= ticks; i++) {
+        const y = PAD.top + cH - (i / ticks) * cH;
+        ctx.beginPath();
+        ctx.strokeStyle = '#2C2C2E';
+        ctx.lineWidth = 1;
+        ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + cW, y);
+        ctx.stroke();
+      }
+
+      /* bars */
+      bucketData.forEach((b, i) => {
+        const x    = PAD.left + i * gap + (gap - barW) / 2;
+        const barH = maxCount > 0 ? Math.max(4, (b.count / maxCount) * cH) : 4;
+        const y    = PAD.top + cH - barH;
+        ctx.fillStyle = b.isOpt ? '#007AFF' : '#2C2C2E';
+        const r = Math.min(5, barW / 2);
+        ctx.beginPath();
+        ctx.roundRect(x, y, barW, barH, [r, r, 0, 0]);
+        ctx.fill();
+
+        /* x label horizontal */
+        ctx.fillStyle = b.isOpt ? '#007AFF' : '#8E8E93';
+        ctx.font = `${11}px -apple-system,sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(bkLabel(b.bk), x + barW / 2, PAD.top + cH + LBL_H - 5);
+      });
+    });
+
+    const bd = document.getElementById('rest-stats-backdrop');
+    bd.style.display = 'flex';
+    requestAnimationFrame(() => { bd.style.opacity = '1'; });
+  }
+
+  function _restStatsClose() {
+    const bd = document.getElementById('rest-stats-backdrop');
+    bd.style.display = 'none';
   }
 
   /* ── Rest timer core ────────────────────────────────────── */
@@ -6735,7 +7030,7 @@
     clearInterval(_rest.interval);
     if (_rest.btn) _rest.btn.classList.remove('logged');
     _rest = null;
-    localStorage.removeItem('activeRestEndsAt');
+    localStorage.removeItem('activeRest');
     const card = document.getElementById('rest-card');
     if (card) {
       card.classList.remove('active');
@@ -6749,8 +7044,48 @@
     const newSecs = Math.max(15, remaining + delta);
     _rest.endsAt = Date.now() + newSecs * 1000;
     if (delta > 0) _rest.totalSecs += delta;
-    localStorage.setItem('activeRestEndsAt', String(_rest.endsAt));
+    localStorage.setItem('activeRest', JSON.stringify({ endsAt: _rest.endsAt, totalSecs: _rest.totalSecs, exId: _rest.exId, exName: _rest.exName }));
     _restUpdateLabel();
+  }
+
+  function _restRestore() {
+    if (_rest || !_workoutActive) return;
+    let data;
+    try { data = JSON.parse(localStorage.getItem('activeRest') || 'null'); } catch(e) {}
+    if (!data) return;
+    if (data.mode === 'stopwatch') { _swRestore(); return; }
+    const { endsAt, totalSecs, exId, exName } = data;
+    if (Date.now() >= endsAt) { localStorage.removeItem('activeRest'); return; }
+    /* recreate the rest card */
+    const existing = document.getElementById('rest-card');
+    if (existing) existing.remove();
+    const rc = document.createElement('div');
+    rc.id = 'rest-card';
+    rc.innerHTML = `<div class="rest-card-top">
+      <span class="rest-card-lbl">Rest</span>
+      <span id="rest-card-countdown">0:00</span>
+      <button class="rest-card-skip" onclick="_restClear()">Skip</button>
+    </div>
+    <div class="rest-card-bar-wrap"><div id="rest-card-bar"></div></div>
+    <div class="rest-card-adj">
+      <button class="rest-adj-pill" onclick="_restAdjust(-15)">−15s</button>
+      <button class="rest-adj-pill" onclick="_restAdjust(15)">+15s</button>
+    </div>`;
+    /* insert after the exercise card, or at the top of the scroll area */
+    const exCard = document.getElementById(exId);
+    if (exCard) exCard.after(rc);
+    else {
+      const scroll = document.getElementById('workout-scroll');
+      if (scroll) scroll.prepend(rc);
+    }
+    _rest = { interval: null, endsAt, totalSecs, exId: exId || '', exName: exName || '', btn: null };
+    _restUpdateLabel();
+    requestAnimationFrame(() => requestAnimationFrame(() => rc.classList.add('active')));
+    _rest.interval = setInterval(() => {
+      if (!_rest) return;
+      if (Date.now() >= _rest.endsAt) { _restComplete(); return; }
+      _restUpdateLabel();
+    }, 250);
   }
 
   function _restClear() {
@@ -6760,19 +7095,103 @@
     clearInterval(_rest.interval);
     if (_rest.btn) _rest.btn.classList.remove('logged');
     _rest = null;
-    localStorage.removeItem('activeRestEndsAt');
+    localStorage.removeItem('activeRest');
     const card = document.getElementById('rest-card');
     if (card) {
       card.classList.remove('active');
       setTimeout(() => { const c = document.getElementById('rest-card'); if (c) c.remove(); }, 300);
     }
   }
+
+  /* ── Stopwatch mode ─────────────────────────────────────── */
+  function _swElapsedSecs() {
+    if (!_sw) return 0;
+    return Math.round((Date.now() - _sw.startedAt) / 1000);
+  }
+
+  function _swUpdateLabel() {
+    if (!_sw) return;
+    const el = document.getElementById('rest-card-countdown');
+    if (el) el.textContent = _fmtSecs(_swElapsedSecs());
+  }
+
+  function _swStop() {
+    if (!_sw) return;
+    const secs = _swElapsedSecs();
+    if (_sw.setRow) _sw.setRow.dataset.restSecs = String(secs);
+    if (_sw.btn) _sw.btn.classList.remove('logged');
+    clearInterval(_sw.interval);
+    _sw = null;
+    localStorage.removeItem('activeRest');
+    const card = document.getElementById('rest-card');
+    if (card) {
+      card.classList.remove('active');
+      setTimeout(() => { const c = document.getElementById('rest-card'); if (c) c.remove(); }, 300);
+    }
+  }
+
+  function _swStart(exId, exName, setRow, btn) {
+    _swStop();
+    _restClear();
+    const existing = document.getElementById('rest-card');
+    if (existing) existing.remove();
+
+    const startedAt = Date.now();
+    localStorage.setItem('activeRest', JSON.stringify({ mode: 'stopwatch', startedAt, exId, exName }));
+
+    const rc = document.createElement('div');
+    rc.id = 'rest-card';
+    rc.innerHTML = `<div class="rest-card-top">
+      <span class="rest-card-lbl">Rest</span>
+      <span id="rest-card-countdown">0:00</span>
+      <button class="rest-card-skip" onclick="_swStop()">Stop</button>
+    </div>`;
+
+    if (setRow) setRow.after(rc);
+    else {
+      const exCard = document.getElementById(exId);
+      if (exCard) exCard.querySelector('.sets-list')?.append(rc);
+      else document.getElementById('workout-scroll')?.prepend(rc);
+    }
+
+    _sw = { interval: null, startedAt, exId: exId || '', exName: exName || '', setRow: setRow || null, btn: btn || null };
+    _swUpdateLabel();
+    requestAnimationFrame(() => requestAnimationFrame(() => rc.classList.add('active')));
+    _sw.interval = setInterval(() => { if (!_sw) return; _swUpdateLabel(); }, 250);
+  }
+
+  function _swRestore() {
+    if (_sw || _rest || !_workoutActive) return;
+    let data;
+    try { data = JSON.parse(localStorage.getItem('activeRest') || 'null'); } catch(e) {}
+    if (!data || data.mode !== 'stopwatch') return;
+    const { startedAt, exId, exName } = data;
+    const existing = document.getElementById('rest-card');
+    if (existing) existing.remove();
+
+    const rc = document.createElement('div');
+    rc.id = 'rest-card';
+    rc.innerHTML = `<div class="rest-card-top">
+      <span class="rest-card-lbl">Rest</span>
+      <span id="rest-card-countdown">0:00</span>
+      <button class="rest-card-skip" onclick="_swStop()">Stop</button>
+    </div>`;
+    const exCard = document.getElementById(exId);
+    if (exCard) exCard.after(rc);
+    else document.getElementById('workout-scroll')?.prepend(rc);
+
+    _sw = { interval: null, startedAt, exId: exId || '', exName: exName || '', setRow: null, btn: null };
+    _swUpdateLabel();
+    requestAnimationFrame(() => requestAnimationFrame(() => rc.classList.add('active')));
+    _sw.interval = setInterval(() => { if (!_sw) return; _swUpdateLabel(); }, 250);
+  }
+
   function logSet(exId, sid, btn) {
     /* Dismiss keyboard first so the tap isn't intercepted by the keyboard overlay */
     if (document.activeElement && document.activeElement !== document.body) {
       document.activeElement.blur();
     }
-    /* ── Record perf data for this set ─────────────────────── */
+    /* ── Record perf data for previous countdown rest ──────── */
     const exCard = document.getElementById(exId);
     const exName = exCard?.querySelector('.exercise-head input')?.value || '';
     let restTaken = null;
@@ -6781,6 +7200,8 @@
     } else if (_lastCompletedRest && _lastCompletedRest.exId === exId) {
       restTaken = _lastCompletedRest.secs;
     }
+    /* stop any running stopwatch for this exercise and record its time */
+    if (_sw && _sw.exId === exId) { restTaken = _swElapsedSecs(); _swStop(); }
     _lastCompletedRest = null;
     if (restTaken !== null && restTaken >= 20 && restTaken <= 600) {
       const row = btn?.closest('.set-row');
@@ -6792,7 +7213,7 @@
       }
     }
 
-    /* ── Start new rest timer ───────────────────────────────── */
+    /* ── Confirm the set ────────────────────────────────────── */
     _restClear();
     if (btn) btn.classList.add('logged');
     const _loggedRow = btn?.closest('.set-row');
@@ -6819,6 +7240,15 @@
 
     if (!_getRestTimerEnabled()) return;
 
+    /* ── Start break timer (stopwatch or countdown) ─────────── */
+    const mode = _getBreakTimerMode();
+    const setRow = btn?.closest('.set-row');
+    if (mode === 'stopwatch') {
+      _swStart(exId, exName, setRow, btn);
+      return;
+    }
+
+    /* countdown mode */
     const optimal = _calcOptimalRest(exName);
     const dur = optimal !== null ? optimal : REST_DEFAULT_SECS;
     const hasSuggestion = optimal !== null;
@@ -6840,12 +7270,11 @@
     </div>
     ${hasSuggestion ? `<div class="rest-card-hint">Suggested: ${_fmtSecs(optimal)} — based on your performance</div>` : ''}`;
 
-    const setRow = btn?.closest('.set-row');
     if (setRow) setRow.after(rc);
     else exCard?.querySelector('.sets-list')?.append(rc);
 
     const endsAt = Date.now() + dur * 1000;
-    localStorage.setItem('activeRestEndsAt', String(endsAt));
+    localStorage.setItem('activeRest', JSON.stringify({ endsAt, totalSecs: dur, exId, exName }));
     _rest = { interval: null, endsAt, totalSecs: dur, exId, exName, btn: btn || null };
     _restUpdateLabel();
     requestAnimationFrame(() => requestAnimationFrame(() => rc.classList.add('active')));
@@ -6932,6 +7361,8 @@
     _workoutPaused   = false;
     document.getElementById('pause-overlay')?.classList.remove('open');
     clearInterval(timerInterval);
+    /* stop any running stopwatch and record elapsed time on its set row */
+    if (_sw) _swStop();
     const exercises = [];
 
     // Regular exercises (killer set is no longer in #exercise-list)
@@ -6952,7 +7383,8 @@
           kg   = (isFuture || inputs[0].dataset.prefilled) ? '' : (inputs[0].value || '0');
           reps = (isFuture || inputs[1].dataset.prefilled) ? '' : (inputs[1].value || '0');
         }
-        sets.push({ kg, reps, tb: timeBased || undefined });
+        const restSecs = row.dataset.restSecs ? parseInt(row.dataset.restSecs, 10) : undefined;
+        sets.push({ kg, reps, tb: timeBased || undefined, restSecs });
       });
       exercises.push({ name, sets });
     });
@@ -7181,12 +7613,14 @@
       card.querySelectorAll('.sets-body .set-row').forEach(row => {
         const inputs = row.querySelectorAll('input');
         const isDone = row.classList.contains('set-done');
+        const restSecs = row.dataset.restSecs ? parseInt(row.dataset.restSecs, 10) : undefined;
         sets.push({
           kg:   inputs[0]?.value || '',
           reps: inputs[1]?.value || '',
           done: isDone || undefined,
           confirmedKg:   isDone ? (row.dataset.confirmedKg   || '') : undefined,
           confirmedReps: isDone ? (row.dataset.confirmedReps || '') : undefined,
+          restSecs,
         });
       });
       exercises.push({ name, tb, sets, ...(killer && { killer: true }) });
@@ -7256,6 +7690,7 @@
             </svg>
           </button>
         </div>
+        <div class="ex-rest-rec"></div>
         <div class="sets-table">
           <div class="sets-col-header">
             <span>Set</span><span>kg</span><span>${tb ? 'Secs' : 'Reps'}</span><span>⚡</span><span></span><span></span>
@@ -7293,6 +7728,7 @@
           row.classList.add('set-done');
           row.dataset.confirmedKg   = setData.confirmedKg   ?? setData.kg   ?? '';
           row.dataset.confirmedReps = setData.confirmedReps ?? setData.reps ?? '';
+          if (setData.restSecs != null) row.dataset.restSecs = String(setData.restSecs);
         }
         row.querySelectorAll('.set-input').forEach(inp => {
           inp.addEventListener('input', () => { updateExIntensity(id); updateGhostHint(id); persistActiveWorkout(); _applySetStates(id); });
@@ -7302,6 +7738,7 @@
       updateGhostHint(id);
       _applySetStates(id);
       _syncAddSetBtn(id);
+      _updateRestRec(id);
     });
 
     /* Restore Killer Set compact card */
@@ -7344,6 +7781,8 @@
     updateResumeBanner();
     _exCurrentIdx = Math.max(0, _exGetCards().length - 1);
     _exNavUpdate();
+    /* Restore rest timer if one was active when the app closed */
+    _restRestore();
   }
 
   /* ── Render: recent (home) ──────────────────────────────── */
@@ -7643,14 +8082,90 @@
       </div>`;
     }).join('');
 
-    // ── Totals chips
+    // ── Totals chips (row 1)
     const volRounded = Math.round(totalVol);
     const volStr  = volRounded >= 1 ? (volRounded >= 1000 ? (volRounded/1000).toFixed(1)+'t' : volRounded+'kg') : null;
     const chips = [
-      { label: 'Intensity', val: totalIntensity > 0 ? fmtInt(totalIntensity) + ' ⚡' : '—' },
+      { label: 'Intensity', val: totalIntensity > 0 ? fmtInt(totalIntensity) + ' ⚡' : '—' },
       { label: 'Total Reps', val: totalReps > 0 ? String(totalReps) : '—' },
       ...(volStr ? [{ label: 'Volume', val: volStr }] : []),
     ];
+
+    // ── Extra stats (row 2)
+    let totalSets = 0, restSum = 0, restCount = 0;
+    let bestSetReps = 0, bestSetName = '';
+    (w.exercises || []).forEach(ex => {
+      if (ex.killer) return;
+      (ex.sets || []).forEach(s => {
+        const r = parseFloat(s.reps) || 0;
+        totalSets++;
+        if (r > bestSetReps) { bestSetReps = r; bestSetName = ex.name; }
+        if (s.restSecs != null && s.restSecs > 0) { restSum += s.restSecs; restCount++; }
+      });
+    });
+    const avgRepsPerSet = totalSets > 0 ? Math.round((totalReps / totalSets) * 10) / 10 : 0;
+    const avgRestSecs   = restCount > 0 ? Math.round(restSum / restCount) : null;
+    const avgRestStr    = avgRestSecs != null ? (avgRestSecs >= 60 ? `${Math.floor(avgRestSecs/60)}m ${avgRestSecs%60}s` : `${avgRestSecs}s`) : '—';
+    const bestSetStr    = bestSetName ? `${bestSetName} (${bestSetReps})` : '—';
+    const chips2 = [
+      { label: 'Avg Reps/Set', val: avgRepsPerSet > 0 ? String(avgRepsPerSet) : '—' },
+      { label: 'Best Set',     val: bestSetStr, small: true },
+      { label: 'Avg Rest',     val: avgRestStr },
+    ];
+
+    // ── Intensity ranking
+    const exRanked = (w.exercises || []).filter(ex => !ex.killer).map(ex => {
+      const exInt = (ex.sets || []).reduce((s, st) => s + calcSetIntensity(ex.name, parseFloat(st.reps)||0, parseFloat(st.kg)||0), 0);
+      return { name: ex.name, intensity: exInt };
+    }).filter(x => x.intensity > 0).sort((a, b) => b.intensity - a.intensity);
+
+    const rankingHTML = exRanked.length > 1 ? `
+      <div class="wd-section-hdr">Intensity Ranking</div>
+      <div class="wd-rank-list">
+        ${exRanked.map((ex, i) => `
+          <div class="wd-rank-row${i > 0 ? ' wd-rank-sep' : ''}">
+            <span class="wd-rank-pos">#${i+1}</span>
+            <span class="wd-rank-name">${ex.name}</span>
+            <span class="wd-rank-val">⚡ ${fmtInt(ex.intensity)}</span>
+          </div>`).join('')}
+      </div>` : '';
+
+    // ── Exercise sections with tappable names
+    const exercisesHTMLv2 = regularExercises.map(ex => {
+      const tb       = !!ex.sets[0]?.tb || !!getExMeta(ex.name).tb;
+      const repLabel = tb ? 'Secs' : 'Reps';
+
+      let exIntTotal = 0, totalExReps = 0;
+      const setRows = (ex.sets || []).map((s, i) => {
+        const r = parseFloat(s.reps) || 0;
+        const k = parseFloat(s.kg)   || 0;
+        const intensity = calcSetIntensity(ex.name, r, k);
+        exIntTotal += intensity;
+        totalExReps += r;
+        const kgCell   = k > 0 ? k + 'kg' : '—';
+        const repsCell = r > 0 ? r + (tb ? 's' : '') : '—';
+        const intCell  = intensity > 0 ? fmtInt(intensity) : '—';
+        return `<div class="wd-set-row">
+          <span class="wd-set-num">${i + 1}</span>
+          <span class="wd-set-val">${kgCell}</span>
+          <span class="wd-set-val">${repsCell}</span>
+          <span class="wd-set-int">${intCell}</span>
+        </div>`;
+      }).join('');
+
+      const footerParts = [];
+      if (totalExReps > 0) footerParts.push(`${totalExReps} ${tb ? 'secs' : 'reps'}`);
+      if (exIntTotal > 0)  footerParts.push(`⚡ ${fmtInt(exIntTotal)}`);
+
+      return `<div class="wd-ex-section workout-detail-exercise-card" data-exercise-name="${ex.name.replace(/"/g,'&quot;')}" style="cursor:pointer;-webkit-tap-highlight-color:rgba(0,122,255,0.15)">
+        <div class="wd-ex-name wd-ex-name-btn">${ex.name}<svg style="margin-left:.375rem;flex-shrink:0;vertical-align:middle" width="6" height="10" viewBox="0 0 6 10" fill="none" stroke="#8E8E93" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 5,5 1,9"/></svg></div>
+        <div class="wd-sets-head">
+          <span>#</span><span>kg</span><span>${repLabel}</span><span>⚡</span>
+        </div>
+        ${setRows}
+        ${footerParts.length ? `<div class="wd-ex-total">${footerParts.join(' · ')}</div>` : ''}
+      </div>`;
+    }).join('');
 
     const body = `
       <div class="wd-header">
@@ -7667,15 +8182,31 @@
           <div class="wd-total-val">${c.val}</div>
         </div>`).join('')}
       </div>
+      <div class="wd-totals" style="border-top:none;padding-top:0">
+        ${chips2.map(c => `<div class="wd-total-chip">
+          <div class="wd-total-label">${c.label}</div>
+          <div class="wd-total-val" style="${c.small ? 'font-size:.75rem;line-height:1.3;word-break:break-word' : ''}">${c.val}</div>
+        </div>`).join('')}
+      </div>
+      ${rankingHTML}
       ${warmupHTML}
       ${killerHTML}
-      ${exercisesHTML}
+      ${exercisesHTMLv2}
       <div style="height:.5rem"></div>`;
 
     document.getElementById('wd-scroll').innerHTML = body;
+    document.querySelectorAll('.workout-detail-exercise-card').forEach(function(card) {
+      var name = card.getAttribute('data-exercise-name');
+      card.addEventListener('click', function() {
+        window.currentTrendExercise = name;
+        document.getElementById('exTrendModal').style.display = 'block';
+        window.renderExerciseTrendModal();
+      });
+    });
     document.getElementById('workout-detail').classList.add('open');
   }
 
+  /* ── Exercise performance modal ─────────────────────────── */
   function closeWorkoutDetail() {
     document.getElementById('workout-detail').classList.remove('open');
   }
@@ -9891,7 +10422,7 @@
   function _getRestTimerEnabled() {
     return _sessionRestEnabled !== null ? _sessionRestEnabled : localStorage.getItem('restTimerEnabled') !== '0';
   }
-  function _setRestTimerEnabled(on) { localStorage.setItem('restTimerEnabled', on ? '1' : '0'); }
+  function _setRestTimerEnabled(on) { localStorage.setItem('restTimerEnabled', on ? '1' : '0'); _syncBreakModeUI(); }
 
   function _updateRestToggleBtn() {
     const toggle = document.getElementById('btn-rest-toggle');
@@ -10178,7 +10709,9 @@
         const row   = document.createElement('div');
         row.className = 'ex-screen-item';
         row.innerHTML = `
-          <button class="ex-screen-item-btn" onclick="showExDetail(${qs(name)})">${name}</button>
+          <div style="flex:1;min-width:0">
+            <button class="ex-screen-item-btn" onclick="showExDetail(${qs(name)})">${name}</button>
+          </div>
           <button class="diff-badge" style="background:${bkgd}" title="Edit difficulty" onclick="editExDiff(${qs(name)})">${diff}</button>
           <button class="ex-item-del"
             onclick="delFromLib(${qs(cat)},${qs(name)})"
@@ -10951,6 +11484,7 @@
         if (tog) tog.checked = getGhostMode();
         const rtTog = document.getElementById('rest-timer-toggle');
         if (rtTog) rtTog.checked = _getRestTimerEnabled();
+        _syncBreakModeUI();
       }
     });
   }
@@ -12766,5 +13300,163 @@
   </div>
 </div>
 
+<div id="exTrendModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:99999;display:none;overflow-y:auto;box-sizing:border-box;">
+  <div id="exTrendInner" style="padding:24px 20px;padding-top:max(44px,env(safe-area-inset-top,44px));padding-bottom:env(safe-area-inset-bottom,24px);color:#fff;font-family:system-ui,-apple-system,sans-serif;box-sizing:border-box;"></div>
+</div>
+
+<script>
+window.currentTrendExercise = '';
+window.currentTrendHorizon = '3M';
+
+window.renderExerciseTrendModal = function() {
+  var name = window.currentTrendExercise;
+  var horizon = window.currentTrendHorizon || '3M';
+  var inner = document.getElementById('exTrendInner');
+  if (!inner) return;
+
+  // --- Collect sessions ---
+  var cutoff = 0;
+  if (horizon !== 'All') {
+    var months = {'1M':1,'3M':3,'6M':6,'1Y':12}[horizon] || 3;
+    var cd = new Date(); cd.setMonth(cd.getMonth() - months); cutoff = cd.getTime();
+  }
+  var sessions = [];
+  var _allWorkouts = JSON.parse(localStorage.getItem('workouts') || '[]');
+  _allWorkouts.forEach(function(w) {
+    if (new Date(w.date).getTime() < cutoff) return;
+    var ex = (w.exercises || []).find(function(e) { return e.name === name; });
+    if (!ex) return;
+    var totalReps = 0, totalInt = 0;
+    (ex.sets || []).forEach(function(s) {
+      var r = parseFloat(s.reps) || 0, k = parseFloat(s.kg) || 0;
+      if (r > 0) {
+        totalReps += r;
+        totalInt += (typeof calcSetIntensity === 'function' ? calcSetIntensity(name, r, k) : r * (k || 1));
+      }
+    });
+    sessions.push({ date: w.date, totalReps: totalReps, totalInt: totalInt, sets: ex.sets || [] });
+  });
+  sessions.reverse();
+
+  // --- Segment control ---
+  var horizons = ['1M','3M','6M','1Y','All'];
+  var segHTML = '<div style="display:flex;background:#2C2C2E;border-radius:10px;padding:3px;gap:2px;margin:16px 0 20px;">';
+  horizons.forEach(function(h) {
+    var active = h === horizon;
+    segHTML += '<button onclick="window.currentTrendHorizon=\'' + h + '\';window.renderExerciseTrendModal();" style="flex:1;padding:6px 0;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:' + (active?'#007AFF':'transparent') + ';color:' + (active?'#fff':'#8E8E93') + ';">' + h + '</button>';
+  });
+  segHTML += '</div>';
+
+  // --- Last 3 sessions breakdown ---
+  var last3 = sessions.slice(-3).reverse();
+  var breakdownHTML = '';
+  last3.forEach(function(sess, si) {
+    var dStr = new Date(sess.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    var uid = 'etb-' + si + '-' + Date.now();
+    var rowsHTML = '';
+    (sess.sets || []).forEach(function(s, idx) {
+      var r = parseFloat(s.reps)||0, k = parseFloat(s.kg)||0;
+      var inten = typeof calcSetIntensity === 'function' ? calcSetIntensity(name,r,k) : r*(k||1);
+      var intStr = inten > 0 ? ('⚡ ' + (typeof fmtInt==='function' ? fmtInt(inten) : Math.round(inten).toLocaleString())) : '';
+      rowsHTML += '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;' + (idx>0?'border-top:.5px solid #2C2C2E;':'') + '">' +
+        '<span style="font-size:12px;color:#8E8E93;min-width:28px;">S'+(idx+1)+'</span>' +
+        '<span style="flex:1;font-size:14px;color:#fff;">'+(r>0?r+' reps':'—')+(k>0?' · '+k+'kg':'')+'</span>' +
+        '<span style="font-size:12px;color:#8E8E93;">'+intStr+'</span>' +
+        '</div>';
+    });
+    breakdownHTML += '<div style="background:#1C1C1E;border-radius:12px;margin-bottom:10px;overflow:hidden;">' +
+      '<button onclick="var el=document.getElementById(\'' + uid + '\');el.style.display=el.style.display===\'none\'?\'block\':\'none\';" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;padding:14px 16px;font-family:inherit;cursor:pointer;">' +
+      '<span style="font-size:15px;font-weight:600;color:#fff;">'+dStr+'</span>' +
+      '<span style="font-size:13px;color:#8E8E93;">'+sess.totalReps+' reps</span>' +
+      '</button>' +
+      '<div id="'+uid+'" style="display:none;padding:0 16px 8px;">'+rowsHTML+'</div>' +
+      '</div>';
+  });
+  if (!last3.length) breakdownHTML = '<div style="font-size:14px;color:#8E8E93;padding:8px 0;">No sessions in this range</div>';
+
+  // --- Render HTML ---
+  inner.innerHTML =
+    '<button onclick="document.getElementById(\'exTrendModal\').style.display=\'none\';" style="background:none;border:none;color:#007AFF;font-size:17px;font-family:inherit;cursor:pointer;padding:0;margin-bottom:20px;display:block;">← Back</button>' +
+    '<div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-.4px;margin-bottom:4px;">'+name+'</div>' +
+    '<div style="font-size:13px;color:#8E8E93;margin-bottom:0;">Performance Over Time</div>' +
+    segHTML +
+    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#8E8E93;margin-bottom:8px;">REPS</div>' +
+    '<div style="background:#1C1C1E;border-radius:12px;padding:16px;margin-bottom:12px;">' +
+    '<canvas id="trendRepsCanvas" style="display:block;width:100%;height:180px;"></canvas>' +
+    '</div>' +
+    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#8E8E93;margin-bottom:8px;">INTENSITY ⚡</div>' +
+    '<div style="background:#1C1C1E;border-radius:12px;padding:16px;margin-bottom:12px;">' +
+    '<canvas id="trendIntensityCanvas" style="display:block;width:100%;height:180px;"></canvas>' +
+    '</div>' +
+    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#8E8E93;margin-bottom:10px;">LAST 3 SESSIONS</div>' +
+    breakdownHTML;
+
+  // --- Draw charts after paint ---
+  requestAnimationFrame(function() {
+    _drawTrendChart(document.getElementById('trendRepsCanvas'), sessions, function(s){return s.totalReps;});
+    _drawTrendChart(document.getElementById('trendIntensityCanvas'), sessions, function(s){return s.totalInt;});
+  });
+};
+
+function _drawTrendChart(canvas, sessions, valFn) {
+  if (!canvas) return;
+  var vals = sessions.map(valFn);
+  var dpr = window.devicePixelRatio || 1;
+  var W = (canvas.parentElement ? canvas.parentElement.clientWidth : 0) || 335;
+  var H = 180;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  if (sessions.length < 2) {
+    ctx.fillStyle = '#8E8E93';
+    ctx.font = '13px system-ui,-apple-system,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Not enough data yet', W/2, H/2);
+    return;
+  }
+
+  var PAD = {top:12, right:12, bottom:28, left:40};
+  var cW = W - PAD.left - PAD.right, cH = H - PAD.top - PAD.bottom;
+  var minV = Math.min.apply(null,vals), maxV = Math.max.apply(null,vals);
+  var rng = maxV - minV || 1;
+  var n = sessions.length;
+  var xOf = function(i){return PAD.left + (i/(n-1))*cW;};
+  var yOf = function(v){return PAD.top + cH - ((v-minV)/rng)*cH;};
+
+  for (var g=0; g<=3; g++) {
+    var gy = PAD.top + (g/3)*cH;
+    ctx.beginPath(); ctx.strokeStyle='#2C2C2E'; ctx.lineWidth=1;
+    ctx.moveTo(PAD.left,gy); ctx.lineTo(PAD.left+cW,gy); ctx.stroke();
+    ctx.fillStyle='#8E8E93'; ctx.font='10px system-ui,-apple-system,sans-serif';
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    ctx.fillText(Math.round(maxV-(g/3)*rng), PAD.left-4, gy);
+  }
+
+  var sx=0,sy=0,sxy=0,sx2=0;
+  for (var j=0;j<n;j++){sx+=j;sy+=vals[j];sxy+=j*vals[j];sx2+=j*j;}
+  var den=n*sx2-sx*sx, slope=den?(n*sxy-sx*sy)/den:0, icept=(sy-slope*sx)/n;
+  ctx.beginPath(); ctx.strokeStyle='#4A90D9'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+  ctx.moveTo(xOf(0),yOf(icept)); ctx.lineTo(xOf(n-1),yOf(icept+slope*(n-1)));
+  ctx.stroke(); ctx.setLineDash([]);
+
+  ctx.beginPath(); ctx.strokeStyle='#007AFF'; ctx.lineWidth=2;
+  for (var i=0;i<n;i++){i===0?ctx.moveTo(xOf(i),yOf(vals[i])):ctx.lineTo(xOf(i),yOf(vals[i]));}
+  ctx.stroke();
+
+  for (var dd=0;dd<n;dd++){
+    ctx.beginPath(); ctx.fillStyle='#007AFF';
+    ctx.arc(xOf(dd),yOf(vals[dd]),4,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.fillStyle='#000';
+    ctx.arc(xOf(dd),yOf(vals[dd]),2,0,Math.PI*2); ctx.fill();
+  }
+
+  var fmt=function(dt){return new Date(dt).toLocaleDateString('en-US',{month:'short',day:'numeric'});};
+  ctx.fillStyle='#8E8E93'; ctx.font='10px system-ui,-apple-system,sans-serif'; ctx.textBaseline='top';
+  ctx.textAlign='left';  ctx.fillText(fmt(sessions[0].date), PAD.left, H-18);
+  ctx.textAlign='right'; ctx.fillText(fmt(sessions[n-1].date), PAD.left+cW, H-18);
+}
+</script>
 </body>
 </html>
