@@ -1424,7 +1424,10 @@
     .chart-legend        { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; padding-top: 0.125rem; }
     .legend-item         { display: flex; align-items: center; gap: 0.25rem; font-size: 0.6875rem; color: var(--tertiary); font-weight: 500; white-space: nowrap; }
     .legend-swatch       { width: 0.5rem; height: 0.5rem; border-radius: 50%; flex-shrink: 0; }
-    .chart-wrap          { padding: 0.5rem 0 0; }
+    .chart-wrap          { padding: 0.5rem 0 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+    .chart-wrap::-webkit-scrollbar { display: none; }
+    .chart-scroll        { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+    .chart-scroll::-webkit-scrollbar { display: none; }
     .chart-graph-label   { font-size: .6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--tertiary); padding: .375rem var(--gutter) 0; }
     .chart-graph-desc    { font-size: .6875rem; color: var(--tertiary); padding: .125rem var(--gutter) 0; opacity: .7; }
     canvas.chart-canvas  { display: block; }
@@ -1802,11 +1805,13 @@
        EXERCISE PICKER SHEET
     ══════════════════════════════════════════════════════ */
     .ex-picker-overlay {
-      position: absolute;
+      position: fixed;
       inset: 0;
+      max-width: min(430px, 100%);
+      margin: 0 auto;
       overflow: hidden;          /* clip sheet handle that peeks below bottom edge */
       background: transparent;
-      z-index: 200;
+      z-index: 100005;           /* above journey overlays/modals when picking */
       display: flex;
       align-items: flex-end;
       justify-content: center;
@@ -2119,19 +2124,24 @@
 
     /* ── Exercise detail view ─────────────────────────────── */
     .detail-back {
+      /* Matches the Settings page back button: bare blue chevron, 44×44 tap target */
       display: flex;
       align-items: center;
-      gap: 0.375rem;
-      padding: calc(var(--nav-top) + env(safe-area-inset-top, 0px)) var(--gutter) 0;
+      justify-content: center;
+      margin: calc(var(--nav-top) + env(safe-area-inset-top, 0px)) 0 0 var(--gutter);
+      padding: 0.25rem 0.5rem 0.25rem 0;
+      min-width: 44px;
+      min-height: 44px;
       color: var(--blue);
-      font-size: 0.9375rem;
-      font-weight: 500;
       cursor: pointer;
       background: none;
       border: none;
       font-family: inherit;
       -webkit-tap-highlight-color: transparent;
+      transition: opacity .12s;
     }
+    .detail-back:active { opacity: .45; }
+    .detail-back svg { flex-shrink: 0; }
     .detail-hero {
       padding: 0.5rem var(--gutter) 1rem;
     }
@@ -2819,6 +2829,222 @@
       display: flex;
       gap: 0.75rem;
       margin-top: 1rem;
+    }
+
+    /* ── Plan editor collapsible sections ───────────────────── */
+    .plan-collapse-card {
+      background: #1C1C1E;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .plan-collapse-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: inherit;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .plan-collapse-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #8E8E93;
+    }
+    .plan-collapse-chev {
+      color: #8E8E93;
+      display: flex;
+      align-items: center;
+      transition: transform 0.25s ease;
+    }
+    .plan-collapse-card.open .plan-collapse-chev { transform: rotate(90deg); }
+    .plan-collapse-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .plan-collapse-card.open .plan-collapse-body { max-height: 1600px; }
+    .plan-collapse-inner { padding-top: 14px; }
+
+    /* Leave room so the sticky bar never covers the last content */
+    .plan-editor.plan-editor-with-bar {
+      padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    }
+    /* ── Plan editor sticky bottom bar ──────────────────────── */
+    .plan-sticky-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0; right: 0;
+      max-width: min(430px, 100%);
+      margin: 0 auto;
+      z-index: 101;            /* above the main tab-bar (100) while editing */
+      display: flex;
+      gap: 0.75rem;
+      background: #1C1C1E;     /* solid, no blur */
+      padding: 0.625rem var(--gutter) max(0.625rem, env(safe-area-inset-bottom, 0px));
+      box-sizing: border-box;
+    }
+    .plan-sticky-cancel, .plan-sticky-save {
+      height: 44px;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .plan-sticky-cancel { flex: 1; background: transparent; color: #8E8E93; }
+    .plan-sticky-save   { flex: 2; background: #007AFF; color: #fff; }
+
+    /* ── Plan cards (Library › Plans) — swipe-to-delete ─────── */
+    /* Match the gap between the segmented control and the plan name card
+       in the plan editor (.plan-editor padding-top: 0.75rem). */
+    #lib-plans-inner.plans-list-mode { padding-top: 0.75rem; }
+    .plan-swipe-wrap {
+      position: relative;
+      /* Match the left/right margins of other cards in the app */
+      margin: 0 var(--gutter) 10px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .plan-swipe-delete {
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 88px;
+      border: none;
+      background: #FF3B30;
+      color: #fff;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .plan-card {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: #1C1C1E;
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transform: translateX(0);
+      transition: transform 0.25s ease;
+      touch-action: pan-y;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .plan-card.swiped { transform: translateX(-88px); }
+    .plan-card-main { flex: 1; min-width: 0; }
+    .plan-card-name { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -.2px; }
+    .plan-card-subs {
+      font-size: 13px;
+      color: #8E8E93;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .plan-card-last {
+      font-size: 12px;
+      color: #8E8E93;
+      margin-top: 8px;
+    }
+
+    /* ── Journeys ───────────────────────────────────────────── */
+    .lib-beta-badge {
+      display: inline-block;
+      margin-left: 5px;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      color: #fff;
+      background: #007AFF;
+      border-radius: 4px;
+      padding: 2px 5px;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .journey-ai-badge { font-size: 11px; color: #8E8E93; font-style: italic; }
+    .journey-ai-pill {
+      position: absolute; right: 16px; bottom: 16px;
+      font-size: 10px; color: #8E8E93; background: #2C2C2E;
+      border-radius: 4px; padding: 2px 6px;
+    }
+    .journey-beta-banner {
+      font-size: 12px;
+      color: #8E8E93;
+      font-style: italic;
+      text-align: center;
+      padding: 10px var(--gutter) 2px;
+    }
+    .journey-overlay {
+      position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px; height: 100%;
+      background: #000; z-index: 99999; overflow-y: auto; box-sizing: border-box;
+      color: #fff; font-family: system-ui, -apple-system, sans-serif;
+    }
+    .journey-inner { padding: 20px; padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+    .journey-pill {
+      display: inline-block; font-size: 11px; font-weight: 600; color: #fff;
+      background: rgba(255,255,255,.12); border-radius: 999px; padding: 3px 9px; margin-right: 6px;
+    }
+    .journey-sec-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #8E8E93; margin: 20px 0 8px; }
+    .journey-card-input {
+      width: 100%; box-sizing: border-box; background: #1C1C1E; border: none; border-radius: 10px;
+      padding: 16px; color: #fff; font-family: inherit; font-size: 15px; outline: none; resize: none;
+    }
+    .journey-chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .journey-chip {
+      flex: 1; min-width: 44px; text-align: center; background: #1C1C1E; color: #8E8E93;
+      border: none; border-radius: 10px; padding: 12px 0; font-family: inherit; font-size: 15px;
+      font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .journey-chip.active { background: #007AFF; color: #fff; }
+    .journey-btn-primary {
+      width: 100%; background: #007AFF; color: #fff; border: none; border-radius: 999px;
+      padding: 15px 0; font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .journey-btn-ghost {
+      width: 100%; background: transparent; color: #8E8E93; border: none; border-radius: 999px;
+      padding: 13px 0; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .journey-week {
+      background: #1C1C1E; border-radius: 12px; padding: 16px; margin-bottom: 10px;
+    }
+    .journey-week-head {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; background: none; border: none; padding: 0; font-family: inherit; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .journey-week-chev { color: #8E8E93; display: flex; transition: transform .25s ease; }
+    .journey-week.open .journey-week-chev { transform: rotate(90deg); }
+    .journey-week-body { display: none; margin-top: 12px; }
+    .journey-week.open .journey-week-body { display: block; }
+    .journey-session-card {
+      background: #2C2C2E; border-radius: 10px; padding: 12px; margin-top: 10px;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .journey-spinner {
+      width: 38px; height: 38px; border: 3px solid rgba(255,255,255,.18);
+      border-top-color: #007AFF; border-radius: 50%; animation: journeySpin .8s linear infinite; margin: 0 auto 14px;
+    }
+    @keyframes journeySpin { to { transform: rotate(360deg); } }
+    .journey-sticky {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      max-width: 430px; width: 100%; z-index: 100001; box-sizing: border-box;
+      background: #1C1C1E; display: flex; gap: 10px; align-items: center;
+      padding: 12px var(--gutter) max(12px, env(safe-area-inset-bottom, 0px));
     }
 
     /* ── Training frequency goal card ───────────────────────── */
@@ -4751,9 +4977,11 @@
 
 <!-- ═══════════════ WORKOUT DETAIL ═══════════════ -->
 <div id="workout-detail">
-  <div class="wd-nav">
-    <button class="wd-back-btn" onclick="closeWorkoutDetail()">← Back</button>
-    <div class="wd-nav-title">Workout Detail</div>
+  <div class="settings-nav">
+    <button class="settings-back-btn" onclick="closeWorkoutDetail()">
+      <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+    </button>
+    <div class="settings-nav-title">Workout Detail</div>
   </div>
   <div class="wd-scroll" id="wd-scroll"></div>
 </div>
@@ -4802,6 +5030,7 @@
         <div class="lib-seg-pill" id="lib-seg-pill"></div>
         <button class="lib-seg-btn active" id="lib-seg-exercises" onclick="showLibSeg('exercises')">Exercises</button>
         <button class="lib-seg-btn"        id="lib-seg-plans"     onclick="showLibSeg('plans')">Plans</button>
+        <button class="lib-seg-btn"        id="lib-seg-journeys"  onclick="showLibSeg('journeys')">Journeys<span class="lib-beta-badge">BETA</span></button>
       </div>
     </div>
     <!-- Exercises sub-view -->
@@ -4812,6 +5041,10 @@
     <!-- Plans sub-view -->
     <div id="lib-plans-content" style="display:none">
       <div id="lib-plans-inner"></div>
+    </div>
+    <!-- Journeys sub-view -->
+    <div id="lib-journeys-content" style="display:none">
+      <div id="lib-journeys-inner"></div>
     </div>
     <!-- Exercise detail view -->
     <div id="lib-detail-content" style="display:none"></div>
@@ -5377,6 +5610,24 @@
     </div>
     <!-- hidden file input for import -->
     <input type="file" id="import-file-input" accept=".json,application/json" style="display:none" onchange="importData(event)" />
+
+    <div class="settings-section-header" style="margin-top:1rem">AI</div>
+    <div class="settings-card">
+      <div class="settings-row settings-row-tappable" onclick="_toggleGeminiKey()">
+        <div class="settings-row-label">Gemini API Key</div>
+        <span class="settings-row-value" id="gemini-key-status">Not set</span>
+      </div>
+      <div id="gemini-key-editor" style="display:none;padding:.75rem var(--gutter);border-top:.5px solid var(--separator)">
+        <input id="gemini-key-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+          placeholder="Paste your Gemini API key"
+          style="width:100%;box-sizing:border-box;background:#1C1C1E;border:none;border-radius:10px;padding:12px;color:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.875rem;outline:none" />
+        <div style="display:flex;align-items:center;gap:.625rem;margin-top:.625rem">
+          <button onclick="_saveGeminiKey()" style="background:#007AFF;color:#fff;border:none;border-radius:999px;padding:.5rem 1.125rem;font-family:inherit;font-size:.875rem;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent">Save</button>
+          <button onclick="_clearGeminiKey()" style="background:var(--red);color:#fff;border:none;border-radius:999px;padding:.5rem 1.125rem;font-family:inherit;font-size:.875rem;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent">Clear</button>
+          <span id="gemini-key-saved" style="display:none;color:var(--green);font-size:.8125rem;font-weight:600">✓ Saved</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -5525,20 +5776,36 @@
            'Handstand Hold','Diamond push-ups','Archer push-ups','Pseudo planche push-ups','One arm push-up',
            'Frog stand','Tuck planche','Advanced tuck planche','Straddle planche','Full planche',
            'Wall handstand','Freestanding handstand','L-sit to handstand',
-           'Straight Bar Dips','Dips with Chest Press at Top','Push-ups with Raised Legs'],
+           'Straight Bar Dips','Dips with Chest Press at Top','Push-ups with Raised Legs',
+           'Wall push-ups','Ring push-ups','Decline push-ups','Incline push-ups','Clapping push-ups',
+           'One-arm push-up negatives','Ring dips','Korean dips','Russian dips','Bulgarian dips',
+           'L-sit dips','Pelican curls','Handstand walk','Wall handstand hold','Handstand push-up negatives',
+           'Pike handstand push-ups','Deficit handstand push-ups','Ring handstand push-ups'],
     Pull: ['Pull-ups','Chin-ups','Rows','Muscle-ups','Fast Muscle-ups','Slow Transition Muscle-ups',
            'Australian rows','Archer pull-ups','One arm pull-up','Commando pull-ups',
            'Tuck front lever','Advanced tuck front lever','Straddle front lever','Full front lever',
            'Front Lever Hold','Front Lever Bicycles','Tucked Front Lever Rows',
            'Tuck back lever','Straddle back lever','Full back lever',
-           'Fast Pull-ups','30 Second Pull-up Hold'],
+           'Fast Pull-ups','30 Second Pull-up Hold',
+           'Neutral grip pull-ups','Wide grip pull-ups','Close grip pull-ups','L-sit pull-ups',
+           'One-arm pull-up negatives','One-arm chin-up negatives','Ring pull-ups','Ring chin-ups',
+           'Typewriter pull-ups','Explosive pull-ups','Chest to bar pull-ups','Behind the neck pull-ups',
+           'Muscle-up negatives','Ring muscle-ups','Bar muscle-up','Strict muscle-ups','Kipping muscle-ups',
+           'Ice cream makers','Back lever','Front lever raises','Front lever pulls',
+           'One arm row','Inverted rows','Ring rows','Australian pull-ups'],
     Core: ['Planks','Leg raises','Sit-ups','Hollow holds','Dragon flag',
            'L-sit','V-sit','Tuck L-sit','Hollow body rock','Dead bug',
            'Ab wheel rollouts','Hanging knee raises','Toes to bar','Human flag',
-           'Windshield Wipers'],
+           'Windshield Wipers',
+           'Hollow body hold','Arch body hold','Dragon flag negatives','Hanging leg raises',
+           'Side plank','Copenhagen plank','Pallof press','GHD sit-ups','Reverse hypers',
+           'Jefferson curl','Back extensions','Manna','Straddle L-sit','Human flag negatives',
+           'Skin the cat','German hang','Shoulder dislocates','Wrist push-ups','Finger push-ups'],
     Legs: ['Squats','Lunges','Pistol squats','Calf raises','Shrimp squats',
            'Sissy squats','Nordic curls','Bulgarian split squats',
-           'Step-ups','Box jumps','Glute bridges','Single leg deadlift'],
+           'Step-ups','Box jumps','Glute bridges','Single leg deadlift',
+           'Jump squats','Hip thrusts','Reverse lunges','Broad jumps','Single leg calf raises',
+           'Wall sit','Squat jumps','Sprints','Hill sprints','Depth jumps','Lateral bounds'],
     'Weighted/Gym': [
       'Bench press','Back squat','Deadlift','Overhead press','Barbell row',
       'Lat pulldown','Leg press','Romanian deadlift','Incline bench press',
@@ -5552,9 +5819,24 @@
       'Cable bicep curl','Tricep kickbacks','Dumbbell chest fly','Pec deck',
       'Cable fly','Concentration curls','Overhead tricep extension',
       'Reverse fly','Upright row','Shrugs','Good mornings','Cable crunch',
+      'Dumbbell press','Incline dumbbell press','Arnold press','Cable curls','Close grip bench',
+      'Dips weighted','Pull-ups weighted','Chin-ups weighted','Dumbbell flyes','Hip thrusts weighted',
+      'Glute bridges weighted','Cable kickbacks','Kettlebell swings','Kettlebell deadlifts','Box squats',
+      'Pause squats','Safety bar squats','Zercher squats','Good mornings weighted',
+    ],
+    Cardio: [
+      'Running','Sprinting','Cycling','Swimming','Rowing machine','Ski erg','Jump rope','Burpees',
+      'Mountain climbers','High knees','Jumping jacks','Battle ropes','Assault bike','Stair climbing',
+      'Elliptical','Walking','Hiking','HIIT circuits','Tabata intervals',
+    ],
+    Mobility: [
+      'Hip flexor stretch','Hamstring stretch','Quad stretch','Pigeon pose','Lizard pose',
+      'Pancake stretch','Middle splits','Front splits','Bridge','Wheel pose','Thoracic rotations',
+      'Cat cow','Child pose','Down dog','Up dog','Wrist circles','Ankle circles','Foam rolling',
+      'Deep squat hold','Jefferson curl mobility',
     ],
   };
-  const EX_CATS = ['Push','Pull','Core','Legs','Weighted/Gym'];
+  const EX_CATS = ['Push','Pull','Core','Legs','Weighted/Gym','Cardio','Mobility'];
 
   /* difficulty + type for all built-in exercises */
   const EXERCISE_META = {
@@ -5630,6 +5912,82 @@
     'Reverse fly':{type:'w',diff:2},'Upright row':{type:'w',diff:3},
     'Shrugs':{type:'w',diff:2},'Good mornings':{type:'w',diff:4},
     'Cable crunch':{type:'w',diff:2},
+    /* ── Added library (estimated difficulty, verified:false) ── */
+    /* Push */
+    'Wall push-ups':{type:'bw',diff:1,verified:false},'Ring push-ups':{type:'bw',diff:5,verified:false},
+    'Decline push-ups':{type:'bw',diff:3,verified:false},'Incline push-ups':{type:'bw',diff:1,verified:false},
+    'Clapping push-ups':{type:'bw',diff:5,verified:false},'One-arm push-up negatives':{type:'bw',diff:6,verified:false},
+    'Ring dips':{type:'bw',diff:6,verified:false},'Korean dips':{type:'bw',diff:7,verified:false},
+    'Russian dips':{type:'bw',diff:8,verified:false},'Bulgarian dips':{type:'bw',diff:6,verified:false},
+    'L-sit dips':{type:'bw',diff:7,verified:false},'Pelican curls':{type:'bw',diff:8,verified:false},
+    'Handstand walk':{type:'bw',diff:8,verified:false},'Wall handstand hold':{type:'bw',diff:2,tb:1,verified:false},
+    'Handstand push-up negatives':{type:'bw',diff:6,verified:false},'Pike handstand push-ups':{type:'bw',diff:4,verified:false},
+    'Deficit handstand push-ups':{type:'bw',diff:8,verified:false},'Ring handstand push-ups':{type:'bw',diff:10,verified:false},
+    /* Pull */
+    'Neutral grip pull-ups':{type:'bw',diff:5,verified:false},'Wide grip pull-ups':{type:'bw',diff:6,verified:false},
+    'Close grip pull-ups':{type:'bw',diff:5,verified:false},'L-sit pull-ups':{type:'bw',diff:7,verified:false},
+    'One-arm pull-up negatives':{type:'bw',diff:8,verified:false},'One-arm chin-up negatives':{type:'bw',diff:8,verified:false},
+    'Ring pull-ups':{type:'bw',diff:6,verified:false},'Ring chin-ups':{type:'bw',diff:6,verified:false},
+    'Typewriter pull-ups':{type:'bw',diff:8,verified:false},'Explosive pull-ups':{type:'bw',diff:6,verified:false},
+    'Chest to bar pull-ups':{type:'bw',diff:6,verified:false},'Behind the neck pull-ups':{type:'bw',diff:7,verified:false},
+    'Muscle-up negatives':{type:'bw',diff:7,verified:false},'Ring muscle-ups':{type:'bw',diff:9,verified:false},
+    'Bar muscle-up':{type:'bw',diff:8,verified:false},'Strict muscle-ups':{type:'bw',diff:9,verified:false},
+    'Kipping muscle-ups':{type:'bw',diff:6,verified:false},'Ice cream makers':{type:'bw',diff:9,verified:false},
+    'Back lever':{type:'bw',diff:8,tb:1,verified:false},'Front lever raises':{type:'bw',diff:7,verified:false},
+    'Front lever pulls':{type:'bw',diff:7,verified:false},'One arm row':{type:'bw',diff:4,verified:false},
+    'Inverted rows':{type:'bw',diff:2,verified:false},'Ring rows':{type:'bw',diff:3,verified:false},
+    'Australian pull-ups':{type:'bw',diff:2,verified:false},
+    /* Core */
+    'Hollow body hold':{type:'bw',diff:3,tb:1,verified:false},'Arch body hold':{type:'bw',diff:2,tb:1,verified:false},
+    'Dragon flag negatives':{type:'bw',diff:4,verified:false},'Hanging leg raises':{type:'bw',diff:5,verified:false},
+    'Side plank':{type:'bw',diff:2,tb:1,verified:false},'Copenhagen plank':{type:'bw',diff:5,tb:1,verified:false},
+    'Pallof press':{type:'bw',diff:3,verified:false},'GHD sit-ups':{type:'bw',diff:5,verified:false},
+    'Reverse hypers':{type:'bw',diff:3,verified:false},'Jefferson curl':{type:'bw',diff:4,verified:false},
+    'Back extensions':{type:'bw',diff:2,verified:false},'Manna':{type:'bw',diff:10,tb:1,verified:false},
+    'Straddle L-sit':{type:'bw',diff:5,tb:1,verified:false},'Human flag negatives':{type:'bw',diff:7,verified:false},
+    'Skin the cat':{type:'bw',diff:5,verified:false},'German hang':{type:'bw',diff:4,tb:1,verified:false},
+    'Shoulder dislocates':{type:'bw',diff:1,verified:false},'Wrist push-ups':{type:'bw',diff:3,verified:false},
+    'Finger push-ups':{type:'bw',diff:7,verified:false},
+    /* Legs */
+    'Jump squats':{type:'bw',diff:2,verified:false},'Hip thrusts':{type:'bw',diff:2,verified:false},
+    'Reverse lunges':{type:'bw',diff:2,verified:false},'Broad jumps':{type:'bw',diff:3,verified:false},
+    'Single leg calf raises':{type:'bw',diff:2,verified:false},'Wall sit':{type:'bw',diff:2,tb:1,verified:false},
+    'Squat jumps':{type:'bw',diff:2,verified:false},'Sprints':{type:'bw',diff:3,verified:false},
+    'Hill sprints':{type:'bw',diff:4,verified:false},'Depth jumps':{type:'bw',diff:5,verified:false},
+    'Lateral bounds':{type:'bw',diff:3,verified:false},
+    /* Weighted */
+    'Dumbbell press':{type:'w',diff:4,verified:false},'Incline dumbbell press':{type:'w',diff:4,verified:false},
+    'Arnold press':{type:'w',diff:4,verified:false},'Cable curls':{type:'w',diff:2,verified:false},
+    'Close grip bench':{type:'w',diff:4,verified:false},'Dips weighted':{type:'w',diff:6,verified:false},
+    'Pull-ups weighted':{type:'w',diff:7,verified:false},'Chin-ups weighted':{type:'w',diff:7,verified:false},
+    'Dumbbell flyes':{type:'w',diff:3,verified:false},'Hip thrusts weighted':{type:'w',diff:4,verified:false},
+    'Glute bridges weighted':{type:'w',diff:3,verified:false},'Cable kickbacks':{type:'w',diff:2,verified:false},
+    'Kettlebell swings':{type:'w',diff:3,verified:false},'Kettlebell deadlifts':{type:'w',diff:3,verified:false},
+    'Box squats':{type:'w',diff:4,verified:false},'Pause squats':{type:'w',diff:6,verified:false},
+    'Safety bar squats':{type:'w',diff:5,verified:false},'Zercher squats':{type:'w',diff:6,verified:false},
+    'Good mornings weighted':{type:'w',diff:4,verified:false},
+    /* Cardio */
+    'Running':{type:'bw',diff:2,verified:false},'Sprinting':{type:'bw',diff:4,verified:false},
+    'Cycling':{type:'bw',diff:2,verified:false},'Swimming':{type:'bw',diff:4,verified:false},
+    'Rowing machine':{type:'bw',diff:3,verified:false},'Ski erg':{type:'bw',diff:3,verified:false},
+    'Jump rope':{type:'bw',diff:2,verified:false},'Burpees':{type:'bw',diff:3,verified:false},
+    'Mountain climbers':{type:'bw',diff:2,verified:false},'High knees':{type:'bw',diff:1,verified:false},
+    'Jumping jacks':{type:'bw',diff:1,verified:false},'Battle ropes':{type:'bw',diff:3,verified:false},
+    'Assault bike':{type:'bw',diff:4,verified:false},'Stair climbing':{type:'bw',diff:2,verified:false},
+    'Elliptical':{type:'bw',diff:1,verified:false},'Walking':{type:'bw',diff:1,verified:false},
+    'Hiking':{type:'bw',diff:2,verified:false},'HIIT circuits':{type:'bw',diff:5,verified:false},
+    'Tabata intervals':{type:'bw',diff:5,verified:false},
+    /* Mobility */
+    'Hip flexor stretch':{type:'bw',diff:1,tb:1,verified:false},'Hamstring stretch':{type:'bw',diff:1,tb:1,verified:false},
+    'Quad stretch':{type:'bw',diff:1,tb:1,verified:false},'Pigeon pose':{type:'bw',diff:2,tb:1,verified:false},
+    'Lizard pose':{type:'bw',diff:3,tb:1,verified:false},'Pancake stretch':{type:'bw',diff:4,tb:1,verified:false},
+    'Middle splits':{type:'bw',diff:7,tb:1,verified:false},'Front splits':{type:'bw',diff:7,tb:1,verified:false},
+    'Bridge':{type:'bw',diff:4,tb:1,verified:false},'Wheel pose':{type:'bw',diff:5,tb:1,verified:false},
+    'Thoracic rotations':{type:'bw',diff:1,verified:false},'Cat cow':{type:'bw',diff:1,verified:false},
+    'Child pose':{type:'bw',diff:1,tb:1,verified:false},'Down dog':{type:'bw',diff:1,tb:1,verified:false},
+    'Up dog':{type:'bw',diff:1,tb:1,verified:false},'Wrist circles':{type:'bw',diff:1,verified:false},
+    'Ankle circles':{type:'bw',diff:1,verified:false},'Foam rolling':{type:'bw',diff:1,verified:false},
+    'Deep squat hold':{type:'bw',diff:2,tb:1,verified:false},'Jefferson curl mobility':{type:'bw',diff:3,verified:false},
   };
 
   /* qs() — single-quote a string for safe use inside double-quoted HTML onclick attrs */
@@ -5791,19 +6149,17 @@
 
     document.getElementById('lib-detail-content').innerHTML = `
       <button class="detail-back" onclick="closeExDetail()">
-        <svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="7,1 1,7 7,13"/>
-        </svg>
-        Exercises
+        <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
       </button>
       <div class="detail-hero">
         <div class="detail-name">${name}</div>
         <div class="detail-meta">
           <span class="detail-cat-tag">${cat || 'Exercise'}</span>
           ${meta.tb ? '<span class="detail-cat-tag" style="color:var(--blue)">⏱ Hold</span>' : ''}
-          <span class="diff-badge" style="background:${diffColor};margin-left:.125rem">${diff}/10</span>
+          <span class="diff-badge" style="background:${diffColor};margin-left:.125rem">${meta.verified === false ? '~' : ''}${diff}/10</span>
         </div>
       </div>
+      ${meta.verified === false ? `<div onclick="editExDiff(${qs(name)})" style="margin:0 var(--gutter) .875rem;background:rgba(255,149,0,.12);border-radius:10px;padding:.625rem .75rem;font-size:.8125rem;color:#FF9500;cursor:pointer;-webkit-tap-highlight-color:transparent">⚠️ Estimated difficulty — tap to adjust</div>` : ''}
       ${(() => { const rec = _calcOptimalRestRec(name); return rec != null ? `<div class="detail-card" style="margin-bottom:.875rem"><button onclick="_restStatsOpen(${qs(name)})" style="width:100%;background:none;border:none;cursor:pointer;font-family:inherit;display:flex;justify-content:space-between;align-items:center;padding:.75rem 0;-webkit-tap-highlight-color:transparent"><span style="font-size:.875rem;color:#8E8E93">💤 Optimal Rest</span><div style="display:flex;align-items:center;gap:.375rem"><span style="font-size:.875rem;color:#fff;font-weight:600">${_fmtRestRec(rec)}</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="#8E8E93" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg></div></button></div>` : ''; })()}
       ${howHTML ? `<div style="font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.65px;color:var(--tertiary);padding:0 var(--gutter) .375rem">How to Perform</div>
       <div class="detail-card">${howHTML}<div style="height:.5rem"></div></div>` : ''}
@@ -5879,6 +6235,19 @@
     const lib = s ? JSON.parse(s) : {};
     let changed = false;
     EX_CATS.forEach(c => { if (!lib[c]) { lib[c] = [...DEFAULT_EX_LIB[c]]; changed = true; } });
+    /* One-time additive seed of the expanded library: append only the newly
+       added (verified:false) defaults, never re-adding user-deleted built-ins. */
+    if (!localStorage.getItem('exLibExpand1')) {
+      EX_CATS.forEach(c => {
+        if (!lib[c]) lib[c] = [];
+        (DEFAULT_EX_LIB[c] || []).forEach(n => {
+          if (EXERCISE_META[n] && EXERCISE_META[n].verified === false && !lib[c].includes(n)) {
+            lib[c].push(n); changed = true;
+          }
+        });
+      });
+      localStorage.setItem('exLibExpand1', '1');
+    }
     if (changed) setExLib(lib);
     return lib;
   }
@@ -6336,6 +6705,7 @@
 
   async function startBlankWorkout() {
     closeStartChoice();
+    _activeJourneyRef = null;
     exerciseCount  = 0;
     activePlanData = null;
     _workoutActive = true;
@@ -7413,6 +7783,9 @@
     workouts.unshift(workout);
     persist();
 
+    /* mark journey session complete if this workout was started from one */
+    if (_activeJourneyRef) { _markJourneySessionComplete(_activeJourneyRef); _activeJourneyRef = null; }
+
     /* clear workout state */
     _workoutActive   = false;
     activePlanData   = null;
@@ -8301,12 +8674,11 @@
 
   /* ── Build one chart card element (no canvas yet) ───────── */
   const RANGE_OPTS = [
-    { label: '30',  key: '30' },
-    { label: '3M',  key: '3M' },
-    { label: '6M',  key: '6M' },
-    { label: '1Y',  key: '1Y' },
-    { label: '5Y',  key: '5Y' },
-    { label: 'All', key: 'all' },
+    { label: '1M', key: '1M' },
+    { label: '3M', key: '3M' },
+    { label: '6M', key: '6M' },
+    { label: '1Y', key: '1Y' },
+    { label: '2Y', key: '2Y' },
   ];
 
   function _filterSessions(sessions, key) {
@@ -8321,7 +8693,145 @@
     return sessions.filter(s => new Date(s.date) >= cutoff);
   }
 
-  function _getProgressRange() { return localStorage.getItem('progressRange') || '30'; }
+  /* ── Proportional X-axis + horizontal-scroll helpers (all time-series charts) ──
+     X position reflects the real number of days between sessions; the canvas is
+     made wider than the visible window so the horizon fits on screen and older
+     data is reachable by scrolling left. */
+  function _horizonDaysFor(rangeKey, times) {
+    const map = { '1M':30, '3M':90, '6M':180, '1Y':365, '2Y':730, '5Y':1825 };
+    if (map[rangeKey]) return map[rangeKey];
+    if (!times || times.length <= 1) return 1;
+    if (rangeKey === '30') {               /* "last 30 sessions" → span of those sessions */
+      const recent = times.slice(-30);
+      return Math.max(1, (recent[recent.length - 1] - recent[0]) / 86400000);
+    }
+    return Math.max(1, (times[times.length - 1] - times[0]) / 86400000);  /* 'all' / 'All' */
+  }
+
+  /* times: ms timestamps (oldest-first). Returns the canvas CSS width and a
+     proportional xOf(index). */
+  function _chartXScale(times, horizonDays, PAD, containerW) {
+    const n = times.length;
+    const minT = n ? Math.min.apply(null, times) : 0;
+    const maxT = n ? Math.max.apply(null, times) : 0;
+    const totalDays = Math.max(1, (maxT - minT) / 86400000);
+    const plotVis  = Math.max(1, containerW - PAD.left - PAD.right);
+    const pxPerDay = plotVis / Math.max(1, horizonDays);
+    const canvasW  = Math.max(containerW, Math.ceil(PAD.left + PAD.right + totalDays * pxPerDay));
+    const plotW    = canvasW - PAD.left - PAD.right;
+    const span     = (maxT - minT) || 1;
+    const xOf = i => n === 1 ? PAD.left + plotVis / 2 : PAD.left + ((times[i] - minT) / span) * plotW;
+    return { canvasW, xOf };
+  }
+
+  function _scrollChartRight(wrap) { if (wrap) wrap.scrollLeft = wrap.scrollWidth; }
+
+  /* ── Smart aggregation by horizon ───────────────────────────
+     1M / 30 → raw (one dot per session); 3M / 6M → weekly buckets;
+     1Y / 5Y / All → monthly buckets. Empty buckets are simply absent
+     (proportional X leaves the natural gap). */
+  function _bucketModeFor(rangeKey) {
+    if (rangeKey === '1M' || rangeKey === '30') return 'none';
+    if (rangeKey === '3M' || rangeKey === '6M') return 'week';
+    return 'month';   /* 1Y, 5Y, all/All */
+  }
+
+  /* dates: ISO strings (oldest-first), values: per-session numbers.
+     Returns { times[], values[], labels[] } — one entry per bucket, each
+     value = SUM of the sessions in that bucket, plotted at the bucket midpoint. */
+  function _aggregateChart(dates, values, rangeKey) {
+    const mode  = _bucketModeFor(rangeKey);
+    const fmtDay = t => new Date(t).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    const fmtMon = t => new Date(t).toLocaleDateString('en-US', { month:'short' });
+    if (mode === 'none') {
+      return {
+        times:  dates.map(d => new Date(d).getTime()),
+        values: values.slice(),
+        labels: dates.map(d => fmtDay(new Date(d).getTime())),
+      };
+    }
+    const map = new Map();
+    for (let i = 0; i < dates.length; i++) {
+      const dt = new Date(dates[i]);
+      let startT, midT;
+      if (mode === 'month') {
+        startT = new Date(dt.getFullYear(), dt.getMonth(), 1).getTime();
+        midT   = (startT + new Date(dt.getFullYear(), dt.getMonth() + 1, 1).getTime()) / 2;
+      } else {
+        const t = new Date(dt); t.setHours(0,0,0,0);
+        t.setDate(t.getDate() - ((t.getDay() + 6) % 7));  /* Monday start */
+        startT = t.getTime();
+        midT   = startT + 3.5 * 86400000;
+      }
+      let b = map.get(startT);
+      if (!b) { b = { start: startT, mid: midT, sum: 0 }; map.set(startT, b); }
+      b.sum += values[i];
+    }
+    const arr = [...map.values()].sort((a, b) => a.start - b.start);
+    return {
+      times:  arr.map(b => b.mid),
+      values: arr.map(b => b.sum),
+      labels: arr.map(b => mode === 'month' ? fmtMon(b.start) : fmtDay(b.start)),
+    };
+  }
+
+  /* ── X-axis label anti-overlap ──────────────────────────────
+     xs: x position of each candidate label. Returns a Set of indices to
+     render: always first + last, intermediate ones only when ≥ minGap px
+     from the last placed label and from the final one. */
+  function _pickXLabelIdxs(xs, minGap) {
+    const n = xs.length;
+    if (n <= 1) return new Set([0]);
+    const chosen = [0];
+    let lastX = xs[0];
+    for (let i = 1; i < n - 1; i++) {
+      if (xs[i] - lastX >= minGap && xs[n - 1] - xs[i] >= minGap) { chosen.push(i); lastX = xs[i]; }
+    }
+    chosen.push(n - 1);
+    return new Set(chosen);
+  }
+
+  /* ── Dot tap tooltip (all charts) ───────────────────────────── */
+  function _getChartTooltip() {
+    let tt = document.getElementById('chart-tooltip');
+    if (!tt) {
+      tt = document.createElement('div');
+      tt.id = 'chart-tooltip';
+      tt.style.cssText = 'position:fixed;z-index:100000;background:#1C1C1E;border-radius:8px;padding:6px 10px;color:#fff;font-size:12px;font-family:system-ui,-apple-system,sans-serif;pointer-events:none;display:none;white-space:nowrap;transform:translate(-50%,-100%);box-shadow:0 2px 8px rgba(0,0,0,.4);';
+      document.body.appendChild(tt);
+      /* dismiss on any tap; a dot tap re-shows it via the canvas click handler */
+      document.addEventListener('pointerdown', _hideChartTooltip, true);
+    }
+    return tt;
+  }
+  function _hideChartTooltip() { const tt = document.getElementById('chart-tooltip'); if (tt) tt.style.display = 'none'; }
+  function _showChartTooltip(text, screenX, screenY) {
+    const tt = _getChartTooltip();
+    tt.textContent = text;
+    tt.style.left = screenX + 'px';
+    tt.style.top  = (screenY - 8) + 'px';
+    tt.style.display = 'block';
+  }
+  /* dots: [{x, y, label, value}] in canvas CSS px. */
+  function _attachDotTooltip(canvas, dots) {
+    if (!canvas) return;
+    canvas.style.cursor = 'pointer';
+    canvas.addEventListener('click', function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left, y = e.clientY - rect.top;
+      let best = null, bd = 1e9;
+      dots.forEach(d => { const dx = d.x - x, dy = d.y - y; const dist = Math.sqrt(dx*dx + dy*dy); if (dist < bd) { bd = dist; best = d; } });
+      if (best && bd <= 22) {
+        e.stopPropagation();
+        _showChartTooltip(best.label + ' · ' + best.value, rect.left + best.x, rect.top + best.y);
+      }
+    });
+  }
+
+  function _getProgressRange() {
+    const r = localStorage.getItem('progressRange');
+    return ['1M','3M','6M','1Y','2Y'].includes(r) ? r : '3M';
+  }
   function _setProgressRange(key) { localStorage.setItem('progressRange', key); }
 
   function _renderProgressRangeSeg() {
@@ -8374,14 +8884,14 @@
 
   function _redrawCharts(card, rangeKey) {
     const { name, sessions, maxSets } = card._chartData;
-    const filtered = _filterSessions(sessions, rangeKey);
     const w1 = document.getElementById('wrap-' + CSS.escape(name));
     if (w1) w1.innerHTML = '';
     const sub = card.querySelector('.chart-card-subtitle');
-    if (sub) sub.textContent = filtered.length === 1
+    if (sub) sub.textContent = sessions.length === 1
       ? 'Log another session to see your trend'
-      : `${filtered.length} sessions`;
-    _drawChartForMode(name, filtered, maxSets, _progressMode);
+      : `${sessions.length} sessions`;
+    /* Draw all sessions; the selected range only sets the visible window/zoom. */
+    _drawChartForMode(name, sessions, maxSets, _progressMode);
   }
 
   /* Redraw all visible exercise chart cards in the current global mode */
@@ -8394,11 +8904,9 @@
 
   function _buildChartCard(name, sessions) {
     const maxSets  = Math.max(...sessions.map(s => s.sets.length));
-    const rangeKey = _getProgressRange();
-    const filtered = _filterSessions(sessions, rangeKey);
-    const subtitle = filtered.length === 1
+    const subtitle = sessions.length === 1
       ? 'Log another session to see your trend'
-      : `${filtered.length} sessions`;
+      : `${sessions.length} sessions`;
 
     const escapedName = CSS.escape(name);
     const card = document.createElement('div');
@@ -8729,8 +9237,17 @@
 
     const dark = isDark();
     const dpr  = window.devicePixelRatio || 1;
-    const W    = wrap.clientWidth;
-    const H    = Math.min(220, Math.max(140, Math.round(W * 0.48)));
+    const containerW = wrap.clientWidth;
+    const H    = Math.min(220, Math.max(140, Math.round(containerW * 0.48)));
+
+    const PAD  = { top: 28, right: 20, bottom: 50, left: 44 };
+    const _rangeKey = _getProgressRange();
+    const _rawBest  = sessions.map(s => Math.max(0, ...s.sets.map(st => parseFloat(st.reps) || 0)));
+    const _agg   = _aggregateChart(sessions.map(s => s.date), _rawBest, _rangeKey);
+    const bestReps = _agg.values;
+    const n = bestReps.length;
+    const _scale = _chartXScale(_agg.times, _horizonDaysFor(_rangeKey, _agg.times), PAD, containerW);
+    const W = _scale.canvasW;
 
     const canvas = document.createElement('canvas');
     canvas.className = 'chart-canvas';
@@ -8742,10 +9259,6 @@
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    const bestReps = sessions.map(s =>
-      Math.max(0, ...s.sets.map(st => parseFloat(st.reps) || 0)));
-
-    const PAD  = { top: 28, right: 20, bottom: 50, left: 44 };
     const cW   = W - PAD.left - PAD.right;
     const cH   = H - PAD.top  - PAD.bottom;
     const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -8754,8 +9267,7 @@
     const yMin   = yTicks[0];
     const yMax   = yTicks[yTicks.length - 1];
 
-    const xOf = i => sessions.length === 1 ? PAD.left + cW / 2
-                   : PAD.left + (i / (sessions.length - 1)) * cW;
+    const xOf = _scale.xOf;
     const yOf = v => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * cH;
 
     const labelColor = dark ? 'rgba(160,160,168,0.85)' : 'rgba(60,60,67,0.50)';
@@ -8791,12 +9303,11 @@
     ctx.font         = '400 10px -apple-system, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'top';
-    const allSameDate = sessions.every(s => s.label === sessions[0].label);
-    if (allSameDate) {
-      ctx.fillText(sessions[0].label, PAD.left + cW / 2, H - PAD.bottom + 9);
+    if (n === 1) {
+      ctx.fillText(_agg.labels[0], PAD.left + cW / 2, H - PAD.bottom + 9);
     } else {
-      const xIdxs = pickLabelIdxs(sessions.length, 5);
-      sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9); });
+      const xIdxs = _pickXLabelIdxs(_agg.labels.map(function(l, i){ return xOf(i); }), 50);
+      _agg.labels.forEach((lbl, i) => { if (xIdxs.has(i)) ctx.fillText(lbl, xOf(i), H - PAD.bottom + 9); });
     }
     ctx.restore();
 
@@ -8887,6 +9398,9 @@
     ctx.textBaseline = 'top';
     ctx.fillText('Reps', PAD.left + cW, PAD.top - 14);
     ctx.restore();
+
+    _attachDotTooltip(canvas, bestReps.map((v, i) => ({ x: xOf(i), y: yOf(v), label: _agg.labels[i], value: String(Math.round(v)) })));
+    _scrollChartRight(wrap);
   }
 
   /* ── Graph 2: Session Total — gold intensity line ─────────── */
@@ -8894,17 +9408,25 @@
     const wrap = document.getElementById('wrap-' + CSS.escape(name));
     if (!wrap) return;
 
-    const totals = sessions.map(s => calcSessionIntensity(name, s.sets));
-    if (totals.every(v => v === 0)) {
+    const _rawTotals = sessions.map(s => calcSessionIntensity(name, s.sets));
+    if (_rawTotals.every(v => v === 0)) {
       wrap.innerHTML = '<div style="text-align:center;padding:.75rem 0 .875rem;font-size:.8125rem;color:var(--tertiary)">Log weight or reps to see intensity</div>';
       return;
     }
 
     const dark  = isDark();
     const dpr   = window.devicePixelRatio || 1;
-    const W     = wrap.clientWidth;
-    const H     = Math.min(220, Math.max(140, Math.round(W * 0.48)));
+    const containerW = wrap.clientWidth;
+    const H     = Math.min(220, Math.max(140, Math.round(containerW * 0.48)));
     const color = '#FFD700';
+
+    const PAD    = { top: 28, right: 20, bottom: 50, left: 44 };
+    const _rangeKey = _getProgressRange();
+    const _agg   = _aggregateChart(sessions.map(s => s.date), _rawTotals, _rangeKey);
+    const totals = _agg.values;
+    const n      = totals.length;
+    const _scale = _chartXScale(_agg.times, _horizonDaysFor(_rangeKey, _agg.times), PAD, containerW);
+    const W = _scale.canvasW;
 
     const canvas = document.createElement('canvas');
     canvas.className = 'chart-canvas';
@@ -8916,7 +9438,6 @@
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    const PAD    = { top: 28, right: 20, bottom: 50, left: 44 };
     const cW     = W - PAD.left - PAD.right;
     const cH     = H - PAD.top  - PAD.bottom;
     const clamp  = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -8925,8 +9446,7 @@
     const yMin   = yTicks[0];
     const yMax   = yTicks[yTicks.length - 1];
 
-    const xOf = i => sessions.length === 1 ? PAD.left + cW / 2
-                   : PAD.left + (i / (sessions.length - 1)) * cW;
+    const xOf = _scale.xOf;
     const yOf = v => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * cH;
 
     const labelColor = dark ? 'rgba(160,160,168,0.85)' : 'rgba(60,60,67,0.50)';
@@ -8958,12 +9478,11 @@
     ctx.font         = '400 10px -apple-system, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'top';
-    const allSameDate = sessions.every(s => s.label === sessions[0].label);
-    if (allSameDate) {
-      ctx.fillText(sessions[0].label, PAD.left + cW / 2, H - PAD.bottom + 9);
+    if (n === 1) {
+      ctx.fillText(_agg.labels[0], PAD.left + cW / 2, H - PAD.bottom + 9);
     } else {
-      const xIdxs = pickLabelIdxs(sessions.length, 5);
-      sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9); });
+      const xIdxs = _pickXLabelIdxs(_agg.labels.map(function(l, i){ return xOf(i); }), 50);
+      _agg.labels.forEach((lbl, i) => { if (xIdxs.has(i)) ctx.fillText(lbl, xOf(i), H - PAD.bottom + 9); });
     }
     ctx.restore();
 
@@ -9054,6 +9573,9 @@
     ctx.textBaseline = 'top';
     ctx.fillText('⚡ Intensity', PAD.left + cW, PAD.top - 14);
     ctx.restore();
+
+    _attachDotTooltip(canvas, totals.map((v, i) => ({ x: xOf(i), y: yOf(v), label: _agg.labels[i], value: String(Math.round(v)) })));
+    _scrollChartRight(wrap);
   }
 
   /* ── Strength Warmup progress ─────────────────────────────── */
@@ -9110,7 +9632,7 @@
 
     if (!isCollapsed) {
       /* defer until layout is complete so canvas has width */
-      setTimeout(() => _drawWarmupCharts(_getWarmupSessions(_getProgressRange())), 0);
+      setTimeout(() => _drawWarmupCharts(_getWarmupSessions('all')), 0);
     }
   }
 
@@ -9192,8 +9714,8 @@
     const wrap2 = document.getElementById('warmup-wrap-avg');
     if (wrap1) wrap1.innerHTML = '';
     if (wrap2) wrap2.innerHTML = '';
-    const sessions = _getWarmupSessions(rangeKey);
-    _drawWarmupCharts(sessions);
+    /* Draw all sessions; the range only sets the visible window/zoom. */
+    _drawWarmupCharts(_getWarmupSessions('all'));
   }
 
   function _drawWarmupCharts(sessions) {
@@ -9209,10 +9731,18 @@
 
     const dark   = isDark();
     const dpr    = window.devicePixelRatio || 1;
-    const W      = wrap.clientWidth;
-    const H      = Math.min(220, Math.max(140, Math.round(W * 0.48)));
+    const containerW = wrap.clientWidth;
+    const H      = Math.min(220, Math.max(140, Math.round(containerW * 0.48)));
     const orange = '#FF9500';
     const gold   = '#FFD700';
+
+    const PAD   = { top: 28, right: 20, bottom: 50, left: 44 };
+    const _rangeKey = _getProgressRange();
+    const _agg   = _aggregateChart(sessions.map(s => s.date), sessions.map(s => s.secs), _rangeKey);
+    const secs   = _agg.values;
+    const n      = secs.length;
+    const _scale = _chartXScale(_agg.times, _horizonDaysFor(_rangeKey, _agg.times), PAD, containerW);
+    const W = _scale.canvasW;
 
     const canvas = document.createElement('canvas');
     canvas.className = 'chart-canvas';
@@ -9224,15 +9754,13 @@
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    const secs  = sessions.map(s => s.secs);
-    const PAD   = { top: 28, right: 20, bottom: 50, left: 44 };
     const cW    = W - PAD.left - PAD.right;
     const cH    = H - PAD.top  - PAD.bottom;
 
     const yTicks = niceYTicks(0, Math.max(...secs, 30), 4);
     const yMin   = yTicks[0];
     const yMax   = yTicks[yTicks.length - 1];
-    const xOf    = i => sessions.length === 1 ? PAD.left + cW / 2 : PAD.left + (i / (sessions.length - 1)) * cW;
+    const xOf    = _scale.xOf;
     const yOf    = v => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * cH;
     const clamp  = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
@@ -9265,8 +9793,8 @@
     ctx.font         = '400 10px -apple-system, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'top';
-    const xIdxs = pickLabelIdxs(sessions.length, 5);
-    sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9); });
+    const xIdxs = _pickXLabelIdxs(_agg.labels.map(function(l, i){ return xOf(i); }), 50);
+    _agg.labels.forEach((lbl, i) => { if (xIdxs.has(i)) ctx.fillText(lbl, xOf(i), H - PAD.bottom + 9); });
     ctx.restore();
 
     /* axis label */
@@ -9352,6 +9880,9 @@
       ctx.fillText('Best', bx + (bx > W / 2 ? -8 : 8), by - 2);
       ctx.restore();
     }
+
+    _attachDotTooltip(canvas, secs.map((v, i) => ({ x: xOf(i), y: yOf(v), label: _agg.labels[i], value: fmtT(v) })));
+    _scrollChartRight(wrap);
   }
 
   function _drawWarmupAvgChart(sessions) {
@@ -9361,9 +9892,17 @@
 
     const dark   = isDark();
     const dpr    = window.devicePixelRatio || 1;
-    const W      = wrap.clientWidth;
-    const H      = Math.min(180, Math.max(120, Math.round(W * 0.38)));
+    const containerW = wrap.clientWidth;
+    const H      = Math.min(180, Math.max(120, Math.round(containerW * 0.38)));
     const orange = '#FF9500';
+
+    const PAD     = { top: 14, right: 20, bottom: 50, left: 44 };
+    const _rangeKey = _getProgressRange();
+    const _agg   = _aggregateChart(sessions.map(s => s.date), sessions.map(s => s.secs), _rangeKey);
+    const secs   = _agg.values;
+    const n      = secs.length;
+    const _scale = _chartXScale(_agg.times, _horizonDaysFor(_rangeKey, _agg.times), PAD, containerW);
+    const W = _scale.canvasW;
 
     const canvas = document.createElement('canvas');
     canvas.className = 'chart-canvas';
@@ -9375,7 +9914,6 @@
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    const secs   = sessions.map(s => s.secs);
     /* cumulative rolling average up to each point */
     const avgs   = secs.map((_, i) => {
       const win = secs.slice(Math.max(0, i - 6), i + 1);
@@ -9383,14 +9921,13 @@
     });
 
     const allVals = [...secs, ...avgs];
-    const PAD     = { top: 14, right: 20, bottom: 50, left: 44 };
     const cW      = W - PAD.left - PAD.right;
     const cH      = H - PAD.top  - PAD.bottom;
 
     const yTicks  = niceYTicks(0, Math.max(...allVals, 30), 4);
     const yMin    = yTicks[0];
     const yMax    = yTicks[yTicks.length - 1];
-    const xOf     = i => sessions.length === 1 ? PAD.left + cW / 2 : PAD.left + (i / (sessions.length - 1)) * cW;
+    const xOf     = _scale.xOf;
     const yOf     = v => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * cH;
 
     const labelColor  = dark ? 'rgba(160,160,168,0.85)' : 'rgba(60,60,67,0.50)';
@@ -9424,8 +9961,8 @@
     ctx.font         = '400 10px -apple-system, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'top';
-    const xIdxs = pickLabelIdxs(sessions.length, 5);
-    sessions.forEach((s, i) => { if (xIdxs.has(i)) ctx.fillText(s.label, xOf(i), H - PAD.bottom + 9); });
+    const xIdxs = _pickXLabelIdxs(_agg.labels.map(function(l, i){ return xOf(i); }), 50);
+    _agg.labels.forEach((lbl, i) => { if (xIdxs.has(i)) ctx.fillText(lbl, xOf(i), H - PAD.bottom + 9); });
     ctx.restore();
 
     /* axis labels */
@@ -9494,6 +10031,9 @@
     lCur += dotR * 2 + gap;
     ctx.fillText('Avg (7-session)', lCur, lY);
     ctx.restore();
+
+    _attachDotTooltip(canvas, secs.map((v, i) => ({ x: xOf(i), y: yOf(v), label: _agg.labels[i], value: fmtT(v) })));
+    _scrollChartRight(wrap);
   }
 
   /* ── Canvas chart (legacy reps-only, kept for reference) ── */
@@ -10706,13 +11246,14 @@
         const meta  = getExMeta(name);
         const diff  = meta.diff;
         const bkgd  = diff <= 3 ? '#34C759' : diff <= 6 ? '#FF9500' : '#FF3B30';
+        const diffLabel = meta.verified === false ? '~' + diff : diff;
         const row   = document.createElement('div');
         row.className = 'ex-screen-item';
         row.innerHTML = `
           <div style="flex:1;min-width:0">
             <button class="ex-screen-item-btn" onclick="showExDetail(${qs(name)})">${name}</button>
           </div>
-          <button class="diff-badge" style="background:${bkgd}" title="Edit difficulty" onclick="editExDiff(${qs(name)})">${diff}</button>
+          <button class="diff-badge" style="background:${bkgd}" title="${meta.verified === false ? 'Estimated difficulty — tap to adjust' : 'Edit difficulty'}" onclick="editExDiff(${qs(name)})">${diffLabel}</button>
           <button class="ex-item-del"
             onclick="delFromLib(${qs(cat)},${qs(name)})"
             title="Remove">
@@ -10806,8 +11347,668 @@
   ══════════════════════════════════════════════════════════ */
   function persistPlans() { localStorage.setItem('plans', JSON.stringify(plans)); }
 
+  /* ══════════════════════════════════════════════════════════
+     Training Journeys (AI-generated, Gemini-powered)
+  ══════════════════════════════════════════════════════════ */
+  let _journeys = (() => { try { return JSON.parse(localStorage.getItem('trainingJourneys') || '[]'); } catch(e) { return []; } })();
+  function _persistJourneys() { localStorage.setItem('trainingJourneys', JSON.stringify(_journeys)); }
+  let _journeyInputs = { goal: '', weeks: 8, days: 3, level: 'Intermediate' };
+  let _journeyPreview = null;        /* generated journey pending save */
+  let _journeyDetailId = null;       /* journey open in detail view */
+  let _journeySessionRef = null;     /* {id, w, s} open in session detail view */
+  let _journeyStartCtx = null;       /* unknown-exercise resolution context before starting */
+  let _journeyWeekOpen = {};         /* accordion state */
+  let _activeJourneyRef = null;      /* {id, w, s} of session started as a workout */
+
+  function _esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  /* ── Journeys list ──────────────────────────────────────── */
+  function renderLibJourneys() {
+    const el = document.getElementById('lib-journeys-inner');
+    if (!el) return;
+    el.classList.add('plans-list-mode');
+    let html = '<div class="journey-beta-banner">🧪 Journeys is in beta — results may vary</div>';
+    if (!_journeys.length) {
+      html += `<div class="empty-state" style="padding-top:1.5rem">
+        <span class="empty-state-emoji">🧭</span>
+        <div class="empty-state-title">No Journeys Yet</div>
+        Generate a personalised multi-week training journey.
+      </div>`;
+    } else {
+      _journeys.forEach(j => {
+        const total = _journeyTotalSessions(j);
+        const done  = (j.completedSessions || []).length;
+        const start = j.createdAt ? new Date(j.createdAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '';
+        html += `<div class="plan-swipe-wrap" data-journey-id="${j.id}">
+          <button class="plan-swipe-delete" onclick="_deleteJourney(${j.id})">Delete</button>
+          <div class="plan-card journey-list-card" data-journey-id="${j.id}">
+            <div class="plan-card-main">
+              <div class="plan-card-name">${_esc(j.name)}</div>
+              <div class="plan-card-subs">${_esc(j.goal)}</div>
+              <div style="margin-top:10px">
+                <span class="journey-pill">${(j.weeks || []).length} weeks</span>
+                <span class="journey-pill">${_journeyDaysPerWeek(j)} days/wk</span>
+                <span class="journey-pill">${done}/${total} done</span>
+              </div>
+              ${start ? `<div class="plan-card-last">Started: ${start}</div>` : ''}
+            </div>
+            <span class="journey-ai-pill">✨ AI</span>
+          </div>
+        </div>`;
+      });
+    }
+    html += `<button class="btn-plan-create" onclick="_openJourneyCreator()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5a.75.75 0 0 1 1.5 0z"/>
+      </svg>
+      New Journey
+    </button>`;
+    el.innerHTML = html;
+    _initJourneySwipe(el);
+  }
+
+  function _journeyTotalSessions(j) { return (j.weeks || []).reduce((n, w) => n + ((w.sessions || []).length), 0); }
+  function _journeyDaysPerWeek(j) { const w = (j.weeks || [])[0]; return w ? (w.sessions || []).length : 0; }
+
+  /* swipe-to-delete + tap-to-open for journey cards (mirrors plan cards) */
+  function _initJourneySwipe(container) {
+    const OPEN = 88, THRESH = 44;
+    container.querySelectorAll('.journey-list-card').forEach(card => {
+      let startX = 0, startY = 0, dx = 0, dragging = false, decided = false, horizontal = false;
+      const isOpen = () => card.classList.contains('swiped');
+      card.addEventListener('pointerdown', e => {
+        startX = e.clientX; startY = e.clientY; dx = 0;
+        dragging = true; decided = false; horizontal = false;
+        card.style.transition = 'none';
+      });
+      card.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        const mx = e.clientX - startX, my = e.clientY - startY;
+        if (!decided) {
+          if (Math.abs(mx) > 8 || Math.abs(my) > 8) { decided = true; horizontal = Math.abs(mx) > Math.abs(my); if (horizontal) card.setPointerCapture(e.pointerId); }
+          else return;
+        }
+        if (!horizontal) return;
+        if (e.cancelable) e.preventDefault();
+        const base = isOpen() ? -OPEN : 0;
+        dx = Math.max(-OPEN, Math.min(0, base + mx));
+        card.style.transform = `translateX(${dx}px)`;
+      });
+      const end = () => { if (!dragging) return; dragging = false; card.style.transition = 'transform 0.25s ease'; if (horizontal) { card.classList.toggle('swiped', dx <= -THRESH); card.style.transform = ''; } };
+      card.addEventListener('pointerup', end);
+      card.addEventListener('pointercancel', end);
+      card.addEventListener('click', () => {
+        if (decided && horizontal) return;
+        if (isOpen()) { card.classList.remove('swiped'); card.style.transform = ''; return; }
+        _openJourneyDetail(Number(card.getAttribute('data-journey-id')));
+      });
+    });
+  }
+
+  function _deleteJourney(id) {
+    const j = _journeys.find(x => x.id === id);
+    _wConfirm({
+      title: 'Delete Journey?',
+      msg: `"${j ? j.name : 'This journey'}" will be permanently deleted.`,
+      okLabel: 'Delete', okColor: 'red',
+      onOk: () => {
+        const item = document.querySelector(`[data-journey-id="${id}"]`);
+        _animateRemove(item, () => { _journeys = _journeys.filter(x => x.id !== id); _persistJourneys(); renderLibJourneys(); });
+      }
+    });
+  }
+
+  /* ── Creator ────────────────────────────────────────────── */
+  function _openJourneyCreator() {
+    _journeyInputs = { goal: '', weeks: 8, weeksCustom: '', days: 3, daysCustom: '', level: 'Intermediate' };
+    _renderJourneyCreator();
+    document.getElementById('journey-creator').style.display = '';
+  }
+  function _jWeeks() { const c = parseInt(_journeyInputs.weeksCustom, 10); return (c > 0) ? c : _journeyInputs.weeks; }
+  function _jDays()  { const c = parseInt(_journeyInputs.daysCustom, 10);  return (c > 0) ? c : _journeyInputs.days; }
+  function _closeJourneyCreator() { document.getElementById('journey-creator').style.display = 'none'; }
+
+  function _renderJourneyCreator(loading) {
+    const el = document.getElementById('journey-creator-inner');
+    if (!el) return;
+    if (loading) {
+      el.innerHTML = `<div style="text-align:center;padding:4rem 0">
+        <div class="journey-spinner"></div>
+        <div style="color:#8E8E93;font-size:15px">Generating your journey...</div>
+      </div>`;
+      return;
+    }
+    const wk = [4,6,8,10,12], dy = [2,3,4,5], lv = ['Beginner','Intermediate','Advanced'];
+    const wkCustom = !!_journeyInputs.weeksCustom, dyCustom = !!_journeyInputs.daysCustom;
+    el.innerHTML = `
+      <div class="journey-sec-label" style="margin-top:4px">Goal</div>
+      <textarea id="jc-goal" class="journey-card-input" rows="3" placeholder="What do you want to achieve?  e.g. Run 5km without stopping, First muscle-up, Increase my squat to 100kg, Lose weight and get fitter" oninput="_journeyInputs.goal=this.value;_updateJourneyGenBtn()">${_esc(_journeyInputs.goal)}</textarea>
+
+      <div class="journey-sec-label">Timeframe</div>
+      <div class="journey-chip-row" id="jc-weeks">
+        ${wk.map(w => `<button class="journey-chip${(!wkCustom && _journeyInputs.weeks===w)?' active':''}" onclick="_jcPickWeeks(${w})">${w}w</button>`).join('')}
+      </div>
+      <input id="jc-weeks-custom" type="text" inputmode="numeric" class="journey-card-input" style="margin-top:8px;padding:12px" placeholder="Or enter custom weeks" value="${_esc(_journeyInputs.weeksCustom)}" oninput="_jcCustom('weeks',this)">
+
+      <div class="journey-sec-label">Days per week</div>
+      <div class="journey-chip-row" id="jc-days">
+        ${dy.map(d => `<button class="journey-chip${(!dyCustom && _journeyInputs.days===d)?' active':''}" onclick="_jcPickDays(${d})">${d}</button>`).join('')}
+      </div>
+      <input id="jc-days-custom" type="text" inputmode="numeric" class="journey-card-input" style="margin-top:8px;padding:12px" placeholder="Or enter custom days" value="${_esc(_journeyInputs.daysCustom)}" oninput="_jcCustom('days',this)">
+
+      <div class="journey-sec-label">Current level</div>
+      <div class="journey-chip-row" id="jc-level">
+        ${lv.map(l => `<button class="journey-chip${_journeyInputs.level===l?' active':''}" onclick="_jcPickLevel('${l}')">${l}</button>`).join('')}
+      </div>
+
+      <div style="margin-top:24px">
+        <button id="jc-generate" class="journey-btn-primary" onclick="_generateJourney()">✨ Generate Journey</button>
+        <div id="jc-apikey-error" style="margin-top:12px"></div>
+      </div>`;
+    _updateJourneyGenBtn();
+  }
+
+  function _jcPickWeeks(w) { _journeyInputs.weeks = w; _journeyInputs.weeksCustom = ''; const el = document.getElementById('jc-weeks-custom'); if (el) el.value = ''; _syncJourneyChips('jc-weeks', w); _updateJourneyGenBtn(); }
+  function _jcPickDays(d)  { _journeyInputs.days = d;  _journeyInputs.daysCustom = '';  const el = document.getElementById('jc-days-custom');  if (el) el.value = ''; _syncJourneyChips('jc-days', d);  _updateJourneyGenBtn(); }
+  function _jcPickLevel(l) { _journeyInputs.level = l; _syncJourneyChips('jc-level', l); _updateJourneyGenBtn(); }
+  function _jcCustom(which, inp) {
+    const digits = inp.value.replace(/[^0-9]/g, '');
+    inp.value = digits;
+    const grpId = which === 'weeks' ? 'jc-weeks' : 'jc-days';
+    if (which === 'weeks') _journeyInputs.weeksCustom = digits; else _journeyInputs.daysCustom = digits;
+    const grp = document.getElementById(grpId);
+    if (grp) {
+      if (digits) grp.querySelectorAll('.journey-chip').forEach(b => b.classList.remove('active'));
+      else _syncJourneyChips(grpId, which === 'weeks' ? _journeyInputs.weeks : _journeyInputs.days);
+    }
+    _updateJourneyGenBtn();
+  }
+  function _updateJourneyGenBtn() {
+    const btn = document.getElementById('jc-generate');
+    if (!btn) return;
+    const ok = !!(_journeyInputs.goal || '').trim() && _jWeeks() > 0 && _jDays() > 0 && !!_journeyInputs.level;
+    btn.disabled = !ok;
+    btn.style.background = ok ? '#007AFF' : '#3A3A3C';
+    btn.style.color = ok ? '#fff' : '#8E8E93';
+    btn.style.cursor = ok ? 'pointer' : 'default';
+  }
+  function _showJourneyApiKeyError() {
+    const c = document.getElementById('jc-apikey-error');
+    if (!c) return;
+    c.innerHTML = `<div style="color:#FF453A;font-size:13px;margin-bottom:6px">A Gemini API key is required to generate journeys.</div>
+      <div style="color:#007AFF;font-size:14px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent" onclick="_journeyGoToApiKeySettings()">Add API key in Settings →</div>`;
+  }
+  function _journeyGoToApiKeySettings() {
+    _closeJourneyCreator();
+    openSettings();
+    settingsPush('settings-data');
+  }
+  function _syncJourneyChips(groupId, val) {
+    const grp = document.getElementById(groupId);
+    if (!grp) return;
+    grp.querySelectorAll('.journey-chip').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent.replace('w','') == String(val) || btn.textContent == String(val));
+    });
+  }
+
+  /* ── Gemini data context ────────────────────────────────── */
+  function _journeyExerciseLibText() {
+    const lib = getExLib();
+    const lines = [];
+    EX_CATS.forEach(cat => (lib[cat] || []).forEach(name => { lines.push(`- ${name} (${cat}, difficulty ${getExMeta(name).diff}/10)`); }));
+    return lines.join('\n') || '(none)';
+  }
+  function _journeyPRText() {
+    const freq = {}, pr = {};
+    const cutoff = Date.now() - 56 * 86400000;   /* 8 weeks */
+    workouts.forEach(w => {
+      if (new Date(w.date).getTime() < cutoff) return;
+      (w.exercises || []).forEach(ex => {
+        freq[ex.name] = (freq[ex.name] || 0) + 1;
+        (ex.sets || []).forEach(s => {
+          const reps = parseFloat(s.reps) || 0, kg = parseFloat(s.kg) || 0;
+          const cur = pr[ex.name];
+          if (!cur || kg > cur.kg || (kg === cur.kg && reps > cur.reps)) pr[ex.name] = { reps, kg };
+        });
+      });
+    });
+    const top = Object.keys(freq).sort((a, b) => freq[b] - freq[a]).slice(0, 10);
+    const lines = top.map(n => `- ${n}: ${pr[n] ? (pr[n].reps + ' reps' + (pr[n].kg > 0 ? ' @ ' + pr[n].kg + 'kg' : '')) : '—'} (${freq[n]} sessions)`);
+    return lines.join('\n') || '(no recent training)';
+  }
+  function _journeyRecentText() {
+    const cutoff = Date.now() - 28 * 86400000;   /* 4 weeks */
+    const lines = [];
+    workouts.forEach(w => {
+      if (new Date(w.date).getTime() < cutoff) return;
+      const d = new Date(w.date).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+      const exNames = (w.exercises || []).map(e => e.name).join(', ');
+      let intensity = 0;
+      (w.exercises || []).forEach(ex => (ex.sets || []).forEach(s => {
+        const r = parseFloat(s.reps) || 0, k = parseFloat(s.kg) || 0;
+        if (r > 0) intensity += (typeof calcSetIntensity === 'function' ? calcSetIntensity(ex.name, r, k) : r * (k || 1));
+      }));
+      lines.push(`- ${d}${w.planName ? ' [' + w.planName + ']' : ''}: ${exNames} (intensity ${Math.round(intensity)})`);
+    });
+    return lines.join('\n') || '(no sessions in last 4 weeks)';
+  }
+
+  function _buildJourneyPrompt() {
+    const i = _journeyInputs;
+    const weeks = _jWeeks(), days = _jDays();
+    return `You are a personal trainer creating a structured training journey.
+
+USER GOAL: ${i.goal}
+TIMEFRAME: ${weeks} weeks
+TRAINING DAYS PER WEEK: ${days} days
+CURRENT LEVEL: ${i.level}
+
+USER'S EXERCISE LIBRARY:
+${_journeyExerciseLibText()}
+Prioritise exercises from this library. Only suggest exercises outside this list if no suitable library exercise exists for the goal.
+
+USER'S PERSONAL RECORDS (last 8 weeks):
+${_journeyPRText()}
+
+USER'S RECENT TRAINING (last 4 weeks):
+${_journeyRecentText()}
+
+Generate a ${weeks}-week training journey with ${days} training days per week.
+The journey should be specific to the user's goal and build progressively. Use exercises from the user's library where possible. Include any exercise type relevant to the goal — calisthenics, weights, cardio, mobility.
+
+Respond ONLY with a JSON object in this exact format, no other text:
+{
+  "name": "Journey name",
+  "goal": "Goal description",
+  "weeks": [
+    {
+      "week": 1,
+      "focus": "Week focus description",
+      "sessions": [
+        {
+          "day": "Monday",
+          "planName": "Session name",
+          "exercises": [
+            { "name": "Exercise name", "sets": 3, "reps": 8, "notes": "Optional coaching note" }
+          ]
+        }
+      ]
+    }
+  ]
+}`;
+  }
+
+  async function _generateJourney() {
+    const goal = (_journeyInputs.goal || '').trim();
+    if (!goal) return;
+    const errC = document.getElementById('jc-apikey-error');
+    if (errC) errC.innerHTML = '';
+    const key = localStorage.getItem('geminiApiKey');
+    if (!key) { _showJourneyApiKeyError(); return; }
+
+    _renderJourneyCreator(true);
+    try {
+      const apiKey = key;
+      const prompt = _buildJourneyPrompt();
+      console.log('Gemini URL:', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + apiKey.substring(0, 8));
+
+      const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + apiKey;
+
+      const response = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: prompt }
+              ]
+            }
+          ]
+        })
+      });
+
+      const responseData = await response.json();
+      console.log('Gemini response status:', response.status);
+      console.log('Gemini response:', JSON.stringify(responseData).substring(0, 200));
+
+      if (!response.ok) {
+        throw new Error('API returned ' + response.status + ': ' + JSON.stringify(responseData));
+      }
+
+      const rawText = responseData.candidates[0].content.parts[0].text;
+      console.log('Raw Gemini response:', rawText.substring(0, 500));
+
+      // Clean the response
+      let cleanText = rawText
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
+
+      // Extract JSON object
+      const firstBrace = cleanText.indexOf('{');
+      const lastBrace = cleanText.lastIndexOf('}');
+      if (firstBrace === -1 || lastBrace === -1) {
+        throw new Error('No JSON object found in response');
+      }
+      cleanText = cleanText.substring(firstBrace, lastBrace + 1);
+
+      const journey = JSON.parse(cleanText);
+      if (!journey || !Array.isArray(journey.weeks) || !journey.weeks.length) throw new Error('Could not parse journey from response');
+      _journeyPreview = journey;
+      _closeJourneyCreator();
+      _openJourneyPreview();
+    } catch (err) {
+      _renderJourneyCreator(false);
+      alert('Could not generate journey: ' + (err && err.message ? err.message : 'unknown error') + '. Please try again.');
+    }
+  }
+
+  function _parseJourneyJSON(text) {
+    if (!text) return null;
+    let t = text.trim().replace(/^```(json)?/i, '').replace(/```$/, '').trim();
+    const a = t.indexOf('{'), b = t.lastIndexOf('}');
+    if (a >= 0 && b > a) t = t.slice(a, b + 1);
+    try { return JSON.parse(t); } catch(e) { return null; }
+  }
+
+  /* ── Preview ────────────────────────────────────────────── */
+  function _openJourneyPreview() {
+    _journeyWeekOpen = {};
+    _renderJourneyPreview();
+    document.getElementById('journey-preview').style.display = '';
+  }
+  function _closeJourneyPreview() { document.getElementById('journey-preview').style.display = 'none'; }
+
+  /* mode: 'preview' (session rows only) | 'detail' (session cards + Start) */
+  function _journeyWeeksHTML(journey, keyPrefix, mode) {
+    const completed = journey.completedSessions || [];
+    return (journey.weeks || []).map((w, wi) => {
+      const open = !!_journeyWeekOpen[keyPrefix + wi];
+      const sess = (w.sessions || []);
+      let body;
+      if (mode === 'detail') {
+        body = sess.map((s, si) => {
+          const exCount = (s.exercises || []).length;
+          const done = completed.includes(wi + '-' + si);
+          return `<div class="journey-session-card" onclick="_openJourneySession(${journey.id},${wi},${si})">
+            <div style="font-size:14px;font-weight:700;color:#fff">${_esc(s.day || ('Session ' + (si+1)))} · ${_esc(s.planName || '')}</div>
+            <div style="font-size:12px;color:#8E8E93;margin-top:2px">${exCount} exercise${exCount!==1?'s':''}${done ? ' · ✓ done' : ''}</div>
+            <button class="journey-btn-primary" style="margin-top:10px;padding:9px 0;font-size:13px" onclick="event.stopPropagation();_startJourneySession(${journey.id},${wi},${si})">▶ Start Session</button>
+          </div>`;
+        }).join('');
+      } else {
+        body = sess.map((s, si) =>
+          `<div style="padding:10px 0;font-size:14px;color:#fff;${si > 0 ? 'border-top:.5px solid #2C2C2E' : ''}">${_esc(s.day || ('Session ' + (si+1)))} · ${_esc(s.planName || '')}</div>`
+        ).join('');
+      }
+      const rightStatus = mode === 'detail'
+        ? `<span style="font-size:13px;color:#8E8E93;margin-right:8px">${sess.filter((_, si) => completed.includes(wi + '-' + si)).length}/${sess.length}</span>`
+        : '';
+      return `<div class="journey-week${open ? ' open' : ''}" id="${keyPrefix}${wi}">
+        <button class="journey-week-head" onclick="_toggleJourneyWeek('${keyPrefix}',${wi})">
+          <span style="text-align:left;flex:1;min-width:0">
+            <span style="font-size:17px;font-weight:700;color:#fff">Week ${w.week || (wi+1)}</span>
+            <span style="display:block;font-size:13px;color:#8E8E93;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_esc(w.focus || '')}</span>
+          </span>
+          <span style="display:flex;align-items:center;flex-shrink:0">${rightStatus}<span class="journey-week-chev"><svg width="9" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 7,7 1,13"/></svg></span></span>
+        </button>
+        <div class="journey-week-body">${body}</div>
+      </div>`;
+    }).join('');
+  }
+  function _toggleJourneyWeek(prefix, wi) {
+    _journeyWeekOpen[prefix + wi] = !_journeyWeekOpen[prefix + wi];
+    const card = document.getElementById(prefix + wi);
+    if (card) card.classList.toggle('open');
+  }
+
+  function _renderJourneyPreview() {
+    const el = document.getElementById('journey-preview-inner');
+    if (!el || !_journeyPreview) return;
+    const j = _journeyPreview;
+    el.innerHTML = `
+      <div style="font-size:24px;font-weight:700;color:#fff;letter-spacing:-.4px">${_esc(j.name)}</div>
+      <div class="journey-ai-badge" style="margin-top:4px">✨ AI Generated</div>
+      <div style="font-size:14px;color:#8E8E93;margin-top:4px;margin-bottom:8px">${_esc(j.goal)}</div>
+      <div style="margin-bottom:8px">
+        <span class="journey-pill">${(j.weeks||[]).length} weeks</span>
+        <span class="journey-pill">${_journeyDaysPerWeek(j)} days/wk</span>
+      </div>
+      <div class="journey-sec-label">Plan</div>
+      ${_journeyWeeksHTML(j, 'pvw', 'preview')}
+      <div class="journey-sticky">
+        <button class="journey-btn-ghost" style="flex:1" onclick="_regenerateJourney()">Regenerate</button>
+        <button class="journey-btn-primary" style="flex:2" onclick="_saveJourney()">Save Journey</button>
+      </div>`;
+  }
+
+  async function _regenerateJourney() {
+    _closeJourneyPreview();
+    document.getElementById('journey-creator').style.display = '';
+    await _generateJourney();
+  }
+
+  function _saveJourney() {
+    if (!_journeyPreview) return;
+    const j = {
+      id: Date.now(),
+      name: _journeyPreview.name || 'My Journey',
+      goal: _journeyPreview.goal || _journeyInputs.goal,
+      weeks: _journeyPreview.weeks || [],
+      createdAt: new Date().toISOString(),
+      completedSessions: []
+    };
+    _journeys.unshift(j);
+    _persistJourneys();
+    _journeyPreview = null;
+    _closeJourneyPreview();
+    renderLibJourneys();
+  }
+
+  /* ── Detail ─────────────────────────────────────────────── */
+  function _openJourneyDetail(id) {
+    _journeyDetailId = id;
+    _journeyWeekOpen = {};
+    _renderJourneyDetail();
+    document.getElementById('journey-detail').style.display = '';
+  }
+  function _closeJourneyDetail() { document.getElementById('journey-detail').style.display = 'none'; }
+
+  function _renderJourneyDetail() {
+    const el = document.getElementById('journey-detail-inner');
+    const j = _journeys.find(x => x.id === _journeyDetailId);
+    if (!el || !j) return;
+    const total = _journeyTotalSessions(j), done = (j.completedSessions || []).length;
+    const pct = total ? Math.round(done / total * 100) : 0;
+    el.innerHTML = `
+      <div style="font-size:24px;font-weight:700;color:#fff;letter-spacing:-.4px">${_esc(j.name)}</div>
+      <div class="journey-ai-badge" style="margin-top:4px">✨ AI Generated</div>
+      <div style="font-size:14px;color:#8E8E93;margin-top:4px">${_esc(j.goal)}</div>
+      <div style="margin-top:12px;background:#1C1C1E;border-radius:12px;padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:13px;color:#8E8E93">${done} / ${total} sessions completed</span>
+          <span style="font-size:13px;color:#fff;font-weight:600">${pct}%</span>
+        </div>
+        <div style="height:8px;background:#2C2C2E;border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:#007AFF"></div></div>
+      </div>
+      <div class="journey-sec-label">Weeks</div>
+      ${_journeyWeeksHTML(j, 'dtw', 'detail')}`;
+  }
+
+  /* ── Session detail (3rd level) ─────────────────────────── */
+  function _openJourneySession(journeyId, wi, si) {
+    _journeySessionRef = { id: journeyId, w: wi, s: si };
+    _renderJourneySession();
+    document.getElementById('journey-session').style.display = '';
+  }
+  function _closeJourneySession() { document.getElementById('journey-session').style.display = 'none'; }
+
+  function _renderJourneySession() {
+    const r = _journeySessionRef;
+    const j = _journeys.find(x => x.id === (r && r.id));
+    if (!j) return;
+    const w = (j.weeks || [])[r.w] || {};
+    const s = (w.sessions || [])[r.s];
+    if (!s) return;
+    const titleEl = document.getElementById('journey-session-title');
+    if (titleEl) titleEl.textContent = s.planName || (s.day || 'Session');
+    const exHTML = (s.exercises || []).map(ex => `
+      <div style="background:#1C1C1E;border-radius:12px;padding:16px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+          <span style="font-size:16px;font-weight:700;color:#fff">${_esc(ex.name)}</span>
+          <span style="font-size:14px;color:#007AFF;white-space:nowrap">${ex.sets || 3} × ${ex.reps != null ? ex.reps : '—'}</span>
+        </div>
+        ${ex.notes ? `<div style="font-size:13px;font-style:italic;color:#8E8E93;margin-top:6px">${_esc(ex.notes)}</div>` : ''}
+      </div>`).join('');
+    const el = document.getElementById('journey-session-inner');
+    el.innerHTML = `
+      <div style="font-size:13px;color:#8E8E93;margin-bottom:12px">Week ${w.week || (r.w+1)} · ${_esc(s.day || ('Session ' + (r.s+1)))}</div>
+      ${exHTML}
+      <div class="journey-sticky">
+        <button class="journey-btn-primary" style="flex:1" onclick="_startJourneySession(${j.id},${r.w},${r.s})">▶ Start Session</button>
+      </div>`;
+  }
+
+  function _exInLibrary(name) {
+    const lib = getExLib();
+    return EX_CATS.some(c => (lib[c] || []).includes(name));
+  }
+
+  function _startJourneySession(journeyId, wi, si) {
+    const j = _journeys.find(x => x.id === journeyId);
+    if (!j) return;
+    const session = ((j.weeks || [])[wi] || {}).sessions?.[si];
+    if (!session) return;
+    const normEx = (session.exercises || []).map(e => ({ name: e.name, sets: Math.max(1, parseInt(e.sets) || 3) }));
+    if (!normEx.length) return;
+    const planName = session.planName || (j.name + ' · Week ' + (wi+1));
+    /* Check every exercise against the library before starting */
+    if (normEx.some(e => !_exInLibrary(e.name))) {
+      _journeyStartCtx = { journeyId, wi, si, planName, exercises: normEx.map(e => ({ name: e.name, sets: e.sets })), addName: null, addDiff: 5 };
+      _renderUnknownExModal();
+      document.getElementById('journey-unknown-modal').style.display = '';
+      return;
+    }
+    _beginJourneyWorkout(journeyId, wi, si, planName, normEx);
+  }
+
+  function _beginJourneyWorkout(journeyId, wi, si, planName, normEx) {
+    _activeJourneyRef = { id: journeyId, w: wi, s: si };
+    _closeJourneySession();
+    _closeJourneyDetail();
+    _startWorkoutFromExercises(planName, normEx);
+  }
+
+  /* ── Unknown-exercise resolution ────────────────────────── */
+  function _guessCategory(name) {
+    const n = (name || '').toLowerCase();
+    if (/stretch|pose|splits|circle|foam|cat cow|dislocate|\bbridge\b|down dog|up dog|mobility|deep squat hold/.test(n)) return 'Mobility';
+    if (/run|sprint|cycl|rowing|row machine|\berg\b|jump rope|burpee|assault bike|elliptical|walk|hik|hiit|tabata|stair|jumping jack|battle rope|mountain climber|high knee/.test(n)) return 'Cardio';
+    if (/squat|lunge|\bleg\b|calf|glute|hip thrust|pistol|deadlift|hamstring|quad|step-up|box jump|nordic|bound|wall sit/.test(n)) return 'Legs';
+    if (/pull|\brow\b|rows|chin|lever|muscle-up|lat pulldown|skin the cat|german hang/.test(n)) return 'Pull';
+    if (/plank|\babs?\b|hollow|l-sit|v-sit|dragon|sit-up|leg raise|toes to bar|flag|hanging|pallof|windshield/.test(n)) return 'Core';
+    if (/bench|barbell|dumbbell|cable|kettlebell|machine|weighted|preacher|skull crusher/.test(n)) return 'Weighted/Gym';
+    if (/press|push|dip|handstand|planche|tricep|chest|\bfly\b|delt/.test(n)) return 'Push';
+    return 'Push';
+  }
+
+  function _renderUnknownExModal() {
+    const ctx = _journeyStartCtx;
+    const el = document.getElementById('journey-unknown-inner');
+    if (!ctx || !el) return;
+    const unknown = ctx.exercises.filter(e => !_exInLibrary(e.name));
+    const cards = unknown.map(e => {
+      const adding = ctx.addName === e.name;
+      const stepper = adding ? `
+        <div style="display:flex;align-items:center;gap:12px;margin-top:10px">
+          <button class="journey-chip" style="flex:0 0 44px;padding:8px 0" onclick="_journeyAddStep(-1)">−</button>
+          <span style="font-size:16px;font-weight:700;color:#fff;min-width:36px;text-align:center">~${ctx.addDiff}</span>
+          <button class="journey-chip" style="flex:0 0 44px;padding:8px 0" onclick="_journeyAddStep(1)">+</button>
+          <button class="journey-btn-primary" style="flex:1;padding:9px 0;font-size:13px" onclick="_journeyAddConfirm(${qs(e.name)})">Add at ~${ctx.addDiff}</button>
+        </div>` : `
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button class="journey-chip" style="flex:1;color:#fff" onclick="_journeyAddStart(${qs(e.name)})">➕ Add to Library</button>
+          <button class="journey-chip" style="flex:1;color:#fff" onclick="_journeyReplace(${qs(e.name)})">🔄 Replace</button>
+        </div>`;
+      return `<div style="background:#1C1C1E;border-radius:12px;padding:16px;margin-bottom:10px">
+        <div style="font-size:16px;font-weight:700;color:#fff">${_esc(e.name)}</div>
+        ${stepper}
+      </div>`;
+    }).join('');
+    const canContinue = unknown.length === 0;
+    el.innerHTML = `
+      <div style="font-size:20px;font-weight:700;color:#fff">Unknown Exercises</div>
+      <div style="font-size:13px;color:#8E8E93;margin-top:4px;margin-bottom:16px">These exercises aren't in your library yet</div>
+      ${cards || '<div style="font-size:14px;color:#34C759;margin-bottom:12px">✓ All exercises resolved</div>'}
+      <div class="journey-sticky">
+        <button class="journey-btn-ghost" style="flex:1" onclick="_journeyStartCancel()">Cancel</button>
+        <button class="journey-btn-primary" style="flex:2;${canContinue ? '' : 'background:#3A3A3C;color:#8E8E93'}" ${canContinue ? '' : 'disabled'} onclick="_journeyStartContinue()">Continue</button>
+      </div>`;
+  }
+  function _journeyAddStart(name) { _journeyStartCtx.addName = name; _journeyStartCtx.addDiff = 5; _renderUnknownExModal(); }
+  function _journeyAddStep(delta) { _journeyStartCtx.addDiff = Math.min(10, Math.max(1, _journeyStartCtx.addDiff + delta)); _renderUnknownExModal(); }
+  function _journeyAddConfirm(name) {
+    const cat = _guessCategory(name);
+    const type = cat === 'Weighted/Gym' ? 'w' : 'bw';
+    const lib = getExLib();
+    if (!lib[cat]) lib[cat] = [];
+    if (!lib[cat].includes(name)) lib[cat].push(name);
+    setExLib(lib);
+    const meta = getCustomMeta();
+    meta[name] = { type, diff: _journeyStartCtx.addDiff, verified: false };
+    setCustomMeta(meta);
+    _journeyStartCtx.addName = null;
+    _renderUnknownExModal();
+  }
+  async function _journeyReplace(name) {
+    const picked = await openExPicker();
+    if (!picked) return;
+    _journeyStartCtx.exercises = _journeyStartCtx.exercises.map(e => e.name === name ? { name: picked, sets: e.sets } : e);
+    _renderUnknownExModal();
+  }
+  function _journeyStartCancel() { document.getElementById('journey-unknown-modal').style.display = 'none'; }
+  function _journeyStartContinue() {
+    const ctx = _journeyStartCtx;
+    if (!ctx) return;
+    if (ctx.exercises.some(e => !_exInLibrary(e.name))) return;
+    document.getElementById('journey-unknown-modal').style.display = 'none';
+    _beginJourneyWorkout(ctx.journeyId, ctx.wi, ctx.si, ctx.planName, ctx.exercises.map(e => ({ name: e.name, sets: e.sets })));
+  }
+
+  function _startWorkoutFromExercises(planName, normEx) {
+    exerciseCount  = 0;
+    _workoutActive = true;
+    _sessionRestEnabled = null;
+    _killerRoutine = [];
+    _killerResults = [];
+    _killerStep    = 0;
+    _wscHideAll();
+    document.getElementById('exercise-list').innerHTML = '';
+    document.getElementById('timer').textContent = '00:00';
+    startTimer();
+    showWorkoutScreen();
+    activePlanData = { planName, exercises: normEx, nextIndex: normEx.length };
+    normEx.forEach(ex => createExCard(ex.name, false, ex.sets));
+    updatePlanBanner();
+    persistActiveWorkout();
+  }
+
+  function _markJourneySessionComplete(ref) {
+    const j = _journeys.find(x => x.id === ref.id);
+    if (!j) return;
+    j.completedSessions = j.completedSessions || [];
+    const token = ref.w + '-' + ref.s;
+    if (!j.completedSessions.includes(token)) { j.completedSessions.push(token); _persistJourneys(); }
+  }
+
   let _plansMode  = 'list';   /* 'list' | 'editor' */
   let _planDraft  = null;     /* { id?, name, exercises[] } while editing */
+  let _planIntExpanded  = false;  /* Intensity Trend section open? */
+  let _planEditExpanded = false;  /* Edit Plan section open? */
+  let _planIntHorizon   = '3M';   /* time filter for the intensity trend chart */
 
   /* ── Library segment switcher ───────────────────────────── */
   let _libSeg = 'exercises';
@@ -10816,10 +12017,12 @@
     _libSeg = seg;
     const exBtn   = document.getElementById('lib-seg-exercises');
     const plBtn   = document.getElementById('lib-seg-plans');
+    const jnBtn   = document.getElementById('lib-seg-journeys');
     const pill    = document.getElementById('lib-seg-pill');
-    const activeBtn = seg === 'exercises' ? exBtn : plBtn;
+    const activeBtn = seg === 'exercises' ? exBtn : seg === 'plans' ? plBtn : jnBtn;
     exBtn?.classList.toggle('active', seg === 'exercises');
     plBtn?.classList.toggle('active', seg === 'plans');
+    jnBtn?.classList.toggle('active', seg === 'journeys');
     if (pill && activeBtn) {
       const firstPos = !pill.style.width || pill.style.width === '0px';
       if (firstPos) pill.style.transition = 'none';
@@ -10831,8 +12034,10 @@
     }
     document.getElementById('lib-exercises-content').style.display = seg === 'exercises' ? '' : 'none';
     document.getElementById('lib-plans-content').style.display     = seg === 'plans'     ? '' : 'none';
+    document.getElementById('lib-journeys-content').style.display  = seg === 'journeys'  ? '' : 'none';
     if (seg === 'exercises') renderExScreen();
     if (seg === 'plans')     renderLibPlans();
+    if (seg === 'journeys')  renderLibJourneys();
   }
 
   /* ── Plans list/editor renderer (targets #lib-plans-inner) ─ */
@@ -10840,23 +12045,16 @@
     const el = document.getElementById('lib-plans-inner');
     if (!el) return;
     if (_plansMode === 'editor') {
+      el.classList.remove('plans-list-mode');
       _renderPlanEditor(el);
     } else {
       _plansMode = 'list';
+      el.classList.add('plans-list-mode');
       _renderPlanList(el);
     }
   }
 
   function _renderPlanList(el) {
-    const trashSVG = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="2,4 14,4"/>
-      <path d="M5 4V2.5A.5.5 0 0 1 5.5 2h5a.5.5 0 0 1 .5.5V4"/>
-      <path d="M3 4l.8 9.2A1 1 0 0 0 4.8 14h6.4a1 1 0 0 0 1-.8L13 4"/>
-    </svg>`;
-    const editSVG = `<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M11.5 2.5a1.41 1.41 0 0 1 2 2L5 13l-3 1 1-3 8.5-8.5z"/>
-    </svg>`;
-
     let html = '';
     if (!plans.length) {
       html += `<div class="empty-state" style="padding-top:1.5rem">
@@ -10866,14 +12064,20 @@
       </div>`;
     } else {
       plans.forEach(plan => {
-        const subs = plan.exercises.slice(0, 4).map(e => _normPlanEx(e).name).join(' · ') + (plan.exercises.length > 4 ? ' …' : '');
-        html += `<div class="plan-item" data-plan-id="${plan.id}">
-          <div class="plan-item-main" style="cursor:default">
-            <div class="plan-item-name">${plan.name}</div>
-            <div class="plan-item-subs">${subs || 'No exercises'}</div>
+        const subs = plan.exercises.map(e => _normPlanEx(e).name).join(' · ');
+        const last = _planLastTrained(plan.name);
+        const lastStr = last
+          ? 'Last trained: ' + new Date(last).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : 'Never trained';
+        html += `<div class="plan-swipe-wrap" data-plan-id="${plan.id}">
+          <button class="plan-swipe-delete" onclick="deletePlan(${plan.id})">Delete</button>
+          <div class="plan-card" data-plan-id="${plan.id}">
+            <div class="plan-card-main">
+              <div class="plan-card-name">${plan.name}</div>
+              <div class="plan-card-subs">${subs || 'No exercises'}</div>
+              <div class="plan-card-last">${lastStr}</div>
+            </div>
           </div>
-          <button class="plan-item-del" onclick="openPlanEditorForId(${plan.id})" title="Edit plan" style="margin-right:.125rem">${editSVG}</button>
-          <button class="plan-item-del" onclick="deletePlan(${plan.id})" title="Delete plan">${trashSVG}</button>
         </div>`;
       });
     }
@@ -10884,6 +12088,69 @@
       New Plan
     </button>`;
     el.innerHTML = html;
+    _initPlanSwipe(el);
+  }
+
+  /* Most recent session timestamp for a plan (null if never trained). */
+  function _planLastTrained(planName) {
+    let latest = null;
+    workouts.forEach(w => {
+      if (w.planName !== planName) return;
+      const t = new Date(w.date).getTime();
+      if (latest === null || t > latest) latest = t;
+    });
+    return latest;
+  }
+
+  /* iOS swipe-to-delete for plan cards. Swipe left reveals the red Delete
+     button; a plain tap opens the plan config screen. */
+  function _initPlanSwipe(container) {
+    const OPEN = 88, THRESH = 44;
+    container.querySelectorAll('.plan-card').forEach(card => {
+      let startX = 0, startY = 0, dx = 0, dragging = false, decided = false, horizontal = false;
+      const isOpen = () => card.classList.contains('swiped');
+
+      card.addEventListener('pointerdown', e => {
+        if (e.target.closest('.plan-card-edit')) return;
+        startX = e.clientX; startY = e.clientY; dx = 0;
+        dragging = true; decided = false; horizontal = false;
+        card.style.transition = 'none';
+      });
+      card.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        const mx = e.clientX - startX, my = e.clientY - startY;
+        if (!decided) {
+          if (Math.abs(mx) > 8 || Math.abs(my) > 8) {
+            decided = true;
+            horizontal = Math.abs(mx) > Math.abs(my);
+            if (horizontal) card.setPointerCapture(e.pointerId);
+          } else return;
+        }
+        if (!horizontal) return;
+        if (e.cancelable) e.preventDefault();
+        const base = isOpen() ? -OPEN : 0;
+        dx = Math.max(-OPEN, Math.min(0, base + mx));
+        card.style.transform = `translateX(${dx}px)`;
+      });
+      const end = () => {
+        if (!dragging) return;
+        dragging = false;
+        card.style.transition = 'transform 0.25s ease';
+        if (horizontal) {
+          card.classList.toggle('swiped', dx <= -THRESH);
+          card.style.transform = '';
+        }
+      };
+      card.addEventListener('pointerup', end);
+      card.addEventListener('pointercancel', end);
+
+      card.addEventListener('click', e => {
+        if (e.target.closest('.plan-card-edit')) return;
+        if (decided && horizontal) return;         /* was a swipe, not a tap */
+        if (isOpen()) { card.classList.remove('swiped'); card.style.transform = ''; return; }
+        openPlanEditorForId(Number(card.getAttribute('data-plan-id')));
+      });
+    });
   }
 
   /* Normalise a plan exercise entry — old plans stored plain strings */
@@ -10908,34 +12175,116 @@
       </div>`;
     }).join('');
 
-    const title = _planDraft.id ? 'Edit Plan' : 'New Plan';
-    el.innerHTML = `<div class="section-header">${title}</div>
-    <div class="plan-editor">
-      <input class="plan-editor-name" id="plan-name-input" type="text"
-        placeholder="Plan name (e.g. Push Day)"
-        value="${(_planDraft.name || '').replace(/"/g, '&quot;')}"
-        oninput="_planDraft.name = this.value" />
-      <div class="plan-ex-list" id="plan-ex-list">${exItems}</div>
-      <button class="btn-plan-add-ex" onclick="planEditorAddEx()">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5a.75.75 0 0 1 1.5 0z"/>
-        </svg>
-        Add Exercise
-      </button>
-      <div class="plan-editor-footer">
-        <button class="wizard-btn-back" style="flex:1" onclick="_plansMode='list';_planDraft=null;renderLibPlans()">Cancel</button>
-        <button class="wizard-btn-confirm" style="flex:2" onclick="savePlan()">Save Plan</button>
-      </div>
-    </div>`;
+    const chevSVG = '<span class="plan-collapse-chev"><svg width="9" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 7,7 1,13"/></svg></span>';
+
+    /* 1. Plan name — always visible, editable inline */
+    const nameCard = `
+      <div class="plan-collapse-card">
+        <input id="plan-name-input" type="text"
+          placeholder="Plan name"
+          value="${(_planDraft.name || '').replace(/"/g, '&quot;')}"
+          oninput="_planDraft.name = this.value"
+          style="width:100%;background:none;border:none;outline:none;color:#fff;font-family:inherit;font-size:24px;font-weight:700;letter-spacing:-.4px;padding:0;box-sizing:border-box;" />
+        <div style="font-size:12px;color:#8E8E93;margin-top:4px;">Plan Name</div>
+      </div>`;
+
+    /* 2. Intensity trend — always visible. Selector matches exercise trend modal. */
+    const horizons = ['1M','3M','6M','1Y','2Y'];
+    let segHTML = '<div style="display:flex;background:#1C1C1E;border-radius:10px;padding:3px;gap:2px;height:36px;box-sizing:border-box;margin-bottom:12px;">';
+    horizons.forEach(h => {
+      const active = h === _planIntHorizon;
+      segHTML += `<button onclick="_planSetIntHorizon('${h}')" style="flex:1;height:100%;padding:0;border:none;border-radius:8px;font-size:14px;font-weight:${active?'700':'600'};font-family:inherit;cursor:pointer;background:${active?'#007AFF':'transparent'};color:${active?'#fff':'#8E8E93'};">${h}</button>`;
+    });
+    segHTML += '</div>';
+
+    const intensitySection = `
+      <div class="plan-collapse-card">
+        <div class="plan-collapse-title" style="margin-bottom:12px;">Intensity Trend</div>
+        ${segHTML}
+        <div class="chart-scroll"><canvas id="plan-int-canvas" style="display:block;width:100%;height:200px;"></canvas></div>
+      </div>`;
+
+    /* 3. Edit plan — collapsible, collapsed by default */
+    const editSection = `
+      <div class="plan-collapse-card${_planEditExpanded ? ' open' : ''}" id="plan-edit-card">
+        <button class="plan-collapse-head" onclick="_planToggleSection('edit')">
+          <span class="plan-collapse-title">Edit Plan</span>
+          ${chevSVG}
+        </button>
+        <div class="plan-collapse-body"><div class="plan-collapse-inner">
+          <div class="plan-ex-list" id="plan-ex-list">${exItems}</div>
+          <button class="btn-plan-add-ex" onclick="planEditorAddEx()">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5a.75.75 0 0 1 1.5 0z"/>
+            </svg>
+            Add Exercise
+          </button>
+        </div></div>
+      </div>`;
+
+    /* 4. Sticky bottom bar */
+    const stickyBar = `
+      <div class="plan-sticky-bar">
+        <button class="plan-sticky-cancel" onclick="_plansMode='list';_planDraft=null;renderLibPlans()">Cancel</button>
+        <button class="plan-sticky-save" onclick="savePlan()">Save Changes</button>
+      </div>`;
+
+    el.innerHTML = `<div class="plan-editor plan-editor-with-bar">
+      ${nameCard}
+      ${intensitySection}
+      ${editSection}
+    </div>${stickyBar}`;
     /* Wire drag-and-drop after DOM is written */
     const planList = document.getElementById('plan-ex-list');
     if (planList) _planInitDrag(planList);
+    /* Draw the intensity trend chart */
+    requestAnimationFrame(() => {
+      const canvas = document.getElementById('plan-int-canvas');
+      if (canvas && typeof _drawTrendChart === 'function') {
+        _drawTrendChart(canvas, _planIntSessions(), function(x){ return x.totalInt; }, 200, _planIntHorizon);
+      }
+    });
+  }
+
+  /* ── Plan editor: intensity trend helpers ───────────────── */
+  function _planToggleSection(which) {
+    if (which === 'int') _planIntExpanded = !_planIntExpanded;
+    else                 _planEditExpanded = !_planEditExpanded;
+    const card = document.getElementById(which === 'int' ? 'plan-int-card' : 'plan-edit-card');
+    if (card) card.classList.toggle('open');
+  }
+
+  function _planSetIntHorizon(h) {
+    _planIntHorizon = h;
+    renderLibPlans();
+  }
+
+  /* All sessions where THIS exact plan was used (horizon only sets the visible
+     window/zoom). Each point = total Intensity Index across every set. */
+  function _planIntSessions() {
+    const planName = (_planDraft && _planDraft.name) || '';
+    const out = [];
+    workouts.forEach(w => {
+      if (!w.planName || w.planName !== planName) return;
+      let totalInt = 0;
+      (w.exercises || []).forEach(ex => {
+        (ex.sets || []).forEach(s => {
+          const r = parseFloat(s.reps) || 0, k = parseFloat(s.kg) || 0;
+          if (r > 0) totalInt += (typeof calcSetIntensity === 'function' ? calcSetIntensity(ex.name, r, k) : r * (k || 1));
+        });
+      });
+      out.push({ date: w.date, totalInt });
+    });
+    return out.reverse();
   }
 
   /* ── Plan editor actions ─────────────────────────────────── */
   function openPlanEditor() {
     _plansMode = 'editor';
     _planDraft = { name: '', exercises: [] };
+    _planIntExpanded = false;      /* no history for a new plan */
+    _planEditExpanded = true;      /* new plan needs the editor to add exercises */
+    _planIntHorizon = '3M';
     renderLibPlans();
   }
 
@@ -10944,6 +12293,9 @@
     if (!plan) return;
     _plansMode = 'editor';
     _planDraft = { id: plan.id, name: plan.name, exercises: plan.exercises.map(_normPlanEx) };
+    _planIntExpanded = false;      /* both sections collapsed by default */
+    _planEditExpanded = false;
+    _planIntHorizon = '3M';
     renderLibPlans();
   }
 
@@ -11112,6 +12464,7 @@
     const plan = plans.find(p => p.id === planId);
     if (!plan || !plan.exercises.length) return;
 
+    _activeJourneyRef = null;
     exerciseCount  = 0;
     _workoutActive = true;
     _sessionRestEnabled = null;
@@ -11474,6 +12827,7 @@
         const strTog = document.getElementById('wu-str-toggle');
         if (strTog) strTog.checked = _getWarmupStrengthEnabled();
       }
+      if (id === 'settings-data') _refreshGeminiKeyStatus();
       if (id === 'settings-killer-edit') ksEditRender();
       if (id === 'settings-goals') _gpOpenGoalsPage();
       if (id === 'settings-goal-freq') _gpOpenFreqPage();
@@ -11492,6 +12846,38 @@
   function settingsPop() {
     const id = _settingsStack.pop();
     if (id) document.getElementById(id)?.classList.remove('open');
+  }
+
+  /* ── Gemini API key (Data Management) ───────────────────── */
+  function _refreshGeminiKeyStatus() {
+    const k  = localStorage.getItem('geminiApiKey') || '';
+    const el = document.getElementById('gemini-key-status');
+    if (el) el.textContent = k ? (k.slice(0, 8) + '...') : 'Not set';
+  }
+  function _toggleGeminiKey() {
+    const ed = document.getElementById('gemini-key-editor');
+    if (!ed) return;
+    const opening = ed.style.display === 'none';
+    ed.style.display = opening ? '' : 'none';
+    const inp = document.getElementById('gemini-key-input');
+    if (inp) inp.value = '';          /* never prefill the full key */
+    _refreshGeminiKeyStatus();
+  }
+  function _saveGeminiKey() {
+    const inp = document.getElementById('gemini-key-input');
+    const k = (inp && inp.value || '').trim();
+    if (!k) return;
+    localStorage.setItem('geminiApiKey', k);
+    if (inp) inp.value = '';
+    _refreshGeminiKeyStatus();
+    const s = document.getElementById('gemini-key-saved');
+    if (s) { s.style.display = ''; setTimeout(() => { s.style.display = 'none'; }, 1800); }
+  }
+  function _clearGeminiKey() {
+    localStorage.removeItem('geminiApiKey');
+    const inp = document.getElementById('gemini-key-input');
+    if (inp) inp.value = '';
+    _refreshGeminiKeyStatus();
   }
 
   function settingsBWChanged(val) {
@@ -13313,8 +14699,63 @@
   </div>
 </div>
 
-<div id="exTrendModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:99999;display:none;overflow-y:auto;box-sizing:border-box;">
-  <div id="exTrendInner" style="padding:24px 20px;padding-top:max(44px,env(safe-area-inset-top,44px));padding-bottom:env(safe-area-inset-bottom,24px);color:#fff;font-family:system-ui,-apple-system,sans-serif;box-sizing:border-box;"></div>
+<div id="exTrendModal" style="position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:100%;background:#000;z-index:99999;display:none;overflow-y:auto;box-sizing:border-box;">
+  <div class="settings-nav" style="position:sticky;top:0;z-index:2;">
+    <button class="settings-back-btn" onclick="document.getElementById('exTrendModal').style.display='none';">
+      <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+    </button>
+    <div class="settings-nav-title">Performance</div>
+  </div>
+  <div id="exTrendInner" style="padding:20px;padding-bottom:env(safe-area-inset-bottom,24px);color:#fff;font-family:system-ui,-apple-system,sans-serif;box-sizing:border-box;"></div>
+</div>
+
+<!-- ═══════════════ JOURNEY CREATOR ═══════════════ -->
+<div id="journey-creator" class="journey-overlay" style="display:none">
+  <div class="settings-nav" style="position:sticky;top:0;z-index:2;background:#000">
+    <button class="settings-back-btn" onclick="_closeJourneyCreator()">
+      <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+    </button>
+    <div class="settings-nav-title">New Journey</div>
+  </div>
+  <div id="journey-creator-inner" class="journey-inner"></div>
+</div>
+
+<!-- ═══════════════ JOURNEY PREVIEW ═══════════════ -->
+<div id="journey-preview" class="journey-overlay" style="display:none">
+  <div class="settings-nav" style="position:sticky;top:0;z-index:2;background:#000">
+    <button class="settings-back-btn" onclick="_closeJourneyPreview()">
+      <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+    </button>
+    <div class="settings-nav-title">Journey Preview</div>
+  </div>
+  <div id="journey-preview-inner" class="journey-inner"></div>
+</div>
+
+<!-- ═══════════════ JOURNEY DETAIL ═══════════════ -->
+<div id="journey-detail" class="journey-overlay" style="display:none">
+  <div class="settings-nav" style="position:sticky;top:0;z-index:2;background:#000">
+    <button class="settings-back-btn" onclick="_closeJourneyDetail()">
+      <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+    </button>
+    <div class="settings-nav-title">Journey</div>
+  </div>
+  <div id="journey-detail-inner" class="journey-inner"></div>
+</div>
+
+<!-- ═══════════════ JOURNEY SESSION DETAIL ═══════════════ -->
+<div id="journey-session" class="journey-overlay" style="display:none">
+  <div class="settings-nav" style="position:sticky;top:0;z-index:2;background:#000">
+    <button class="settings-back-btn" onclick="_closeJourneySession()">
+      <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+    </button>
+    <div class="settings-nav-title" id="journey-session-title">Session</div>
+  </div>
+  <div id="journey-session-inner" class="journey-inner"></div>
+</div>
+
+<!-- ═══════════════ JOURNEY UNKNOWN EXERCISES MODAL ═══════════════ -->
+<div id="journey-unknown-modal" class="journey-overlay" style="display:none;z-index:100002">
+  <div id="journey-unknown-inner" class="journey-inner" style="padding-top:calc(20px + env(safe-area-inset-top,0px))"></div>
 </div>
 
 <script>
@@ -13327,16 +14768,10 @@ window.renderExerciseTrendModal = function() {
   var inner = document.getElementById('exTrendInner');
   if (!inner) return;
 
-  // --- Collect sessions ---
-  var cutoff = 0;
-  if (horizon !== 'All') {
-    var months = {'1M':1,'3M':3,'6M':6,'1Y':12}[horizon] || 3;
-    var cd = new Date(); cd.setMonth(cd.getMonth() - months); cutoff = cd.getTime();
-  }
+  // --- Collect sessions (all history; horizon only sets the visible window) ---
   var sessions = [];
   var _allWorkouts = JSON.parse(localStorage.getItem('workouts') || '[]');
   _allWorkouts.forEach(function(w) {
-    if (new Date(w.date).getTime() < cutoff) return;
     var ex = (w.exercises || []).find(function(e) { return e.name === name; });
     if (!ex) return;
     var totalReps = 0, totalInt = 0;
@@ -13352,11 +14787,11 @@ window.renderExerciseTrendModal = function() {
   sessions.reverse();
 
   // --- Segment control ---
-  var horizons = ['1M','3M','6M','1Y','All'];
-  var segHTML = '<div style="display:flex;background:#2C2C2E;border-radius:10px;padding:3px;gap:2px;margin:16px 0 20px;">';
+  var horizons = ['1M','3M','6M','1Y','2Y'];
+  var segHTML = '<div style="display:flex;background:#1C1C1E;border-radius:10px;padding:3px;gap:2px;height:36px;box-sizing:border-box;margin:16px 0 0;">';
   horizons.forEach(function(h) {
     var active = h === horizon;
-    segHTML += '<button onclick="window.currentTrendHorizon=\'' + h + '\';window.renderExerciseTrendModal();" style="flex:1;padding:6px 0;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:' + (active?'#007AFF':'transparent') + ';color:' + (active?'#fff':'#8E8E93') + ';">' + h + '</button>';
+    segHTML += '<button onclick="window.currentTrendHorizon=\'' + h + '\';window.renderExerciseTrendModal();" style="flex:1;height:100%;padding:0;border:none;border-radius:8px;font-size:14px;font-weight:' + (active?'700':'600') + ';font-family:inherit;cursor:pointer;background:' + (active?'#007AFF':'transparent') + ';color:' + (active?'#fff':'#8E8E93') + ';">' + h + '</button>';
   });
   segHTML += '</div>';
 
@@ -13389,40 +14824,53 @@ window.renderExerciseTrendModal = function() {
 
   // --- Render HTML ---
   inner.innerHTML =
-    '<button onclick="document.getElementById(\'exTrendModal\').style.display=\'none\';" style="background:none;border:none;color:#007AFF;font-size:17px;font-family:inherit;cursor:pointer;padding:0;margin-bottom:20px;display:block;">← Back</button>' +
-    '<div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-.4px;margin-bottom:4px;">'+name+'</div>' +
-    '<div style="font-size:13px;color:#8E8E93;margin-bottom:0;">Performance Over Time</div>' +
+    '<div style="font-size:28px;font-weight:700;color:#fff;letter-spacing:-.4px;margin-top:4px;">'+name+'</div>' +
+    '<div style="font-size:13px;color:#8E8E93;">Performance Over Time</div>' +
     segHTML +
-    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#8E8E93;margin-bottom:8px;">REPS</div>' +
+    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#8E8E93;margin:20px 0 8px;">REPS</div>' +
     '<div style="background:#1C1C1E;border-radius:12px;padding:16px;margin-bottom:12px;">' +
     '<canvas id="trendRepsCanvas" style="display:block;width:100%;height:180px;"></canvas>' +
     '</div>' +
-    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#8E8E93;margin-bottom:8px;">INTENSITY ⚡</div>' +
+    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#8E8E93;margin:20px 0 8px;">INTENSITY ⚡</div>' +
     '<div style="background:#1C1C1E;border-radius:12px;padding:16px;margin-bottom:12px;">' +
     '<canvas id="trendIntensityCanvas" style="display:block;width:100%;height:180px;"></canvas>' +
     '</div>' +
-    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#8E8E93;margin-bottom:10px;">LAST 3 SESSIONS</div>' +
+    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#8E8E93;margin:20px 0 10px;">LAST 3 SESSIONS</div>' +
     breakdownHTML;
 
   // --- Draw charts after paint ---
   requestAnimationFrame(function() {
-    _drawTrendChart(document.getElementById('trendRepsCanvas'), sessions, function(s){return s.totalReps;});
-    _drawTrendChart(document.getElementById('trendIntensityCanvas'), sessions, function(s){return s.totalInt;});
+    _drawTrendChart(document.getElementById('trendRepsCanvas'), sessions, function(s){return s.totalReps;}, 180, horizon);
+    _drawTrendChart(document.getElementById('trendIntensityCanvas'), sessions, function(s){return s.totalInt;}, 180, horizon);
   });
 };
 
-function _drawTrendChart(canvas, sessions, valFn) {
+function _drawTrendChart(canvas, sessions, valFn, height, rangeKey) {
   if (!canvas) return;
-  var vals = sessions.map(valFn);
   var dpr = window.devicePixelRatio || 1;
-  var W = (canvas.parentElement ? canvas.parentElement.clientWidth : 0) || 335;
-  var H = 180;
+  var parent = canvas.parentElement;
+  /* visible content width of the scroll container (minus its own padding) */
+  var _cs = parent ? getComputedStyle(parent) : null;
+  var _padX = _cs ? ((parseFloat(_cs.paddingLeft) || 0) + (parseFloat(_cs.paddingRight) || 0)) : 0;
+  var containerW = (parent ? parent.clientWidth - _padX : 0) || 303;
+  var H = height || 180;
+
+  /* Aggregate (week/month per horizon) → proportional X + horizontal scroll. */
+  var agg = _aggregateChart(sessions.map(function(s){ return s.date; }), sessions.map(valFn), rangeKey || '1M');
+  var vals = agg.values, times = agg.times, labels = agg.labels;
+  var n = vals.length;
+
+  var PAD = {top:14, right:18, bottom:26, left:40};
+  var scale = _chartXScale(times, _horizonDaysFor(rangeKey || '1M', times), PAD, containerW);
+  var W = scale.canvasW;
+  if (parent) parent.classList.add('chart-scroll');
+
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   canvas.width = W * dpr; canvas.height = H * dpr;
   var ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  if (sessions.length < 2) {
+  if (n < 2) {
     ctx.fillStyle = '#8E8E93';
     ctx.font = '13px system-ui,-apple-system,sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -13430,45 +14878,66 @@ function _drawTrendChart(canvas, sessions, valFn) {
     return;
   }
 
-  var PAD = {top:12, right:12, bottom:28, left:40};
   var cW = W - PAD.left - PAD.right, cH = H - PAD.top - PAD.bottom;
   var minV = Math.min.apply(null,vals), maxV = Math.max.apply(null,vals);
   var rng = maxV - minV || 1;
-  var n = sessions.length;
-  var xOf = function(i){return PAD.left + (i/(n-1))*cW;};
+  var xOf = scale.xOf;
   var yOf = function(v){return PAD.top + cH - ((v-minV)/rng)*cH;};
 
+  /* horizontal grid lines + y value labels */
   for (var g=0; g<=3; g++) {
     var gy = PAD.top + (g/3)*cH;
     ctx.beginPath(); ctx.strokeStyle='#2C2C2E'; ctx.lineWidth=1;
     ctx.moveTo(PAD.left,gy); ctx.lineTo(PAD.left+cW,gy); ctx.stroke();
-    ctx.fillStyle='#8E8E93'; ctx.font='10px system-ui,-apple-system,sans-serif';
+    ctx.fillStyle='#8E8E93'; ctx.font='11px system-ui,-apple-system,sans-serif';
     ctx.textAlign='right'; ctx.textBaseline='middle';
-    ctx.fillText(Math.round(maxV-(g/3)*rng), PAD.left-4, gy);
+    ctx.fillText(Math.round(maxV-(g/3)*rng), PAD.left-8, gy);
   }
 
+  /* trend line (dashed grey) */
   var sx=0,sy=0,sxy=0,sx2=0;
   for (var j=0;j<n;j++){sx+=j;sy+=vals[j];sxy+=j*vals[j];sx2+=j*j;}
   var den=n*sx2-sx*sx, slope=den?(n*sxy-sx*sy)/den:0, icept=(sy-slope*sx)/n;
-  ctx.beginPath(); ctx.strokeStyle='#4A90D9'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.strokeStyle='#8E8E93'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
   ctx.moveTo(xOf(0),yOf(icept)); ctx.lineTo(xOf(n-1),yOf(icept+slope*(n-1)));
   ctx.stroke(); ctx.setLineDash([]);
 
-  ctx.beginPath(); ctx.strokeStyle='#007AFF'; ctx.lineWidth=2;
+  /* data line (blue) */
+  ctx.beginPath(); ctx.strokeStyle='#007AFF'; ctx.lineWidth=2; ctx.lineJoin='round';
   for (var i=0;i<n;i++){i===0?ctx.moveTo(xOf(i),yOf(vals[i])):ctx.lineTo(xOf(i),yOf(vals[i]));}
   ctx.stroke();
 
+  /* personal best = highest value */
+  var bestIdx = vals.indexOf(maxV);
+
+  /* dots — hollow blue (white fill, blue border); PR dot red filled */
   for (var dd=0;dd<n;dd++){
-    ctx.beginPath(); ctx.fillStyle='#007AFF';
-    ctx.arc(xOf(dd),yOf(vals[dd]),4,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.fillStyle='#000';
-    ctx.arc(xOf(dd),yOf(vals[dd]),2,0,Math.PI*2); ctx.fill();
+    if (dd === bestIdx) continue;
+    ctx.beginPath();
+    ctx.arc(xOf(dd),yOf(vals[dd]),4,0,Math.PI*2);
+    ctx.fillStyle='#fff'; ctx.fill();
+    ctx.strokeStyle='#007AFF'; ctx.lineWidth=2; ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.arc(xOf(bestIdx),yOf(maxV),5,0,Math.PI*2);
+  ctx.fillStyle='#FF3B30'; ctx.fill();
+
+  /* x axis labels — skip overlapping ones (min 50px gap), always first + last */
+  ctx.fillStyle='#8E8E93'; ctx.font='11px system-ui,-apple-system,sans-serif'; ctx.textBaseline='top';
+  var _xs = labels.map(function(l, i){ return xOf(i); });
+  var _lblIdxs = _pickXLabelIdxs(_xs, 50);
+  for (var li=0; li<n; li++){
+    if (!_lblIdxs.has(li)) continue;
+    ctx.textAlign = li===0 ? 'left' : (li===n-1 ? 'right' : 'center');
+    ctx.fillText(labels[li], xOf(li), H-PAD.bottom+8);
   }
 
-  var fmt=function(dt){return new Date(dt).toLocaleDateString('en-US',{month:'short',day:'numeric'});};
-  ctx.fillStyle='#8E8E93'; ctx.font='10px system-ui,-apple-system,sans-serif'; ctx.textBaseline='top';
-  ctx.textAlign='left';  ctx.fillText(fmt(sessions[0].date), PAD.left, H-18);
-  ctx.textAlign='right'; ctx.fillText(fmt(sessions[n-1].date), PAD.left+cW, H-18);
+  /* dot tooltips */
+  var _dots = [];
+  for (var di=0; di<n; di++) _dots.push({ x: xOf(di), y: yOf(vals[di]), label: labels[di], value: String(Math.round(vals[di])) });
+  _attachDotTooltip(canvas, _dots);
+
+  if (parent) parent.scrollLeft = parent.scrollWidth;
 }
 </script>
 </body>
