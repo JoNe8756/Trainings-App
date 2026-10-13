@@ -2975,9 +2975,9 @@
     }
     .journey-ai-badge { font-size: 11px; color: #8E8E93; font-style: italic; }
     .journey-ai-pill {
-      position: absolute; right: 16px; bottom: 16px;
-      font-size: 10px; color: #8E8E93; background: #2C2C2E;
-      border-radius: 4px; padding: 2px 6px;
+      position: absolute; right: 16px; top: 16px;
+      font-size: 12px; color: #007AFF; background: #2C2C2E;
+      border-radius: 999px; padding: 4px 10px;
     }
     .journey-beta-banner {
       font-size: 12px;
@@ -2994,8 +2994,13 @@
     }
     .journey-inner { padding: 20px; padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
     .journey-pill {
-      display: inline-block; font-size: 11px; font-weight: 600; color: #fff;
-      background: rgba(255,255,255,.12); border-radius: 999px; padding: 3px 9px; margin-right: 6px;
+      display: inline-block; font-size: 12px; font-weight: 600; color: #8E8E93;
+      background: #2C2C2E; border-radius: 999px; padding: 4px 10px; margin-right: 6px;
+    }
+    .journey-card-goal {
+      font-size: 13px; color: #8E8E93; margin-top: 4px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; text-overflow: ellipsis;
     }
     .journey-sec-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #8E8E93; margin: 20px 0 8px; }
     .journey-card-input {
@@ -3024,16 +3029,22 @@
     }
     .journey-week-head {
       display: flex; align-items: center; justify-content: space-between;
-      width: 100%; background: none; border: none; padding: 0; font-family: inherit; cursor: pointer;
+      width: 100%; background: none; border: none; outline: none; padding: 0; font-family: inherit; cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
+    .journey-week-head:focus, .journey-week-head:focus-visible { outline: none; }
     .journey-week-chev { color: #8E8E93; display: flex; transition: transform .25s ease; }
     .journey-week.open .journey-week-chev { transform: rotate(90deg); }
     .journey-week-body { display: none; margin-top: 12px; }
     .journey-week.open .journey-week-body { display: block; }
     .journey-session-card {
-      background: #2C2C2E; border-radius: 10px; padding: 12px; margin-top: 10px;
+      background: #2C2C2E; border-radius: 10px; padding: 10px 12px; margin-top: 8px;
       cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .journey-start-btn {
+      height: 40px; padding: 0 16px; background: #007AFF; color: #fff; border: none;
+      border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
     .journey-spinner {
       width: 38px; height: 38px; border: 3px solid rgba(255,255,255,.18);
@@ -4258,7 +4269,7 @@
       display: none;
       position: fixed;
       inset: 0;
-      z-index: 2000;
+      z-index: 100010;
       background: rgba(0,0,0,.6);
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
@@ -4833,6 +4844,7 @@
       <div class="section-header">Highlights</div>
       <div id="highlights-list"></div>
     </div>
+    <div id="active-journeys-section"></div>
     <div class="section-header">Last Training</div>
     <div id="recent-list">
       <div class="empty-state">
@@ -6156,10 +6168,21 @@
         <div class="detail-meta">
           <span class="detail-cat-tag">${cat || 'Exercise'}</span>
           ${meta.tb ? '<span class="detail-cat-tag" style="color:var(--blue)">⏱ Hold</span>' : ''}
-          <span class="diff-badge" style="background:${diffColor};margin-left:.125rem">${meta.verified === false ? '~' : ''}${diff}/10</span>
+          <span class="diff-badge" style="background:${diffColor};margin-left:.125rem;cursor:pointer" onclick="_openExDiffEditor(${qs(name)})">${meta.verified === false ? '~' : ''}${diff}/10</span>
+          <span onclick="_openExDiffEditor(${qs(name)})" style="color:#007AFF;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent">Edit</span>
         </div>
       </div>
-      ${meta.verified === false ? `<div onclick="editExDiff(${qs(name)})" style="margin:0 var(--gutter) .875rem;background:rgba(255,149,0,.12);border-radius:10px;padding:.625rem .75rem;font-size:.8125rem;color:#FF9500;cursor:pointer;-webkit-tap-highlight-color:transparent">⚠️ Estimated difficulty — tap to adjust</div>` : ''}
+      ${meta.verified === false ? `<div onclick="_openExDiffEditor(${qs(name)})" style="margin:0 var(--gutter) .875rem;background:rgba(255,149,0,.12);border-radius:10px;padding:.625rem .75rem;font-size:.8125rem;color:#FF9500;cursor:pointer;-webkit-tap-highlight-color:transparent">⚠️ Estimated difficulty — tap to adjust</div>` : ''}
+      <div id="ex-diff-editor" style="display:none;margin:0 var(--gutter) .875rem;background:#1C1C1E;border-radius:12px;padding:16px">
+        <div style="font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8E8E93;text-align:center">Difficulty</div>
+        <div id="ex-diff-value" style="font-size:48px;font-weight:700;color:#fff;text-align:center;line-height:1.1;margin:6px 0 12px">${diff}</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px">
+          <button onclick="_exDiffStep(-0.5)" style="width:44px;height:44px;background:#2C2C2E;border:none;border-radius:8px;color:#fff;font-size:24px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent">−</button>
+          <button onclick="_exDiffStep(0.5)" style="width:44px;height:44px;background:#2C2C2E;border:none;border-radius:8px;color:#fff;font-size:24px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent">+</button>
+        </div>
+        <button onclick="_exDiffSave(${qs(name)})" style="width:100%;background:#007AFF;color:#fff;border:none;border-radius:999px;padding:13px 0;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent">Save</button>
+        <button onclick="_exDiffCancel()" style="width:100%;background:none;border:none;color:#8E8E93;font-family:inherit;font-size:14px;font-weight:600;padding:10px 0 0;cursor:pointer;-webkit-tap-highlight-color:transparent">Cancel</button>
+      </div>
       ${(() => { const rec = _calcOptimalRestRec(name); return rec != null ? `<div class="detail-card" style="margin-bottom:.875rem"><button onclick="_restStatsOpen(${qs(name)})" style="width:100%;background:none;border:none;cursor:pointer;font-family:inherit;display:flex;justify-content:space-between;align-items:center;padding:.75rem 0;-webkit-tap-highlight-color:transparent"><span style="font-size:.875rem;color:#8E8E93">💤 Optimal Rest</span><div style="display:flex;align-items:center;gap:.375rem"><span style="font-size:.875rem;color:#fff;font-weight:600">${_fmtRestRec(rec)}</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="#8E8E93" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg></div></button></div>` : ''; })()}
       ${howHTML ? `<div style="font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.65px;color:var(--tertiary);padding:0 var(--gutter) .375rem">How to Perform</div>
       <div class="detail-card">${howHTML}<div style="height:.5rem"></div></div>` : ''}
@@ -6179,6 +6202,31 @@
     document.getElementById('lib-detail-content').style.display = 'none';
     document.querySelector('.lib-seg-wrap').style.display = '';
     showLibSeg(_libSeg);
+  }
+
+  /* ── Difficulty override editor (exercise detail) ───────── */
+  let _exDiffEditVal = 5;
+  function _openExDiffEditor(name) {
+    _exDiffEditVal = getExMeta(name).diff;
+    const ed = document.getElementById('ex-diff-editor');
+    const val = document.getElementById('ex-diff-value');
+    if (val) val.textContent = _exDiffEditVal;
+    if (ed) { ed.style.display = ''; ed.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  }
+  function _exDiffStep(delta) {
+    _exDiffEditVal = Math.min(10, Math.max(1, Math.round((_exDiffEditVal + delta) * 2) / 2));
+    const val = document.getElementById('ex-diff-value');
+    if (val) val.textContent = _exDiffEditVal;
+  }
+  function _exDiffCancel() {
+    const ed = document.getElementById('ex-diff-editor');
+    if (ed) ed.style.display = 'none';
+  }
+  function _exDiffSave(name) {
+    const meta = getCustomMeta();
+    meta[name] = Object.assign({}, meta[name], { diff: _exDiffEditVal, verified: true });
+    setCustomMeta(meta);
+    showExDetail(name);   /* re-render: updated badge, no "~", no estimate banner */
   }
 
   function getUserBW()      { return parseFloat(localStorage.getItem('userBW')     || '75'); }
@@ -6285,7 +6333,7 @@
 
     const fab = document.getElementById('home-fab-wrap');
     if (fab) fab.style.display = (tab === 'home' && !_workoutActive) ? 'flex' : 'none';
-    if (tab === 'home')      { _updateGreeting(); renderRecent(); renderFreqGoal(); renderHighlights(); }
+    if (tab === 'home')      { _updateGreeting(); renderRecent(); renderFreqGoal(); renderHighlights(); renderActiveJourneys(); }
     if (tab === 'history')   renderHistory();
     if (tab === 'progress')  renderProgress();
     if (tab === 'exercises') {
@@ -7960,7 +8008,7 @@
           const homeActive     = document.getElementById('home-screen').classList.contains('active');
           const historyActive  = document.getElementById('history-screen').classList.contains('active');
           const progressActive = document.getElementById('progress-screen')?.classList.contains('active');
-          if (homeActive)     { renderRecent(); renderFreqGoal(); renderHighlights(); }
+          if (homeActive)     { renderRecent(); renderFreqGoal(); renderHighlights(); renderActiveJourneys(); }
           if (historyActive)  renderHistory();
           if (progressActive) renderProgress();
         });
@@ -11383,16 +11431,17 @@
           <button class="plan-swipe-delete" onclick="_deleteJourney(${j.id})">Delete</button>
           <div class="plan-card journey-list-card" data-journey-id="${j.id}">
             <div class="plan-card-main">
-              <div class="plan-card-name">${_esc(j.name)}</div>
-              <div class="plan-card-subs">${_esc(j.goal)}</div>
+              <div class="plan-card-name" style="padding-right:48px">${_esc(j.name)}</div>
+              <div class="journey-card-goal">${_esc(j.goal)}</div>
               <div style="margin-top:10px">
                 <span class="journey-pill">${(j.weeks || []).length} weeks</span>
                 <span class="journey-pill">${_journeyDaysPerWeek(j)} days/wk</span>
-                <span class="journey-pill">${done}/${total} done</span>
               </div>
+              <div style="font-size:11px;color:#8E8E93;text-align:right;margin-top:8px">${done}/${total} sessions</div>
+              <div style="height:4px;background:#2C2C2E;border-radius:999px;overflow:hidden"><div style="height:100%;width:${total ? (done / total * 100) : 0}%;background:#007AFF;border-radius:999px"></div></div>
               ${start ? `<div class="plan-card-last">Started: ${start}</div>` : ''}
             </div>
-            <span class="journey-ai-pill">✨ AI</span>
+            <span class="journey-ai-pill">✦ AI</span>
           </div>
         </div>`;
       });
@@ -11409,6 +11458,85 @@
 
   function _journeyTotalSessions(j) { return (j.weeks || []).reduce((n, w) => n + ((w.sessions || []).length), 0); }
   function _journeyDaysPerWeek(j) { const w = (j.weeks || [])[0]; return w ? (w.sessions || []).length : 0; }
+
+  /* first incomplete session in order, or null if all done */
+  function _journeyNextSession(j) {
+    const weeks = j.weeks || [], completed = j.completedSessions || [];
+    for (let wi = 0; wi < weeks.length; wi++) {
+      const sess = weeks[wi].sessions || [];
+      for (let si = 0; si < sess.length; si++) {
+        if (!completed.includes(wi + '-' + si)) return { wi, si, s: sess[si], week: weeks[wi].week || (wi + 1) };
+      }
+    }
+    return null;
+  }
+
+  /* ── Summary tab: active journeys ───────────────────────── */
+  function renderActiveJourneys() {
+    const el = document.getElementById('active-journeys-section');
+    if (!el) return;
+    /* Read fresh from localStorage every render so the section shows on first
+       load without needing to visit the Journeys tab first. */
+    try { _journeys = JSON.parse(localStorage.getItem('trainingJourneys') || '[]'); } catch (e) { _journeys = []; }
+    const active = _journeys.filter(j => (j.completedSessions || []).length > 0);
+    if (!active.length) { el.innerHTML = ''; return; }
+    let html = '<div class="section-header">Active Journeys</div>';
+    active.forEach(j => {
+      const total = _journeyTotalSessions(j), done = (j.completedSessions || []).length;
+      const next = _journeyNextSession(j);
+      html += `<div style="background:#1C1C1E;border-radius:12px;padding:16px;margin:0 var(--gutter) 10px">
+        <div style="font-size:17px;font-weight:700;color:#fff">${_esc(j.name)}</div>
+        <div style="font-size:11px;color:#8E8E93;font-style:italic;margin-top:2px">✨ AI Generated</div>
+        <div style="font-size:11px;color:#8E8E93;text-align:right;margin-top:10px">${done}/${total} sessions</div>
+        <div style="height:4px;background:#2C2C2E;border-radius:999px;overflow:hidden"><div style="height:100%;width:${total ? (done / total * 100) : 0}%;background:#007AFF;border-radius:999px"></div></div>
+        ${next
+          ? `<div style="font-size:13px;color:#8E8E93;margin-top:10px">Next: ${_esc(next.s.planName || next.s.day || ('Session ' + (next.si+1)))} · Week ${next.week}</div>
+             <div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="journey-start-btn" onclick="_startNextJourneySession(${j.id})">▶ Start Next Session</button></div>`
+          : `<div style="font-size:13px;color:#34C759;margin-top:10px">✓ All sessions complete</div>`}
+      </div>`;
+    });
+    el.innerHTML = html;
+  }
+  function _startNextJourneySession(journeyId) {
+    const j = _journeys.find(x => x.id === journeyId);
+    if (!j) return;
+    const next = _journeyNextSession(j);
+    if (!next) return;
+    /* Navigate to Library → Journeys → Journey Detail with the next
+       session's week expanded; the user starts it from there. */
+    showTab('exercises');
+    showLibSeg('journeys');
+    _openJourneyDetail(journeyId, next.wi);
+  }
+
+  function _resetJourney(id) {
+    _wConfirm({
+      title: 'Reset journey?',
+      msg: "All progress will be lost and you'll start from session 1.",
+      okLabel: 'Reset', okColor: 'red',
+      onOk: () => {
+        const j = _journeys.find(x => x.id === id);
+        if (!j) return;
+        j.completedSessions = [];
+        _persistJourneys();
+        _renderJourneyDetail();
+      }
+    });
+  }
+
+  /* effective plan name used when a session is logged as a workout */
+  function _journeyEffectivePlanName(j, wi, s) { return s.planName || (j.name + ' · Week ' + (wi + 1)); }
+  /* completion date (ms) read from workout history, matched by plan name; null if not done */
+  function _journeySessionDoneDate(j, wi, si) {
+    if (!(j.completedSessions || []).includes(wi + '-' + si)) return null;
+    const s = ((j.weeks || [])[wi] || {}).sessions?.[si];
+    if (!s) return null;
+    const pn = _journeyEffectivePlanName(j, wi, s);
+    let latest = null;
+    workouts.forEach(w => { if (w.planName === pn) { const t = new Date(w.date).getTime(); if (latest === null || t > latest) latest = t; } });
+    return latest;
+  }
+  function _fmtJDate(ms, withYear) { return ms == null ? '' : new Date(ms).toLocaleDateString('en-US', withYear ? { month:'short', day:'numeric', year:'numeric' } : { month:'short', day:'numeric' }); }
 
   /* swipe-to-delete + tap-to-open for journey cards (mirrors plan cards) */
   function _initJourneySwipe(container) {
@@ -11460,12 +11588,13 @@
 
   /* ── Creator ────────────────────────────────────────────── */
   function _openJourneyCreator() {
-    _journeyInputs = { goal: '', weeks: 8, weeksCustom: '', days: 3, daysCustom: '', level: 'Intermediate' };
+    _journeyInputs = { goal: '', weeks: 8, weeksCustom: '', days: 3, daysCustom: '', duration: 60, durationCustom: '', level: 'Intermediate' };
     _renderJourneyCreator();
     document.getElementById('journey-creator').style.display = '';
   }
   function _jWeeks() { const c = parseInt(_journeyInputs.weeksCustom, 10); return (c > 0) ? c : _journeyInputs.weeks; }
   function _jDays()  { const c = parseInt(_journeyInputs.daysCustom, 10);  return (c > 0) ? c : _journeyInputs.days; }
+  function _jDuration() { const c = parseInt(_journeyInputs.durationCustom, 10); return (c > 0) ? c : _journeyInputs.duration; }
   function _closeJourneyCreator() { document.getElementById('journey-creator').style.display = 'none'; }
 
   function _renderJourneyCreator(loading) {
@@ -11474,12 +11603,12 @@
     if (loading) {
       el.innerHTML = `<div style="text-align:center;padding:4rem 0">
         <div class="journey-spinner"></div>
-        <div style="color:#8E8E93;font-size:15px">Generating your journey...</div>
+        <div id="jc-loading-text" style="color:#8E8E93;font-size:15px">Generating your journey... (attempt 1/3)</div>
       </div>`;
       return;
     }
-    const wk = [4,6,8,10,12], dy = [2,3,4,5], lv = ['Beginner','Intermediate','Advanced'];
-    const wkCustom = !!_journeyInputs.weeksCustom, dyCustom = !!_journeyInputs.daysCustom;
+    const wk = [4,6,8,10,12], dy = [2,3,4,5], dur = [30,45,60,75,90], lv = ['Beginner','Intermediate','Advanced'];
+    const wkCustom = !!_journeyInputs.weeksCustom, dyCustom = !!_journeyInputs.daysCustom, durCustom = !!_journeyInputs.durationCustom;
     el.innerHTML = `
       <div class="journey-sec-label" style="margin-top:4px">Goal</div>
       <textarea id="jc-goal" class="journey-card-input" rows="3" placeholder="What do you want to achieve?  e.g. Run 5km without stopping, First muscle-up, Increase my squat to 100kg, Lose weight and get fitter" oninput="_journeyInputs.goal=this.value;_updateJourneyGenBtn()">${_esc(_journeyInputs.goal)}</textarea>
@@ -11496,6 +11625,12 @@
       </div>
       <input id="jc-days-custom" type="text" inputmode="numeric" class="journey-card-input" style="margin-top:8px;padding:12px" placeholder="Or enter custom days" value="${_esc(_journeyInputs.daysCustom)}" oninput="_jcCustom('days',this)">
 
+      <div class="journey-sec-label">Session Duration</div>
+      <div class="journey-chip-row" id="jc-duration">
+        ${dur.map(d => `<button class="journey-chip${(!durCustom && _journeyInputs.duration===d)?' active':''}" onclick="_jcPickDuration(${d})">${d}min</button>`).join('')}
+      </div>
+      <input id="jc-duration-custom" type="text" inputmode="numeric" class="journey-card-input" style="margin-top:8px;padding:12px" placeholder="Or enter custom minutes" value="${_esc(_journeyInputs.durationCustom)}" oninput="_jcCustom('duration',this)">
+
       <div class="journey-sec-label">Current level</div>
       <div class="journey-chip-row" id="jc-level">
         ${lv.map(l => `<button class="journey-chip${_journeyInputs.level===l?' active':''}" onclick="_jcPickLevel('${l}')">${l}</button>`).join('')}
@@ -11510,23 +11645,26 @@
 
   function _jcPickWeeks(w) { _journeyInputs.weeks = w; _journeyInputs.weeksCustom = ''; const el = document.getElementById('jc-weeks-custom'); if (el) el.value = ''; _syncJourneyChips('jc-weeks', w); _updateJourneyGenBtn(); }
   function _jcPickDays(d)  { _journeyInputs.days = d;  _journeyInputs.daysCustom = '';  const el = document.getElementById('jc-days-custom');  if (el) el.value = ''; _syncJourneyChips('jc-days', d);  _updateJourneyGenBtn(); }
+  function _jcPickDuration(d) { _journeyInputs.duration = d; _journeyInputs.durationCustom = ''; const el = document.getElementById('jc-duration-custom'); if (el) el.value = ''; _syncJourneyChips('jc-duration', d); _updateJourneyGenBtn(); }
   function _jcPickLevel(l) { _journeyInputs.level = l; _syncJourneyChips('jc-level', l); _updateJourneyGenBtn(); }
   function _jcCustom(which, inp) {
     const digits = inp.value.replace(/[^0-9]/g, '');
     inp.value = digits;
-    const grpId = which === 'weeks' ? 'jc-weeks' : 'jc-days';
-    if (which === 'weeks') _journeyInputs.weeksCustom = digits; else _journeyInputs.daysCustom = digits;
+    const grpId = which === 'weeks' ? 'jc-weeks' : which === 'days' ? 'jc-days' : 'jc-duration';
+    if (which === 'weeks') _journeyInputs.weeksCustom = digits;
+    else if (which === 'days') _journeyInputs.daysCustom = digits;
+    else _journeyInputs.durationCustom = digits;
     const grp = document.getElementById(grpId);
     if (grp) {
       if (digits) grp.querySelectorAll('.journey-chip').forEach(b => b.classList.remove('active'));
-      else _syncJourneyChips(grpId, which === 'weeks' ? _journeyInputs.weeks : _journeyInputs.days);
+      else _syncJourneyChips(grpId, which === 'weeks' ? _journeyInputs.weeks : which === 'days' ? _journeyInputs.days : _journeyInputs.duration);
     }
     _updateJourneyGenBtn();
   }
   function _updateJourneyGenBtn() {
     const btn = document.getElementById('jc-generate');
     if (!btn) return;
-    const ok = !!(_journeyInputs.goal || '').trim() && _jWeeks() > 0 && _jDays() > 0 && !!_journeyInputs.level;
+    const ok = !!(_journeyInputs.goal || '').trim() && _jWeeks() > 0 && _jDays() > 0 && _jDuration() > 0 && !!_journeyInputs.level;
     btn.disabled = !ok;
     btn.style.background = ok ? '#007AFF' : '#3A3A3C';
     btn.style.color = ok ? '#fff' : '#8E8E93';
@@ -11547,15 +11685,22 @@
     const grp = document.getElementById(groupId);
     if (!grp) return;
     grp.querySelectorAll('.journey-chip').forEach(btn => {
-      btn.classList.toggle('active', btn.textContent.replace('w','') == String(val) || btn.textContent == String(val));
+      const num = btn.textContent.replace('min', '').replace('w', '');
+      btn.classList.toggle('active', num == String(val) || btn.textContent == String(val));
     });
   }
 
   /* ── Gemini data context ────────────────────────────────── */
   function _journeyExerciseLibText() {
     const lib = getExLib();
-    const lines = [];
-    EX_CATS.forEach(cat => (lib[cat] || []).forEach(name => { lines.push(`- ${name} (${cat}, difficulty ${getExMeta(name).diff}/10)`); }));
+    /* usage frequency across all workout history */
+    const freq = {};
+    workouts.forEach(w => (w.exercises || []).forEach(ex => { freq[ex.name] = (freq[ex.name] || 0) + 1; }));
+    /* flatten library with its category, then keep the 50 most-used */
+    const all = [];
+    EX_CATS.forEach(cat => (lib[cat] || []).forEach(name => all.push({ name, cat })));
+    all.sort((a, b) => (freq[b.name] || 0) - (freq[a.name] || 0));
+    const lines = all.slice(0, 50).map(e => `- ${e.name} (${e.cat}, difficulty ${getExMeta(e.name).diff}/10)`);
     return lines.join('\n') || '(none)';
   }
   function _journeyPRText() {
@@ -11573,63 +11718,93 @@
       });
     });
     const top = Object.keys(freq).sort((a, b) => freq[b] - freq[a]).slice(0, 10);
-    const lines = top.map(n => `- ${n}: ${pr[n] ? (pr[n].reps + ' reps' + (pr[n].kg > 0 ? ' @ ' + pr[n].kg + 'kg' : '')) : '—'} (${freq[n]} sessions)`);
+    const lines = top.map(n => {
+      const p = pr[n];
+      let perf = '—';
+      if (p) {
+        const tb = (typeof getExMeta === 'function') && !!getExMeta(n).tb;
+        perf = tb ? (p.reps + 's hold') : (p.reps + ' reps' + (p.kg > 0 ? ' @ ' + p.kg + 'kg' : ''));
+      }
+      return `- ${n}: ${perf} (${freq[n]} sessions)`;
+    });
     return lines.join('\n') || '(no recent training)';
   }
   function _journeyRecentText() {
-    const cutoff = Date.now() - 28 * 86400000;   /* 4 weeks */
+    const cutoff = Date.now() - 14 * 86400000;   /* 2 weeks */
     const lines = [];
     workouts.forEach(w => {
       if (new Date(w.date).getTime() < cutoff) return;
       const d = new Date(w.date).toLocaleDateString('en-US', { month:'short', day:'numeric' });
-      const exNames = (w.exercises || []).map(e => e.name).join(', ');
       let intensity = 0;
-      (w.exercises || []).forEach(ex => (ex.sets || []).forEach(s => {
-        const r = parseFloat(s.reps) || 0, k = parseFloat(s.kg) || 0;
-        if (r > 0) intensity += (typeof calcSetIntensity === 'function' ? calcSetIntensity(ex.name, r, k) : r * (k || 1));
-      }));
-      lines.push(`- ${d}${w.planName ? ' [' + w.planName + ']' : ''}: ${exNames} (intensity ${Math.round(intensity)})`);
+      const exStr = (w.exercises || []).map(ex => {
+        const sets = (ex.sets || []).length;
+        const reps = (ex.sets || []).map(s => parseFloat(s.reps) || 0).filter(r => r > 0);
+        (ex.sets || []).forEach(s => {
+          const r = parseFloat(s.reps) || 0, k = parseFloat(s.kg) || 0;
+          if (r > 0) intensity += (typeof calcSetIntensity === 'function' ? calcSetIntensity(ex.name, r, k) : r * (k || 1));
+        });
+        return `${ex.name} ${sets}x(${reps.length ? reps.join('/') : '—'} reps)`;
+      }).join('; ');
+      lines.push(`- ${d}${w.planName ? ' [' + w.planName + ']' : ''}: ${exStr} (intensity ${Math.round(intensity)})`);
     });
     return lines.join('\n') || '(no sessions in last 4 weeks)';
   }
 
   function _buildJourneyPrompt() {
     const i = _journeyInputs;
-    const weeks = _jWeeks(), days = _jDays();
-    return `You are a personal trainer creating a structured training journey.
+    const weeks = _jWeeks(), days = _jDays(), duration = _jDuration();
+    return `You are an elite personal trainer and strength coach with deep expertise in calisthenics, weightlifting, and athletic development. You create highly specific, science-based training journeys tailored to the individual.
 
-USER GOAL: ${i.goal}
-TIMEFRAME: ${weeks} weeks
-TRAINING DAYS PER WEEK: ${days} days
-CURRENT LEVEL: ${i.level}
+USER PROFILE:
+- Goal: ${i.goal}
+- Timeframe: ${weeks} weeks
+- Training days per week: ${days} days
+- Session duration: ${duration} minutes
+- Current level: ${i.level}
 
-USER'S EXERCISE LIBRARY:
-${_journeyExerciseLibText()}
-Prioritise exercises from this library. Only suggest exercises outside this list if no suitable library exercise exists for the goal.
-
-USER'S PERSONAL RECORDS (last 8 weeks):
+USER'S CURRENT PERFORMANCE (personal records):
 ${_journeyPRText()}
 
 USER'S RECENT TRAINING (last 4 weeks):
 ${_journeyRecentText()}
 
-Generate a ${weeks}-week training journey with ${days} training days per week.
-The journey should be specific to the user's goal and build progressively. Use exercises from the user's library where possible. Include any exercise type relevant to the goal — calisthenics, weights, cardio, mobility.
+USER'S EXERCISE LIBRARY:
+${_journeyExerciseLibText()}
 
-Respond ONLY with a JSON object in this exact format, no other text:
+COACHING INSTRUCTIONS:
+1. Analyse the user's current performance data carefully before designing the journey — start from their actual level, not a generic baseline
+2. Design progressive overload week by week — each week must be harder than the last in a specific, measurable way (more reps, more sets, harder variation, less rest)
+3. Every session must have a clear focus and purpose — no generic 'full body' sessions without specific targets
+4. Include specific coaching notes for each exercise explaining exactly what to focus on, common mistakes to avoid, and what good form feels like
+5. Balance volume and recovery — do not programme the same muscle groups on consecutive days
+6. Prioritise exercises from the user's library — only suggest exercises outside the library if essential for the goal
+7. For calisthenics goals: include skill progressions, not just volume work — e.g. for muscle-up goal include transition drills, false grip work, straight arm strength
+8. For strength goals: include periodisation — not every week at max intensity, include deload weeks
+9. Session duration must be respected — calculate realistic sets, reps and rest periods that fit within ${duration} minutes
+10. Week 1 must be achievable at the user's current level — do not start too hard
+
+RESPONSE FORMAT:
+Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation text before or after. Use this exact structure:
 {
-  "name": "Journey name",
-  "goal": "Goal description",
+  "name": "Specific descriptive journey name",
+  "goal": "Detailed goal description",
   "weeks": [
     {
       "week": 1,
-      "focus": "Week focus description",
+      "focus": "Specific week focus with measurable target",
       "sessions": [
         {
           "day": "Monday",
-          "planName": "Session name",
+          "planName": "Specific session name describing the focus",
+          "duration": ${duration},
           "exercises": [
-            { "name": "Exercise name", "sets": 3, "reps": 8, "notes": "Optional coaching note" }
+            {
+              "name": "Exercise name from library",
+              "sets": 4,
+              "reps": 6,
+              "rest": 90,
+              "notes": "Specific coaching cue: what to focus on, what good form feels like, common mistake to avoid"
+            }
           ]
         }
       ]
@@ -11647,63 +11822,70 @@ Respond ONLY with a JSON object in this exact format, no other text:
     if (!key) { _showJourneyApiKeyError(); return; }
 
     _renderJourneyCreator(true);
-    try {
-      const apiKey = key;
-      const prompt = _buildJourneyPrompt();
-      console.log('Gemini URL:', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + apiKey.substring(0, 8));
+    const apiKey = key;
+    const prompt = _buildJourneyPrompt();
+    const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + apiKey;
+    const MAX_ATTEMPTS = 3, TIMEOUT_MS = 45000, RETRY_DELAY_MS = 3000;
+    let lastErr = null;
 
-      const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + apiKey;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      _setJourneyLoadingText(attempt === 1 ? 'Generating your journey... (attempt 1/3)' : `Retrying... (attempt ${attempt}/3)`);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+      try {
+        const response = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [ { parts: [ { text: prompt } ] } ] }),
+          signal: controller.signal
+        });
+        clearTimeout(timer);
 
-      const response = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: prompt }
-              ]
-            }
-          ]
-        })
-      });
+        const responseData = await response.json();
+        console.log('Gemini response status:', response.status);
+        console.log('Gemini response:', JSON.stringify(responseData).substring(0, 200));
 
-      const responseData = await response.json();
-      console.log('Gemini response status:', response.status);
-      console.log('Gemini response:', JSON.stringify(responseData).substring(0, 200));
+        if (!response.ok) {
+          throw new Error('API returned ' + response.status + ': ' + JSON.stringify(responseData));
+        }
 
-      if (!response.ok) {
-        throw new Error('API returned ' + response.status + ': ' + JSON.stringify(responseData));
+        const rawText = responseData.candidates[0].content.parts[0].text;
+        console.log('Raw Gemini response:', rawText.substring(0, 500));
+
+        // Clean the response
+        let cleanText = rawText
+          .replace(/```json/g, '')
+          .replace(/```/g, '')
+          .trim();
+
+        // Extract JSON object
+        const firstBrace = cleanText.indexOf('{');
+        const lastBrace = cleanText.lastIndexOf('}');
+        if (firstBrace === -1 || lastBrace === -1) {
+          throw new Error('No JSON object found in response');
+        }
+        cleanText = cleanText.substring(firstBrace, lastBrace + 1);
+
+        const journey = JSON.parse(cleanText);
+        if (!journey || !Array.isArray(journey.weeks) || !journey.weeks.length) throw new Error('Could not parse journey from response');
+        _journeyPreview = journey;
+        _closeJourneyCreator();
+        _openJourneyPreview();
+        return;
+      } catch (err) {
+        clearTimeout(timer);
+        lastErr = (err && err.name === 'AbortError') ? new Error('Request timed out after 45s') : err;
+        console.log('Gemini attempt ' + attempt + ' failed:', lastErr && lastErr.message);
+        if (attempt < MAX_ATTEMPTS) { await new Promise(r => setTimeout(r, RETRY_DELAY_MS)); continue; }
       }
-
-      const rawText = responseData.candidates[0].content.parts[0].text;
-      console.log('Raw Gemini response:', rawText.substring(0, 500));
-
-      // Clean the response
-      let cleanText = rawText
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
-        .trim();
-
-      // Extract JSON object
-      const firstBrace = cleanText.indexOf('{');
-      const lastBrace = cleanText.lastIndexOf('}');
-      if (firstBrace === -1 || lastBrace === -1) {
-        throw new Error('No JSON object found in response');
-      }
-      cleanText = cleanText.substring(firstBrace, lastBrace + 1);
-
-      const journey = JSON.parse(cleanText);
-      if (!journey || !Array.isArray(journey.weeks) || !journey.weeks.length) throw new Error('Could not parse journey from response');
-      _journeyPreview = journey;
-      _closeJourneyCreator();
-      _openJourneyPreview();
-    } catch (err) {
-      _renderJourneyCreator(false);
-      alert('Could not generate journey: ' + (err && err.message ? err.message : 'unknown error') + '. Please try again.');
     }
+    _renderJourneyCreator(false);
+    alert('Could not generate journey after 3 attempts: ' + (lastErr && lastErr.message ? lastErr.message : 'unknown error') + '. Please try again.');
+  }
+
+  function _setJourneyLoadingText(text) {
+    const el = document.getElementById('jc-loading-text');
+    if (el) el.textContent = text;
   }
 
   function _parseJourneyJSON(text) {
@@ -11730,13 +11912,29 @@ Respond ONLY with a JSON object in this exact format, no other text:
       const sess = (w.sessions || []);
       let body;
       if (mode === 'detail') {
+        const next = _journeyNextSession(journey);
         body = sess.map((s, si) => {
           const exCount = (s.exercises || []).length;
           const done = completed.includes(wi + '-' + si);
-          return `<div class="journey-session-card" onclick="_openJourneySession(${journey.id},${wi},${si})">
-            <div style="font-size:14px;font-weight:700;color:#fff">${_esc(s.day || ('Session ' + (si+1)))} · ${_esc(s.planName || '')}</div>
-            <div style="font-size:12px;color:#8E8E93;margin-top:2px">${exCount} exercise${exCount!==1?'s':''}${done ? ' · ✓ done' : ''}</div>
-            <button class="journey-btn-primary" style="margin-top:10px;padding:9px 0;font-size:13px" onclick="event.stopPropagation();_startJourneySession(${journey.id},${wi},${si})">▶ Start Session</button>
+          const isCurrent = !!next && next.wi === wi && next.si === si;
+          const locked = !done && !isCurrent;
+          const doneDate = done ? _fmtJDate(_journeySessionDoneDate(journey, wi, si), true) : '';
+          const cardStyle = (isCurrent ? 'background:#1A3A5C;' : '') + (locked ? 'opacity:.5;cursor:default;' : '');
+          const tap = locked ? '' : `onclick="_openJourneySession(${journey.id},${wi},${si})"`;
+          let bottom = '';
+          if (done) {
+            bottom = `<div style="font-size:12px;color:#34C759;margin-top:2px">✓ Done${doneDate ? ' · ' + doneDate : ''}</div>
+              <div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="journey-start-btn" onclick="event.stopPropagation();_startJourneySession(${journey.id},${wi},${si})">▶ Repeat Session</button></div>`;
+          } else if (isCurrent) {
+            bottom = `<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="journey-start-btn" onclick="event.stopPropagation();_startJourneySession(${journey.id},${wi},${si})">▶ Start Session</button></div>`;
+          }
+          return `<div class="journey-session-card" style="${cardStyle}" ${tap}>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${done ? '<span style="color:#34C759;font-weight:700">✓</span>' : ''}
+              <span style="flex:1;font-size:14px;font-weight:700;color:${done ? '#8E8E93' : '#fff'}">${_esc(s.day || ('Session ' + (si+1)))} · ${_esc(s.planName || '')}</span>
+            </div>
+            <div style="font-size:12px;color:#8E8E93;margin-top:2px">${exCount} exercise${exCount!==1?'s':''}</div>
+            ${bottom}
           </div>`;
         }).join('');
       } else {
@@ -11744,14 +11942,26 @@ Respond ONLY with a JSON object in this exact format, no other text:
           `<div style="padding:10px 0;font-size:14px;color:#fff;${si > 0 ? 'border-top:.5px solid #2C2C2E' : ''}">${_esc(s.day || ('Session ' + (si+1)))} · ${_esc(s.planName || '')}</div>`
         ).join('');
       }
+      const doneCount = sess.filter((_, si) => completed.includes(wi + '-' + si)).length;
       const rightStatus = mode === 'detail'
-        ? `<span style="font-size:13px;color:#8E8E93;margin-right:8px">${sess.filter((_, si) => completed.includes(wi + '-' + si)).length}/${sess.length}</span>`
+        ? `<span style="font-size:13px;color:#8E8E93;margin-right:8px">${doneCount}/${sess.length}</span>`
         : '';
+      let weekStatus = '';
+      if (mode === 'detail' && doneCount > 0) {
+        if (doneCount === sess.length) {
+          weekStatus = `<span style="display:block;font-size:12px;color:#34C759;margin-top:2px">✓ Complete</span>`;
+        } else {
+          let last = null;
+          sess.forEach((_, si) => { const d = _journeySessionDoneDate(journey, wi, si); if (d != null && (last == null || d > last)) last = d; });
+          if (last != null) weekStatus = `<span style="display:block;font-size:12px;color:#8E8E93;margin-top:2px">Last done: ${_fmtJDate(last, false)}</span>`;
+        }
+      }
       return `<div class="journey-week${open ? ' open' : ''}" id="${keyPrefix}${wi}">
         <button class="journey-week-head" onclick="_toggleJourneyWeek('${keyPrefix}',${wi})">
           <span style="text-align:left;flex:1;min-width:0">
             <span style="font-size:17px;font-weight:700;color:#fff">Week ${w.week || (wi+1)}</span>
             <span style="display:block;font-size:13px;color:#8E8E93;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_esc(w.focus || '')}</span>
+            ${weekStatus}
           </span>
           <span style="display:flex;align-items:center;flex-shrink:0">${rightStatus}<span class="journey-week-chev"><svg width="9" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 7,7 1,13"/></svg></span></span>
         </button>
@@ -11809,9 +12019,10 @@ Respond ONLY with a JSON object in this exact format, no other text:
   }
 
   /* ── Detail ─────────────────────────────────────────────── */
-  function _openJourneyDetail(id) {
+  function _openJourneyDetail(id, expandWeekIdx) {
     _journeyDetailId = id;
     _journeyWeekOpen = {};
+    if (expandWeekIdx != null) _journeyWeekOpen['dtw' + expandWeekIdx] = true;
     _renderJourneyDetail();
     document.getElementById('journey-detail').style.display = '';
   }
@@ -11835,7 +12046,8 @@ Respond ONLY with a JSON object in this exact format, no other text:
         <div style="height:8px;background:#2C2C2E;border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:#007AFF"></div></div>
       </div>
       <div class="journey-sec-label">Weeks</div>
-      ${_journeyWeeksHTML(j, 'dtw', 'detail')}`;
+      ${_journeyWeeksHTML(j, 'dtw', 'detail')}
+      <button onclick="_resetJourney(${j.id})" style="display:block;width:100%;background:none;border:none;color:#FF3B30;font-family:inherit;font-size:15px;font-weight:600;text-align:center;padding:20px 0 8px;cursor:pointer;-webkit-tap-highlight-color:transparent">Reset Journey</button>`;
   }
 
   /* ── Session detail (3rd level) ─────────────────────────── */
@@ -11863,12 +12075,15 @@ Respond ONLY with a JSON object in this exact format, no other text:
         </div>
         ${ex.notes ? `<div style="font-size:13px;font-style:italic;color:#8E8E93;margin-top:6px">${_esc(ex.notes)}</div>` : ''}
       </div>`).join('');
+    const doneMs = _journeySessionDoneDate(j, r.w, r.s);
+    const isDone = doneMs != null || (j.completedSessions || []).includes(r.w + '-' + r.s);
     const el = document.getElementById('journey-session-inner');
     el.innerHTML = `
       <div style="font-size:13px;color:#8E8E93;margin-bottom:12px">Week ${w.week || (r.w+1)} · ${_esc(s.day || ('Session ' + (r.s+1)))}</div>
+      ${isDone ? `<div style="font-size:13px;color:#34C759;margin-bottom:12px">✓ Completed${doneMs != null ? ' on ' + _fmtJDate(doneMs, true) : ''}</div>` : ''}
       ${exHTML}
       <div class="journey-sticky">
-        <button class="journey-btn-primary" style="flex:1" onclick="_startJourneySession(${j.id},${r.w},${r.s})">▶ Start Session</button>
+        <button class="journey-btn-primary" style="flex:1" onclick="_startJourneySession(${j.id},${r.w},${r.s})">▶ ${isDone ? 'Repeat' : 'Start'} Session</button>
       </div>`;
   }
 
@@ -12905,6 +13120,7 @@ Respond ONLY with a JSON object in this exact format, no other text:
     renderRecent();
     renderGoalsSection();
     renderHighlights();
+    renderActiveJourneys();
     showToast('All data cleared');
   }
 
@@ -13007,6 +13223,7 @@ Respond ONLY with a JSON object in this exact format, no other text:
       renderRecent();
       renderGoalsSection();
       renderHighlights();
+      renderActiveJourneys();
       showToast(`Imported: ${detected.join(', ')} ✓`);
     };
     reader.readAsText(file);
@@ -14527,6 +14744,7 @@ Respond ONLY with a JSON object in this exact format, no other text:
   renderRecent();    /* also calls updateRepeatBtn() */
   renderFreqGoal();
   renderHighlights();
+  renderActiveJourneys();
 
   /* Set library seg-wrap sticky top (matches pattern used for progress-mode-bar) */
   requestAnimationFrame(() => {
