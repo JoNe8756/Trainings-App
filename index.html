@@ -3051,11 +3051,73 @@
       border-top-color: #007AFF; border-radius: 50%; animation: journeySpin .8s linear infinite; margin: 0 auto 14px;
     }
     @keyframes journeySpin { to { transform: rotate(360deg); } }
+    .journey-banner-spinner {
+      width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.25);
+      border-top-color: #fff; border-radius: 50%; animation: journeySpin .8s linear infinite; flex-shrink: 0;
+    }
+    .journey-gen-card {
+      display: flex; align-items: center; gap: 12px;
+      background: #1C1C1E; border-radius: 12px; padding: 16px; margin: 0 var(--gutter) 10px;
+      animation: journeyGenPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes journeyGenPulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+    .ex-journey-tag { font-size: 11px; color: #8E8E93; font-style: italic; padding: 2px 0 0; }
+    #jsp-overlay {
+      display: none; position: fixed; inset: 0; z-index: 100003;
+      background: rgba(0,0,0,.6); align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #jsp-modal {
+      width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; margin: 0 16px;
+      background: #1C1C1E; border-radius: 20px; padding: 24px; box-sizing: border-box;
+      color: #fff; font-family: system-ui, -apple-system, sans-serif;
+    }
+    .jsp-card { background: #2C2C2E; border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+    #jsk-overlay {
+      display: none; position: fixed; inset: 0; z-index: 100004;
+      background: rgba(0,0,0,.6); align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #jsk-modal {
+      width: 100%; max-width: 400px; max-height: 85vh; overflow-y: auto; margin: 0 16px;
+      background: #1C1C1E; border-radius: 20px; padding: 24px; box-sizing: border-box;
+      color: #fff; font-family: system-ui, -apple-system, sans-serif;
+    }
+    .jsk-step { display: flex; gap: 10px; margin-bottom: 12px; }
+    .jsk-step-num { color: #007AFF; font-weight: 700; flex-shrink: 0; }
+    .jsk-step-text { color: #fff; font-size: 14px; line-height: 1.4; }
+    .jsk-step-text a { color: #007AFF; text-decoration: underline; }
+    #journey-header-spinner {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 12px) + 12px);
+      right: 20px;
+      width: 20px; height: 20px; box-sizing: border-box;
+      border: 2px solid rgba(142,142,147,.25);
+      border-top-color: #8E8E93; border-radius: 50%;
+      z-index: 99997; display: none;
+      animation: journeySpin 1s linear infinite;
+    }
     .journey-sticky {
       position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
       max-width: 430px; width: 100%; z-index: 100001; box-sizing: border-box;
       background: #1C1C1E; display: flex; gap: 10px; align-items: center;
       padding: 12px var(--gutter) max(12px, env(safe-area-inset-bottom, 0px));
+    }
+    /* Journey preview action bar — solid, always visible */
+    .journey-preview-bar {
+      position: fixed; bottom: 0; left: 0; width: 100%;
+      z-index: 100001; box-sizing: border-box; background: #000;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    }
+    .journey-preview-bar .jpb-regen {
+      background: none; border: none; color: #8E8E93; font-family: inherit;
+      font-size: 15px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .journey-preview-bar .jpb-save {
+      height: 50px; min-width: 180px; background: #007AFF; color: #fff; border: none;
+      border-radius: 999px; font-family: inherit; font-size: 16px; font-weight: 700;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
 
     /* ── Training frequency goal card ───────────────────────── */
@@ -4619,7 +4681,8 @@
       transition: opacity .12s !important;
     }
     #ex-secondary-actions button:first-child { color: #007AFF !important; }
-    #ex-secondary-actions button:last-child  { color: #FF3B30 !important; }
+    #ex-secondary-actions button:nth-child(2) { color: #FF3B30 !important; }
+    #ex-secondary-actions button:last-child  { color: #30D158 !important; }
     #ex-secondary-actions button:active { opacity: .55 !important; }
 
     /* ── Plan pre-workout summary overlay ───────────────── */
@@ -4918,6 +4981,7 @@
     <div id="ex-secondary-actions">
       <button onclick="addExercise()">+ Add Exercise</button>
       <button onclick="openKillerSet()">💀 Killer Set</button>
+      <button onclick="_openJourneySessionPicker()">➕ Journey Session</button>
     </div>
   </div>
 </div>
@@ -5626,7 +5690,12 @@
     <div class="settings-section-header" style="margin-top:1rem">AI</div>
     <div class="settings-card">
       <div class="settings-row settings-row-tappable" onclick="_toggleGeminiKey()">
-        <div class="settings-row-label">Gemini API Key</div>
+        <div style="flex:1;display:flex;align-items:center;gap:8px;min-width:0">
+          <span class="settings-row-label" style="flex:0 1 auto">Gemini API Key</span>
+          <button onclick="event.stopPropagation();_openApiKeyGuide(false)" title="How to get a key" style="margin:-13px 0;width:44px;height:44px;background:none;border:none;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0">
+            <span style="width:18px;height:18px;border-radius:999px;background:#2C2C2E;color:#8E8E93;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;line-height:1">?</span>
+          </button>
+        </div>
         <span class="settings-row-value" id="gemini-key-status">Not set</span>
       </div>
       <div id="gemini-key-editor" style="display:none;padding:.75rem var(--gutter);border-top:.5px solid var(--separator)">
@@ -6754,6 +6823,7 @@
   async function startBlankWorkout() {
     closeStartChoice();
     _activeJourneyRef = null;
+    _workoutJourneyAdds = [];
     exerciseCount  = 0;
     activePlanData = null;
     _workoutActive = true;
@@ -6814,7 +6884,7 @@
   }
 
   let _exCardSeq = 0;
-  function createExCard(name, isKiller = false, numSets = 1) {
+  function createExCard(name, isKiller = false, numSets = 1, opts = {}) {
     exerciseCount++;
     const id  = 'ex-' + Date.now() + '-' + (++_exCardSeq);
     const tb  = !!getExMeta(name).tb;  /* time-based hold exercise? */
@@ -6824,6 +6894,11 @@
     if (tb)           div.dataset.tb      = '1';
     if (isKiller)     div.dataset.killer  = '1';
     if (activePlanData && numSets >= 1) div.dataset.planSets = String(numSets);
+    if (opts.journeyKey) {
+      div.dataset.journeyKey   = opts.journeyKey;
+      div.dataset.plannedSets  = String(opts.plannedSets || numSets || 1);
+      div.dataset.plannedReps  = String(opts.plannedReps || 0);
+    }
     div.innerHTML = `
       ${isKiller ? '<div class="ex-killer-tag">💀 Killer Set</div>' : ''}
       <div class="exercise-head">
@@ -6835,6 +6910,7 @@
           </svg>
         </button>
       </div>
+      ${opts.journeyTag ? `<div class="ex-journey-tag">📍 ${_esc(opts.journeyTag)}</div>` : ''}
       <div class="ex-rest-rec"></div>
       <div class="sets-table">
         <div class="sets-col-header">
@@ -7007,6 +7083,18 @@
   }
 
   function _prefillSetRow(row, setIndex, exName) {
+    /* Journey exercises: pre-fill reps with the planned journey target (not PB). */
+    const jcard = row.closest('.exercise-card');
+    if (jcard && jcard.dataset.journeyKey && jcard.dataset.plannedReps) {
+      const jin = row.querySelectorAll('.set-input');
+      const planned = parseFloat(jcard.dataset.plannedReps) || 0;
+      if (jin.length && planned > 0) {
+        jin[1].value = planned;                 /* reps — editable */
+        jin[1].dataset.prefilled = '1';
+        jin[1].classList.add('set-input-prefill');
+      }
+      return;                                    /* kg stays empty; skip personal-best prefill */
+    }
     const sets = _getLastSessionSets(exName);
     if (!sets || setIndex >= sets.length) return;
     const s = sets[setIndex];
@@ -7833,6 +7921,9 @@
 
     /* mark journey session complete if this workout was started from one */
     if (_activeJourneyRef) { _markJourneySessionComplete(_activeJourneyRef); _activeJourneyRef = null; }
+
+    /* check journey sessions added mid-workout (strict: all planned sets/reps confirmed) */
+    _checkJourneySessionsOnFinish();
 
     /* clear workout state */
     _workoutActive   = false;
@@ -11405,8 +11496,13 @@
   let _journeyDetailId = null;       /* journey open in detail view */
   let _journeySessionRef = null;     /* {id, w, s} open in session detail view */
   let _journeyStartCtx = null;       /* unknown-exercise resolution context before starting */
+  let _journeyGenPrompt = null;      /* prompt snapshot for background generation / retry */
+  let _journeyGenState = null;       /* null | 'loading' | 'error' — shown inside the Journeys list */
+  let _journeySuccessFlash = false;  /* transient "Journey ready!" flash under the new card */
+  let _journeyFlashTimer = null;
   let _journeyWeekOpen = {};         /* accordion state */
   let _activeJourneyRef = null;      /* {id, w, s} of session started as a workout */
+  let _workoutJourneyAdds = [];      /* journey sessions added mid-workout, for completion check */
 
   function _esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
@@ -11416,14 +11512,14 @@
     if (!el) return;
     el.classList.add('plans-list-mode');
     let html = '<div class="journey-beta-banner">🧪 Journeys is in beta — results may vary</div>';
-    if (!_journeys.length) {
+    if (!_journeys.length && _journeyGenState !== 'loading' && _journeyGenState !== 'error') {
       html += `<div class="empty-state" style="padding-top:1.5rem">
         <span class="empty-state-emoji">🧭</span>
         <div class="empty-state-title">No Journeys Yet</div>
         Generate a personalised multi-week training journey.
       </div>`;
     } else {
-      _journeys.forEach(j => {
+      _journeys.forEach((j, ji) => {
         const total = _journeyTotalSessions(j);
         const done  = (j.completedSessions || []).length;
         const start = j.createdAt ? new Date(j.createdAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '';
@@ -11444,14 +11540,32 @@
             <span class="journey-ai-pill">✦ AI</span>
           </div>
         </div>`;
+        /* brief success flash below the newly added (first) journey card */
+        if (ji === 0 && _journeySuccessFlash) {
+          html += `<div style="margin:0 var(--gutter) 10px;color:#34C759;font-size:13px;font-weight:600;text-align:center">✅ Journey ready!</div>`;
+        }
       });
     }
-    html += `<button class="btn-plan-create" onclick="_openJourneyCreator()">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5a.75.75 0 0 1 1.5 0z"/>
-      </svg>
-      New Journey
-    </button>`;
+    if (_journeyGenState === 'loading') {
+      /* generating card replaces the New Journey button */
+      html += `<div class="journey-gen-card">
+        <span class="journey-banner-spinner"></span>
+        <span style="font-size:15px;color:#fff">Journey generation in progress...</span>
+      </div>`;
+    } else {
+      if (_journeyGenState === 'error') {
+        html += `<div onclick="_retryJourneyGeneration()" style="margin:0 var(--gutter) 10px;background:#1C1C1E;border-radius:12px;padding:16px;cursor:pointer;-webkit-tap-highlight-color:transparent">
+          <div style="font-size:15px;color:#fff">❌ Generation failed</div>
+          <div style="font-size:13px;color:#007AFF;margin-top:4px">Tap to retry</div>
+        </div>`;
+      }
+      html += `<button class="btn-plan-create" onclick="_openJourneyCreator()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5a.75.75 0 0 1 1.5 0z"/>
+        </svg>
+        New Journey
+      </button>`;
+    }
     el.innerHTML = html;
     _initJourneySwipe(el);
   }
@@ -11509,6 +11623,104 @@
     _openJourneyDetail(journeyId, next.wi);
   }
 
+  /* ── Add a journey session to the active workout ────────── */
+  function _openJourneySessionPicker() {
+    _renderJourneySessionPicker();
+    document.getElementById('jsp-overlay').style.display = 'flex';
+  }
+  function _closeJourneySessionPicker() { document.getElementById('jsp-overlay').style.display = 'none'; }
+
+  function _renderJourneySessionPicker() {
+    const modal = document.getElementById('jsp-modal');
+    if (!modal) return;
+    const rows = [];
+    _journeys.forEach(j => {
+      const next = _journeyNextSession(j);
+      if (!next) return;
+      const exCount = (next.s.exercises || []).length;
+      rows.push(`<div class="jsp-card">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#8E8E93">${_esc(j.name)}</div>
+            <div style="font-size:17px;font-weight:700;color:#fff;margin-top:2px">${_esc(next.s.planName || ('Session ' + (next.si+1)))}</div>
+            <div style="font-size:13px;color:#8E8E93;margin-top:2px">${_esc(next.s.day || ('Session ' + (next.si+1)))} · Week ${next.week}</div>
+            <div style="font-size:13px;color:#8E8E93">${exCount} exercise${exCount!==1?'s':''}</div>
+          </div>
+          <button onclick="_addJourneySessionToWorkout(${j.id},${next.wi},${next.si})" style="flex-shrink:0;background:#007AFF;color:#fff;border:none;border-radius:999px;padding:10px 16px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent">➕ Add</button>
+        </div>
+      </div>`);
+    });
+    modal.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+        <div style="font-size:20px;font-weight:700;color:#fff">Add Journey Session</div>
+        <button onclick="_closeJourneySessionPicker()" style="background:none;border:none;color:#8E8E93;font-size:20px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent">✕</button>
+      </div>
+      ${rows.length ? rows.join('') : '<div style="font-size:14px;color:#8E8E93;padding:8px 0 16px">No journey sessions available</div>'}
+      <button onclick="_closeJourneySessionPicker()" style="width:100%;background:none;border:none;color:#8E8E93;font-family:inherit;font-size:15px;font-weight:600;padding:12px 0 0;cursor:pointer;-webkit-tap-highlight-color:transparent">Cancel</button>`;
+  }
+
+  function _addJourneySessionToWorkout(journeyId, wi, si) {
+    const j = _journeys.find(x => x.id === journeyId);
+    if (!j) return;
+    const session = ((j.weeks || [])[wi] || {}).sessions?.[si];
+    if (!session) return;
+    const key = journeyId + '-' + wi + '-' + si;
+    _workoutJourneyAdds.push({
+      journeyId, wi, si, journeyName: j.name, key,
+      exercises: (session.exercises || []).map(e => ({
+        name: e.name,
+        plannedSets: Math.max(1, parseInt(e.sets) || 1),
+        plannedReps: parseFloat(e.reps) || 0
+      }))
+    });
+    (session.exercises || []).forEach(e => {
+      const sets = Math.max(1, parseInt(e.sets) || 1);
+      createExCard(e.name, false, sets, { journeyTag: j.name, journeyKey: key, plannedSets: sets, plannedReps: parseFloat(e.reps) || 0 });
+    });
+    _closeJourneySessionPicker();
+  }
+
+  /* On finish: mark added journey sessions complete only if every planned
+     exercise has >= planned sets confirmed with reps >= planned reps. */
+  function _checkJourneySessionsOnFinish() {
+    if (!_workoutJourneyAdds.length) return;
+    const cards = Array.from(document.querySelectorAll('#exercise-list .exercise-card'));
+    let anyComplete = false, incompleteUnfinished = 0;
+    _workoutJourneyAdds.forEach(rec => {
+      let unfinished = 0;
+      rec.exercises.forEach(pe => {
+        const matching = cards.filter(c => c.dataset.journeyKey === rec.key &&
+          (c.querySelector('.exercise-head input')?.value.trim() === pe.name));
+        let good = 0;
+        matching.forEach(c => c.querySelectorAll('.sets-body .set-row.set-done').forEach(row => {
+          const reps = parseFloat(row.dataset.confirmedReps) || 0;
+          if (reps >= pe.plannedReps) good++;
+        }));
+        if (good < pe.plannedSets) unfinished++;
+      });
+      if (unfinished === 0) {
+        const j = _journeys.find(x => x.id === rec.journeyId);
+        if (j) {
+          j.completedSessions = j.completedSessions || [];
+          const token = rec.wi + '-' + rec.si;
+          if (!j.completedSessions.includes(token)) j.completedSessions.push(token);
+          j.completedDates = j.completedDates || {};
+          j.completedDates[token] = new Date().toISOString();
+          anyComplete = true;
+        }
+      } else {
+        incompleteUnfinished += unfinished;
+      }
+    });
+    _persistJourneys();
+    _workoutJourneyAdds = [];
+    if (incompleteUnfinished > 0) {
+      showToast('⚠️ Journey session incomplete — ' + incompleteUnfinished + ' exercise' + (incompleteUnfinished !== 1 ? 's' : '') + ' not finished');
+    } else if (anyComplete) {
+      showToast('✅ Journey session completed!');
+    }
+  }
+
   function _resetJourney(id) {
     _wConfirm({
       title: 'Reset journey?',
@@ -11529,6 +11741,9 @@
   /* completion date (ms) read from workout history, matched by plan name; null if not done */
   function _journeySessionDoneDate(j, wi, si) {
     if (!(j.completedSessions || []).includes(wi + '-' + si)) return null;
+    /* explicit completion date (sessions completed via "add to workout") takes priority */
+    const explicit = j.completedDates && j.completedDates[wi + '-' + si];
+    if (explicit) return new Date(explicit).getTime();
     const s = ((j.weeks || [])[wi] || {}).sessions?.[si];
     if (!s) return null;
     const pn = _journeyEffectivePlanName(j, wi, s);
@@ -11574,14 +11789,29 @@
   }
 
   function _deleteJourney(id) {
-    const j = _journeys.find(x => x.id === id);
     _wConfirm({
-      title: 'Delete Journey?',
-      msg: `"${j ? j.name : 'This journey'}" will be permanently deleted.`,
+      title: 'Delete this journey?',
+      msg: 'All progress will be lost.',
       okLabel: 'Delete', okColor: 'red',
       onOk: () => {
         const item = document.querySelector(`[data-journey-id="${id}"]`);
         _animateRemove(item, () => { _journeys = _journeys.filter(x => x.id !== id); _persistJourneys(); renderLibJourneys(); });
+      }
+    });
+  }
+
+  /* Delete from the Journey Detail screen → navigate back to the list */
+  function _deleteJourneyFromDetail(id) {
+    _wConfirm({
+      title: 'Delete this journey?',
+      msg: 'All progress will be lost.',
+      okLabel: 'Delete', okColor: 'red',
+      onOk: () => {
+        _journeys = _journeys.filter(x => x.id !== id);
+        _persistJourneys();
+        _closeJourneyDetail();
+        showTab('exercises');
+        showLibSeg('journeys');
       }
     });
   }
@@ -11693,14 +11923,49 @@
   /* ── Gemini data context ────────────────────────────────── */
   function _journeyExerciseLibText() {
     const lib = getExLib();
-    /* usage frequency across all workout history */
-    const freq = {};
-    workouts.forEach(w => (w.exercises || []).forEach(ex => { freq[ex.name] = (freq[ex.name] || 0) + 1; }));
-    /* flatten library with its category, then keep the 50 most-used */
-    const all = [];
-    EX_CATS.forEach(cat => (lib[cat] || []).forEach(name => all.push({ name, cat })));
-    all.sort((a, b) => (freq[b.name] || 0) - (freq[a.name] || 0));
-    const lines = all.slice(0, 50).map(e => `- ${e.name} (${e.cat}, difficulty ${getExMeta(e.name).diff}/10)`);
+    const goal = (_journeyInputs.goal || '').toLowerCase();
+    const inLib = name => EX_CATS.some(c => (lib[c] || []).includes(name));
+    const catOf = name => { for (const c of EX_CATS) { if ((lib[c] || []).includes(name)) return c; } return 'Exercise'; };
+
+    /* usage stats across history */
+    const freq = {}, recent = new Set(), prSet = new Set();
+    const recentCut = Date.now() - 28 * 86400000;   /* 4 weeks */
+    workouts.forEach(w => {
+      const isRecent = new Date(w.date).getTime() >= recentCut;
+      (w.exercises || []).forEach(ex => {
+        freq[ex.name] = (freq[ex.name] || 0) + 1;
+        if (isRecent) recent.add(ex.name);
+        (ex.sets || []).forEach(s => { if ((parseFloat(s.reps) || 0) > 0) prSet.add(ex.name); });
+      });
+    });
+
+    /* goal keyword → relevant categories */
+    const KW = {
+      Pull: ['pull-up', 'muscle-up', 'pull', 'back', 'lever', 'row'],
+      Push: ['push', 'handstand', 'dip', 'press', 'chest'],
+      Core: ['core', 'abs', 'planche', 'lever', 'flag'],
+      Legs: ['squat', 'jump', 'run', 'leg', 'pistol'],
+      'Weighted/Gym': ['bench', 'deadlift', 'squat', 'barbell', 'strength', 'gym'],
+      Cardio: ['run', 'cardio', 'endurance', 'cycling', 'swim'],
+    };
+    const cats = Object.keys(KW).filter(cat => KW[cat].some(k => goal.includes(k)));
+
+    /* ordered, de-duplicated selection, capped at 50 */
+    const ordered = [];
+    const add = n => { if (inLib(n) && !ordered.includes(n)) ordered.push(n); };
+    /* 1. always include exercises with a PR or trained in the last 4 weeks */
+    prSet.forEach(add);
+    recent.forEach(add);
+    if (cats.length) {
+      /* 2. logged exercises in matching categories */
+      cats.forEach(cat => (lib[cat] || []).forEach(n => { if (freq[n]) add(n); }));
+      /* 3. fill remaining slots from matching categories */
+      cats.forEach(cat => (lib[cat] || []).forEach(add));
+    } else {
+      /* no keyword match → top most-frequently-used */
+      Object.keys(freq).sort((a, b) => freq[b] - freq[a]).forEach(add);
+    }
+    const lines = ordered.slice(0, 50).map(n => `- ${n} (${catOf(n)}, difficulty ${getExMeta(n).diff}/10)`);
     return lines.join('\n') || '(none)';
   }
   function _journeyPRText() {
@@ -11813,23 +12078,56 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
 }`;
   }
 
-  async function _generateJourney() {
+  /* Tap handler — validates, then kicks off background generation (non-blocking) */
+  function _generateJourney() {
     const goal = (_journeyInputs.goal || '').trim();
     if (!goal) return;
     const errC = document.getElementById('jc-apikey-error');
     if (errC) errC.innerHTML = '';
     const key = localStorage.getItem('geminiApiKey');
-    if (!key) { _showJourneyApiKeyError(); return; }
+    if (!key) { _openApiKeyGuide(); return; }
 
-    _renderJourneyCreator(true);
-    const apiKey = key;
-    const prompt = _buildJourneyPrompt();
-    const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + apiKey;
-    const MAX_ATTEMPTS = 3, TIMEOUT_MS = 45000, RETRY_DELAY_MS = 3000;
-    let lastErr = null;
+    _journeyGenPrompt = _buildJourneyPrompt();
+    _closeJourneyCreator();        /* free the UI immediately */
+    _runJourneyGeneration();       /* fire-and-forget background process */
+  }
+  function _retryJourneyGeneration() {
+    if (_journeyGenPrompt == null) _journeyGenPrompt = _buildJourneyPrompt();
+    _runJourneyGeneration();
+  }
+
+  /* ── Gemini API key guide modal (shown when no key is stored) ── */
+  function _openApiKeyGuide(showSettingsButton = true) {
+    const btn = document.getElementById('jsk-open-settings');
+    if (btn) btn.style.display = showSettingsButton ? '' : 'none';
+    document.getElementById('jsk-overlay').style.display = 'flex';
+  }
+  function _closeApiKeyGuide() { document.getElementById('jsk-overlay').style.display = 'none'; }
+  function _apiKeyGuideToSettings() {
+    _closeApiKeyGuide();
+    _closeJourneyCreator();
+    openSettings();
+    settingsPush('settings-data');
+  }
+
+  /* Background generation: status shown inside the Journeys list.
+     60s timeout, retry on 503 only (3 attempts, 5s delay). */
+  function _setJourneyHeaderSpinner(on) {
+    const s = document.getElementById('journey-header-spinner');
+    if (s) s.style.display = on ? 'block' : 'none';
+  }
+  async function _runJourneyGeneration() {
+    const key = localStorage.getItem('geminiApiKey');
+    if (!key) { _journeyGenState = 'error'; renderLibJourneys(); return; }
+    _journeyGenState = 'loading';
+    _journeySuccessFlash = false;
+    _setJourneyHeaderSpinner(true);
+    renderLibJourneys();
+    const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + key;
+    const prompt = _journeyGenPrompt;
+    const MAX_ATTEMPTS = 3, TIMEOUT_MS = 60000, RETRY_DELAY_MS = 5000;
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-      _setJourneyLoadingText(attempt === 1 ? 'Generating your journey... (attempt 1/3)' : `Retrying... (attempt ${attempt}/3)`);
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
       try {
@@ -11846,6 +12144,11 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
         console.log('Gemini response:', JSON.stringify(responseData).substring(0, 200));
 
         if (!response.ok) {
+          /* Retry only on 503 (service unavailable); fail immediately otherwise */
+          if (response.status === 503 && attempt < MAX_ATTEMPTS) {
+            await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
+            continue;
+          }
           throw new Error('API returned ' + response.status + ': ' + JSON.stringify(responseData));
         }
 
@@ -11868,24 +12171,33 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
 
         const journey = JSON.parse(cleanText);
         if (!journey || !Array.isArray(journey.weeks) || !journey.weeks.length) throw new Error('Could not parse journey from response');
-        _journeyPreview = journey;
-        _closeJourneyCreator();
-        _openJourneyPreview();
+        /* save the generated journey so it appears in the list automatically */
+        _journeys.unshift({
+          id: Date.now(),
+          name: journey.name || 'My Journey',
+          goal: journey.goal || _journeyInputs.goal,
+          weeks: journey.weeks || [],
+          createdAt: new Date().toISOString(),
+          completedSessions: []
+        });
+        _persistJourneys();
+        _journeyGenState = null;
+        _journeySuccessFlash = true;
+        _setJourneyHeaderSpinner(false);
+        renderLibJourneys();
+        clearTimeout(_journeyFlashTimer);
+        _journeyFlashTimer = setTimeout(() => { _journeySuccessFlash = false; renderLibJourneys(); }, 3000);
         return;
       } catch (err) {
         clearTimeout(timer);
-        lastErr = (err && err.name === 'AbortError') ? new Error('Request timed out after 45s') : err;
-        console.log('Gemini attempt ' + attempt + ' failed:', lastErr && lastErr.message);
-        if (attempt < MAX_ATTEMPTS) { await new Promise(r => setTimeout(r, RETRY_DELAY_MS)); continue; }
+        const msg = (err && err.name === 'AbortError') ? 'Request timed out after 60s' : (err && err.message ? err.message : 'unknown error');
+        console.log('Gemini attempt ' + attempt + ' failed:', msg);
+        _journeyGenState = 'error';
+        _setJourneyHeaderSpinner(false);
+        renderLibJourneys();
+        return;
       }
     }
-    _renderJourneyCreator(false);
-    alert('Could not generate journey after 3 attempts: ' + (lastErr && lastErr.message ? lastErr.message : 'unknown error') + '. Please try again.');
-  }
-
-  function _setJourneyLoadingText(text) {
-    const el = document.getElementById('jc-loading-text');
-    if (el) el.textContent = text;
   }
 
   function _parseJourneyJSON(text) {
@@ -11989,9 +12301,9 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
       </div>
       <div class="journey-sec-label">Plan</div>
       ${_journeyWeeksHTML(j, 'pvw', 'preview')}
-      <div class="journey-sticky">
-        <button class="journey-btn-ghost" style="flex:1" onclick="_regenerateJourney()">Regenerate</button>
-        <button class="journey-btn-primary" style="flex:2" onclick="_saveJourney()">Save Journey</button>
+      <div class="journey-preview-bar">
+        <button class="jpb-regen" onclick="_regenerateJourney()">Regenerate</button>
+        <button class="jpb-save" onclick="_saveJourney()">Save Journey</button>
       </div>`;
   }
 
@@ -12047,7 +12359,8 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
       </div>
       <div class="journey-sec-label">Weeks</div>
       ${_journeyWeeksHTML(j, 'dtw', 'detail')}
-      <button onclick="_resetJourney(${j.id})" style="display:block;width:100%;background:none;border:none;color:#FF3B30;font-family:inherit;font-size:15px;font-weight:600;text-align:center;padding:20px 0 8px;cursor:pointer;-webkit-tap-highlight-color:transparent">Reset Journey</button>`;
+      <button onclick="_resetJourney(${j.id})" style="display:block;width:100%;background:none;border:none;color:#FF3B30;font-family:inherit;font-size:15px;font-weight:600;text-align:center;padding:20px 0 8px;cursor:pointer;-webkit-tap-highlight-color:transparent">Reset Journey</button>
+      <button onclick="_deleteJourneyFromDetail(${j.id})" style="display:block;width:100%;background:none;border:none;color:#FF3B30;font-family:inherit;font-size:15px;font-weight:600;text-align:center;padding:8px 0 4px;cursor:pointer;-webkit-tap-highlight-color:transparent">Delete Journey</button>`;
   }
 
   /* ── Session detail (3rd level) ─────────────────────────── */
@@ -12194,6 +12507,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
   }
 
   function _startWorkoutFromExercises(planName, normEx) {
+    _workoutJourneyAdds = [];
     exerciseCount  = 0;
     _workoutActive = true;
     _sessionRestEnabled = null;
@@ -12680,6 +12994,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     if (!plan || !plan.exercises.length) return;
 
     _activeJourneyRef = null;
+    _workoutJourneyAdds = [];
     exerciseCount  = 0;
     _workoutActive = true;
     _sessionRestEnabled = null;
@@ -14974,6 +15289,31 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
 <!-- ═══════════════ JOURNEY UNKNOWN EXERCISES MODAL ═══════════════ -->
 <div id="journey-unknown-modal" class="journey-overlay" style="display:none;z-index:100002">
   <div id="journey-unknown-inner" class="journey-inner" style="padding-top:calc(20px + env(safe-area-inset-top,0px))"></div>
+</div>
+
+<!-- ═══════════════ JOURNEY SESSION PICKER (add to workout) ═══════════════ -->
+<div id="jsp-overlay" onclick="if(event.target===this)_closeJourneySessionPicker()">
+  <div id="jsp-modal"></div>
+</div>
+
+<!-- ═══════════════ JOURNEY GENERATION HEADER SPINNER ═══════════════ -->
+<div id="journey-header-spinner"></div>
+
+<!-- ═══════════════ GEMINI API KEY GUIDE MODAL ═══════════════ -->
+<div id="jsk-overlay" onclick="if(event.target===this)_closeApiKeyGuide()">
+  <div id="jsk-modal">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div style="font-size:20px;font-weight:700;color:#fff">Gemini API Key Required</div>
+      <button onclick="_closeApiKeyGuide()" style="background:none;border:none;color:#8E8E93;font-size:20px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent">✕</button>
+    </div>
+    <div style="font-size:14px;color:#8E8E93;margin-bottom:20px">To generate AI journeys you need a free Gemini API key. It takes 2 minutes to set up.</div>
+    <div class="jsk-step"><span class="jsk-step-num">1.</span><span class="jsk-step-text">Go to <a href="https://aistudio.google.com" target="_blank" rel="noopener">aistudio.google.com</a></span></div>
+    <div class="jsk-step"><span class="jsk-step-num">2.</span><span class="jsk-step-text">Sign in with your Google account</span></div>
+    <div class="jsk-step"><span class="jsk-step-num">3.</span><span class="jsk-step-text">Click 'Get API key' → 'Create API key'</span></div>
+    <div class="jsk-step"><span class="jsk-step-num">4.</span><span class="jsk-step-text">Copy the key and paste it in Settings</span></div>
+    <button id="jsk-open-settings" onclick="_apiKeyGuideToSettings()" style="width:100%;background:#007AFF;color:#fff;border:none;border-radius:999px;padding:14px 0;margin-top:12px;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent">Open Settings →</button>
+    <button onclick="_closeApiKeyGuide()" style="width:100%;background:none;border:none;color:#8E8E93;font-family:inherit;font-size:15px;font-weight:600;padding:12px 0 0;cursor:pointer;-webkit-tap-highlight-color:transparent">Cancel</button>
+  </div>
 </div>
 
 <script>
