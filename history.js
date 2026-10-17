@@ -50,6 +50,7 @@
     if (chev) chev.classList.toggle('open', !!state[key]);
   }
 
+  // === HISTORY LIST ===
   function renderHistory() {
     const el = document.getElementById('history-list');
     if (!workouts.length) {
@@ -84,6 +85,7 @@
     }).join('');
   }
 
+  // === WORKOUT DETAIL ===
   function openWorkoutDetail(workoutId) {
     const w = workouts.find(x => x.id === workoutId);
     if (!w) return;
@@ -373,6 +375,7 @@
 window.currentTrendExercise = '';
 window.currentTrendHorizon = '3M';
 
+// === EXERCISE TREND MODAL ===
 window.renderExerciseTrendModal = function() {
   var name = window.currentTrendExercise;
   var horizon = window.currentTrendHorizon || '3M';

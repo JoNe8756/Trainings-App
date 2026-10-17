@@ -1,6 +1,7 @@
 /* Extracted from index.html — Settings screens (main, Personal Info, Training Goals,
    Workout Setup, Preferences, Data Management, About, Gemini API key + guide). */
 
+  // === PREFERENCES ===
   function _syncBreakModeUI() {
     const mode = _getBreakTimerMode();
     const swBtn = document.getElementById('break-mode-sw');
@@ -66,6 +67,7 @@
     settingsPush('settings-data');
   }
 
+  // === SETTINGS MAIN ===
   function openSettings() {
     /* Ensure workout-detail is closed — it sits at z-index 1100 and would
        bleed over settings panels (z-index 800-810) if left open */
@@ -120,6 +122,7 @@
     if (id) document.getElementById(id)?.classList.remove('open');
   }
 
+  // === GEMINI API KEY ===
   function _refreshGeminiKeyStatus() {
     const k  = localStorage.getItem('geminiApiKey') || '';
     const el = document.getElementById('gemini-key-status');
@@ -154,6 +157,7 @@
     _refreshGeminiKeyStatus();
   }
 
+  // === PERSONAL INFO ===
   function settingsBWChanged(val) {
     const v = parseFloat(val);
     if (!isNaN(v) && v >= 30 && v <= 300) { setUserBW(v); return; }
@@ -164,6 +168,7 @@
 
   function updateSettingsFreqDisplay() { updateSettingsGoalsDisplay(); }
 
+  // === DATA MANAGEMENT ===
   function exportData() {
     const incl = {
       history:  document.getElementById('exp-chk-history')?.checked  ?? true,
@@ -269,6 +274,7 @@
   }
 
 
+  // === TRAINING GOALS ===
   function _gpSelectFreqPeriod(period, save) {
     const weekBtn  = document.getElementById('gp-freq-period-week');
     const monthBtn = document.getElementById('gp-freq-period-month');

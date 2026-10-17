@@ -4,6 +4,7 @@
    add-exercise flow. Loaded early (after app.js) because restore-on-load, _pickVoice()
    and init-time renderers reference these at page load. */
 
+  // === INTENSITY INDEX ===
   function calcSetIntensity(name, reps, kg) {
     const meta = getExMeta(name);
     const rawReps = parseFloat(reps);
@@ -32,6 +33,7 @@
          : String(n);
   }
 
+  // === WORKOUT INITIALIZATION ===
   function showWorkoutScreen(targetIdx) {
     ['home', 'progress', 'history', 'exercises'].forEach(t => {
       document.getElementById(t + '-screen').classList.remove('active');
@@ -341,6 +343,7 @@
     createExCard(name);
   }
 
+  // === EXERCISE CARDS ===
   function createExCard(name, isKiller = false, numSets = 1, opts = {}) {
     exerciseCount++;
     const id  = 'ex-' + Date.now() + '-' + (++_exCardSeq);
@@ -480,6 +483,7 @@
 
   function _exNavGoTo(idx) { _exCurrentIdx = idx; _exNavUpdate(); _exScrollReset(); }
 
+  // === SET LOGGING ===
   function _getLastSessionSets(exName) {
     const norm = exName.trim().toLowerCase();
     for (const w of workouts) {
@@ -645,6 +649,7 @@
     });
   }
 
+  // === REST TIMER / STOPWATCH ===
   function _getBreakTimerMode() { return localStorage.getItem('breakTimerMode') || 'stopwatch'; }
 
   function _setBreakTimerMode(m) {
@@ -1275,6 +1280,7 @@
     _showPostWorkout(workout);
   }
 
+  // === POST-WORKOUT SUMMARY ===
   function _showPostWorkout(w) {
     const mins = Math.floor(w.duration / 60), secs = w.duration % 60;
     const durStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
@@ -1581,6 +1587,7 @@
     if (el) el.textContent = total > 0 ? `⚡ ${fmtInt(total)}` : '';
   }
 
+  // === KILLER SET ===
   function getKillerRoutine() {
     try {
       const s = localStorage.getItem('killerSetRoutine');
@@ -1961,6 +1968,7 @@
     });
   }
 
+  // === GHOST MODE ===
   function getGhostMode() { return localStorage.getItem('ghostMode') !== '0'; }
 
   function setGhostMode(on) {
@@ -2059,6 +2067,7 @@
     }
   }
 
+  // === JOURNEY SESSION INTEGRATION ===
   function _checkJourneySessionsOnFinish() {
     if (!_workoutJourneyAdds.length) return;
     const cards = Array.from(document.querySelectorAll('#exercise-list .exercise-card'));
@@ -2266,6 +2275,7 @@
       .reverse();
   }
 
+  // === WARMUP ===
   function startWithWarmup(planId) {
     closeStartChoice();
     _warmupPostPlanId = planId;

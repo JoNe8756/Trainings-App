@@ -68,6 +68,7 @@
     return 'month';   /* 1Y, 5Y, all/All */
   }
 
+  // === DATA AGGREGATION ===
   function _aggregateChart(dates, values, rangeKey) {
     const mode  = _bucketModeFor(rangeKey);
     const fmtDay = t => new Date(t).toLocaleDateString('en-US', { month:'short', day:'numeric' });
@@ -379,6 +380,7 @@
     </div>`;
   }
 
+  // === PROGRESS TAB ===
   function renderProgress() {
     const container = document.getElementById('progress-charts');
     const data      = buildExerciseData();
@@ -552,6 +554,7 @@
     }
   }
 
+  // === CHART DRAWING ===
   function drawBestSetChart(name, sessions) {
     const wrap = document.getElementById('wrap-' + CSS.escape(name));
     if (!wrap) return;

@@ -2,6 +2,7 @@
    creation wizard, training plans, plan intensity chart, journeys (list/detail/creator/
    generation), unknown-exercise handling. */
 
+  // === EXERCISE DETAIL ===
   function showExDetail(name) {
     const d    = EXERCISE_DETAIL[name];
     const meta = getExMeta(name);
@@ -227,6 +228,7 @@
     });
   }
 
+  // === EXERCISE CREATOR ===
   function openWizard(name, cat, ctx) {
     _wiz = { name, cat, ctx, type: null, step: 0, answers: {} };
     _renderWizStep();
@@ -402,6 +404,7 @@
     else renderExScreen();
   }
 
+  // === EXERCISE LIST ===
   function renderExScreen() {
     const container = document.getElementById('ex-screen-list');
     container.innerHTML = '';
@@ -516,6 +519,7 @@
   }
 
 
+  // === JOURNEYS LIST ===
   function renderLibJourneys() {
     const el = document.getElementById('lib-journeys-inner');
     if (!el) return;
@@ -741,6 +745,7 @@
     });
   }
 
+  // === JOURNEY CREATOR ===
   function _openJourneyCreator() {
     _journeyInputs = { goal: '', weeks: 8, weeksCustom: '', days: 3, daysCustom: '', duration: 60, durationCustom: '', level: 'Intermediate' };
     _renderJourneyCreator();
@@ -952,6 +957,7 @@
     return lines.join('\n') || '(no sessions in last 4 weeks)';
   }
 
+  // === GEMINI API ===
   function _buildJourneyPrompt() {
     const i = _journeyInputs;
     const weeks = _jWeeks(), days = _jDays(), duration = _jDuration();
@@ -1252,6 +1258,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     renderLibJourneys();
   }
 
+  // === JOURNEY DETAIL ===
   function _openJourneyDetail(id, expandWeekIdx) {
     _journeyDetailId = id;
     _journeyWeekOpen = {};
@@ -1453,6 +1460,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     if (seg === 'journeys')  renderLibJourneys();
   }
 
+  // === TRAINING PLANS ===
   function renderLibPlans() {
     const el = document.getElementById('lib-plans-inner');
     if (!el) return;
@@ -1566,6 +1574,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     return (typeof e === 'string') ? { name: e, sets: 3 } : { name: e.name, sets: e.sets || 3 };
   }
 
+  // === PLAN CONFIG ===
   function _renderPlanEditor(el) {
     const exItems = (_planDraft.exercises || []).map((raw, i) => {
       const ex = _normPlanEx(raw);
