@@ -930,6 +930,7 @@
 </div>
 
 <div class="tab-bar">
+  <div id="nav-pill"></div>
   <button class="tab-btn active" id="tab-home" onclick="showTab('home')">
     <svg viewBox="0 0 25 25" fill="currentColor">
       <path d="M12.5 3.5L3 11.5V21h6.5v-5.5h6V21H22V11.5L12.5 3.5z"/>
@@ -1086,6 +1087,18 @@
     requestAnimationFrame(() => nextScreen.style.opacity = ''); /* let CSS transition take over */
     const btn = document.getElementById('tab-' + tab);
     if (btn) btn.classList.add('active');
+
+    /* slide the highlight pill to the selected tab with a squash-and-settle feel */
+    const navPill = document.getElementById('nav-pill');
+    const tabBarEl = document.querySelector('.tab-bar');
+    const _navIdx = { home: 0, progress: 1, history: 2, exercises: 3 };
+    if (navPill && _navIdx[tab] !== undefined) {
+      navPill.style.transform = 'translateX(calc(100% * ' + _navIdx[tab] + '))';
+      if (tabBarEl) {
+        tabBarEl.classList.add('is-moving');
+        setTimeout(() => tabBarEl.classList.remove('is-moving'), 450);
+      }
+    }
 
     /* show/hide resume banner whenever we leave the workout screen */
     updateResumeBanner();
@@ -2574,6 +2587,16 @@
   /* Show FAB only if no active workout (restoreActiveWorkout may have set _workoutActive) */
   const _initFab = document.getElementById('home-fab-wrap');
   if (_initFab) _initFab.style.display = _workoutActive ? 'none' : 'flex';
+
+  /* Position the nav highlight pill under whichever tab is active on load */
+  (function initNavPill() {
+    const navPill = document.getElementById('nav-pill');
+    if (!navPill) return;
+    const _navIdx = { home: 0, progress: 1, history: 2, exercises: 3 };
+    const activeBtn = document.querySelector('.tab-btn.active');
+    const tab = activeBtn ? activeBtn.id.replace('tab-', '') : 'home';
+    navPill.style.transform = 'translateX(calc(100% * ' + (_navIdx[tab] || 0) + '))';
+  })();
 
   /* ── Splash ─────────────────────────────────────────────── */
   (function initSplash() {
