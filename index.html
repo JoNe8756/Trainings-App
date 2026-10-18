@@ -1091,7 +1091,7 @@
     updateResumeBanner();
 
     const fab = document.getElementById('home-fab-wrap');
-    if (fab) fab.style.display = (tab === 'home' && !_workoutActive) ? 'flex' : 'none';
+    if (fab) fab.style.display = !_workoutActive ? 'flex' : 'none';
     if (tab === 'home')      { _updateGreeting(); renderRecent(); renderFreqGoal(); renderHighlights(); renderActiveJourneys(); }
     if (tab === 'history')   renderHistory();
     if (tab === 'progress')  renderProgress();

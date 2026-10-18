@@ -251,34 +251,33 @@
     /* ── Floating action button ───────────────────────────── */
     #home-fab-wrap {
       position: fixed;
-      bottom: max(5.5rem, calc(4.75rem + env(safe-area-inset-bottom, 0px)));
-      left: 0;
-      right: 0;
-      max-width: min(430px, 100%);
-      margin: 0 auto;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+      left: 50%;
+      transform: translateX(calc(430px / 2 - 80px));
+      right: auto;
+      width: 64px;
+      height: 64px;
+      max-width: none;
+      margin: 0;
       display: none;
-      justify-content: flex-end;
-      padding-right: 1.25rem;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
       pointer-events: none;
-      z-index: 101;
+      z-index: 1001;
     }
     #home-fab {
       pointer-events: auto;
-      width: 56px;
-      height: 56px;
+      width: 64px;
+      height: 64px;
       flex-shrink: 0;
       border-radius: 50%;
       border: none;
       outline: none;
-      background: linear-gradient(160deg, rgba(80,160,255,0.72) 0%, rgba(0,100,255,0.62) 55%, rgba(0,80,220,0.70) 100%);
-      backdrop-filter: blur(28px) saturate(220%) brightness(1.08);
-      -webkit-backdrop-filter: blur(28px) saturate(220%) brightness(1.08);
-      box-shadow:
-        0 6px 24px rgba(0,80,255,0.40),
-        inset 0 1.5px 0 rgba(255,255,255,0.55),
-        inset 0 -1px 0 rgba(0,50,180,0.30);
+      background: #007AFF;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
       color: #fff;
-      font-size: 1.875rem;
+      font-size: 28px;
       font-weight: 300;
       line-height: 1;
       display: flex;
@@ -1348,30 +1347,34 @@
     #resume-banner-label { font-size: 0.9375rem; font-weight: 600; }
     #resume-banner-timer { font-size: 0.8125rem; font-weight: 500; opacity: .88; font-variant-numeric: tabular-nums; }
 
+    /* Floating rounded nav bar; constrained to the app's phone-width frame */
     .tab-bar {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      /* Respect the phone-frame max-width on desktop */
-      max-width: min(430px, 100%);
-      margin-left: auto;
-      margin-right: auto;
-      /* z-index 100: above normal content; all overlays (150+) remain above it */
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+      left: 50%;
+      /* left edge aligns with the content cards (16px gutter), right edge 8px before the + button */
+      transform: translateX(calc(-50% - 36px));
+      width: calc(min(100%, 430px) - 104px);
+      max-width: calc(430px - 104px);
       z-index: 100;
-      /* Force own compositing layer — never repaints during layout changes */
-      transform: translateZ(0);
       will-change: transform;
-      background: var(--glass-tab);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      border-top: 0.5px solid var(--separator);
-      box-shadow: 0 -1px 0 var(--separator);
+      background: #1C1C1E;
+      border-radius: 999px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      overflow: hidden;
+      box-sizing: border-box;
       display: flex;
-      padding: 0.5rem 0 max(0.75rem, env(safe-area-inset-bottom));
+      align-items: center;
+      justify-content: space-evenly;
+      height: 64px;
+      padding-left: 6px;
+      padding-right: 6px;
     }
     .tab-btn {
-      flex: 1;
+      flex: 1 1 0;
+      min-width: 0;
+      box-sizing: border-box;
+      width: 100%;
       background: none;
       border: none;
       outline: none;
@@ -1380,20 +1383,28 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.1875rem;
-      padding: 0.25rem 0;
-      color: var(--tertiary);
-      font-size: 0.625rem;   /* 10px */
+      justify-content: center;
+      gap: 3px;
+      padding: 6px 0;
+      margin: 0;
+      color: #8E8E93;
+      font-size: 10px;
       font-weight: 500;
       letter-spacing: .2px;
-      transition: color .15s;
+      transition: color .15s, background .15s;
       font-family: inherit;
-      /* ensure label never wraps */
       white-space: nowrap;
+      border-radius: 999px;
     }
     .tab-btn:focus { outline: none; }
-    .tab-btn.active { color: var(--blue); }
-    .tab-btn svg { width: 25px; height: 25px; flex-shrink: 0; }
+    .tab-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+    /* Active tab: fills its slot exactly so neighbours never shift */
+    .tab-btn.active {
+      background: rgba(0,122,255,0.25);
+      padding: 6px 0;
+      margin: 0;
+      color: #007AFF;
+    }
 
     /* ── Progress / Chart cards ───────────────────────────── */
     .chart-card {
@@ -4648,7 +4659,7 @@
     #resume-banner.banner-land { animation: _banner-land 300ms ease-out; }
     /* Workout scroll: fills remaining space between fixed top and fixed bottom */
     #workout-scroll {
-      flex: 1 !important;
+      flex: 0 1 auto;
       overflow-y: auto !important;
       -webkit-overflow-scrolling: touch !important;
       min-height: 0 !important;

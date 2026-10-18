@@ -1464,10 +1464,13 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
   function renderLibPlans() {
     const el = document.getElementById('lib-plans-inner');
     if (!el) return;
+    const nav = document.querySelector('.tab-bar');
     if (_plansMode === 'editor') {
+      if (nav) nav.style.display = 'none';          /* hide bottom nav on plan detail/config */
       el.classList.remove('plans-list-mode');
       _renderPlanEditor(el);
     } else {
+      if (nav) nav.style.display = '';              /* restore bottom nav back on the list */
       _plansMode = 'list';
       el.classList.add('plans-list-mode');
       _renderPlanList(el);

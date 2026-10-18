@@ -56,9 +56,21 @@
     _exNavUpdate();
   }
 
+  /* Last exercise (from the end) that has a confirmed set with reps > 0;
+     falls back to the first exercise when nothing is confirmed yet. */
+  function _lastActiveExerciseIdx() {
+    const cards = _exGetCards();
+    for (let i = cards.length - 1; i >= 0; i--) {
+      const doneRows = cards[i].querySelectorAll('.sets-body .set-row.set-done');
+      for (const row of doneRows) {
+        if ((parseFloat(row.dataset.confirmedReps) || 0) > 0) return i;
+      }
+    }
+    return 0;
+  }
+
   function resumeWorkout() {
-    const saved = parseInt(localStorage.getItem('activeWorkoutExerciseIndex'), 10);
-    const targetIdx = isFinite(saved) ? saved : null;
+    const targetIdx = _lastActiveExerciseIdx();
 
     const ws = document.getElementById('workout-screen');
     /* Reset any stale positioning before showing */
@@ -351,6 +363,10 @@
     const div = document.createElement('div');
     div.className = 'exercise-card';
     div.id = id;
+    /* Card height = content only: drop the CSS max-height cap and any height
+       forcing so there's no stretched/empty space below the card. */
+    div.style.maxHeight = 'none';
+    div.style.height = 'auto';
     if (tb)           div.dataset.tb      = '1';
     if (isKiller)     div.dataset.killer  = '1';
     if (activePlanData && numSets >= 1) div.dataset.planSets = String(numSets);
@@ -493,17 +509,49 @@
     return null;
   }
 
+  // === SET PRE-FILL ===
+  /* Mark an input as a suggestion (not a confirmed value): grey, italic,
+     slightly smaller, dashed border. */
+  function _markPrefill(inp, val) {
+    inp.value = val;
+    inp.dataset.prefilled = '1';
+    inp.classList.add('set-input-prefill');
+    inp.style.color = '#8E8E93';
+    inp.style.fontStyle = 'italic';
+    inp.style.fontSize = '15px';
+    inp.style.border = '1px dashed #8E8E93';
+    inp.style.textAlign = 'center';
+  }
+  /* Reset suggestion styling back to a normal confirmed-looking input. */
+  function _clearPrefillStyle(inp) {
+    inp.style.color = '';
+    inp.style.fontStyle = '';
+    inp.style.fontSize = '';
+    inp.style.border = '';
+    inp.style.textAlign = '';
+  }
+  /* Enable the ✓ (log-set) button whenever the reps field has a value > 0,
+     including a pre-filled suggestion; disabled only when empty/0. */
+  function _updateLogBtnState(row) {
+    if (!row) return;
+    const inputs = row.querySelectorAll('.set-input');
+    const btn = row.querySelector('.btn-log-set');
+    if (!btn || inputs.length < 2) return;
+    const reps = parseFloat(inputs[1].value);
+    const ok = isFinite(reps) && reps > 0;
+    btn.disabled = !ok;
+    btn.style.opacity = ok ? '' : '0.35';
+    btn.style.pointerEvents = ok ? '' : 'none';
+    btn.style.cursor = ok ? '' : 'default';
+  }
+
   function _prefillSetRow(row, setIndex, exName) {
     /* Journey exercises: pre-fill reps with the planned journey target (not PB). */
     const jcard = row.closest('.exercise-card');
     if (jcard && jcard.dataset.journeyKey && jcard.dataset.plannedReps) {
       const jin = row.querySelectorAll('.set-input');
       const planned = parseFloat(jcard.dataset.plannedReps) || 0;
-      if (jin.length && planned > 0) {
-        jin[1].value = planned;                 /* reps — editable */
-        jin[1].dataset.prefilled = '1';
-        jin[1].classList.add('set-input-prefill');
-      }
+      if (jin.length && planned > 0) _markPrefill(jin[1], planned);  /* reps — editable, greyed */
       return;                                    /* kg stays empty; skip personal-best prefill */
     }
     const sets = _getLastSessionSets(exName);
@@ -511,16 +559,8 @@
     const s = sets[setIndex];
     const inputs = row.querySelectorAll('.set-input');
     if (!inputs.length) return;
-    if (s.kg && parseFloat(s.kg) > 0) {
-      inputs[0].value = s.kg;
-      inputs[0].dataset.prefilled = '1';
-      inputs[0].classList.add('set-input-prefill');
-    }
-    if (s.reps && parseFloat(s.reps) > 0) {
-      inputs[1].value = s.reps;
-      inputs[1].dataset.prefilled = '1';
-      inputs[1].classList.add('set-input-prefill');
-    }
+    if (s.kg && parseFloat(s.kg) > 0) _markPrefill(inputs[0], s.kg);
+    if (s.reps && parseFloat(s.reps) > 0) _markPrefill(inputs[1], s.reps);
   }
 
   function _applySetStates(exId) {
@@ -542,6 +582,7 @@
           const isEmpty = Array.from(inputs).every(i => !i.value.trim());
           if (isEmpty) _prefillSetRow(row, idx, exName);
         }
+        _updateLogBtnState(row);   /* ✓ enabled only when reps > 0 */
       } else {
         row.classList.remove('set-active', 'set-upcoming');
         row.classList.add('set-future');
@@ -550,9 +591,11 @@
           i.value = '';
           i.classList.remove('set-input-prefill');
           delete i.dataset.prefilled;
+          _clearPrefillStyle(i);
         });
         const badge = row.querySelector('.set-intensity-badge');
         if (badge) badge.textContent = '';
+        _updateLogBtnState(row);
       }
     });
   }
@@ -603,6 +646,8 @@
       inp.addEventListener('input', () => {
         inp.classList.remove('set-input-prefill');
         delete inp.dataset.prefilled;
+        _clearPrefillStyle(inp);              /* user value — white, normal, solid border */
+        _updateLogBtnState(row);
         updateExIntensity(exId); updateGhostHint(exId); persistActiveWorkout(); _applySetStates(exId);
       });
     });
@@ -611,6 +656,7 @@
     updateGhostHint(exId);
     persistActiveWorkout();
     _applySetStates(exId);
+    _updateLogBtnState(row);
     _syncAddSetBtn(exId);
   }
 
@@ -1071,6 +1117,10 @@
   }
 
   function logSet(exId, sid, btn) {
+    /* A set with no reps (empty or 0) can never be confirmed */
+    const _guardRow = btn?.closest('.set-row');
+    const _guardReps = _guardRow ? parseFloat(_guardRow.querySelectorAll('.set-input')[1]?.value) : NaN;
+    if (!(isFinite(_guardReps) && _guardReps > 0)) return;
     /* Dismiss keyboard first so the tap isn't intercepted by the keyboard overlay */
     if (document.activeElement && document.activeElement !== document.body) {
       document.activeElement.blur();
@@ -1104,7 +1154,7 @@
     if (_loggedRow) {
       /* accept any prefilled values as confirmed */
       const _cIns = _loggedRow.querySelectorAll('.set-input');
-      _cIns.forEach(i => { i.classList.remove('set-input-prefill'); delete i.dataset.prefilled; });
+      _cIns.forEach(i => { i.classList.remove('set-input-prefill'); delete i.dataset.prefilled; _clearPrefillStyle(i); });
       /* snapshot confirmed values so intensity reads are stable after DOM state changes */
       _loggedRow.dataset.confirmedKg   = _cIns[0]?.value || '';
       _loggedRow.dataset.confirmedReps = _cIns[1]?.value || '';
@@ -1565,12 +1615,62 @@
     _restRestore();
   }
 
+  // === SET IMPROVEMENT INDICATOR ===
+  /* Compare a confirmed set to the same set number from the most recent session
+     with the same plan. Plan sessions only; returns '' when nothing to show. */
+  function _setImproveHTML(exName, setIndex, curReps, curKg) {
+    if (!activePlanData || !activePlanData.planName) return '';   /* plan sessions only */
+    const plan = activePlanData.planName;
+    let prevSet = null;
+    for (const w of workouts) {                   /* workouts is newest-first */
+      if (w.planName !== plan) continue;
+      const ex = (w.exercises || []).find(e => (e.name || '').trim() === exName);
+      if (!ex) continue;
+      const ps = (ex.sets || [])[setIndex];
+      if (ps) { prevSet = ps; break; }
+    }
+    if (!prevSet) return '';
+    const pReps = parseFloat(prevSet.reps) || 0, pKg = parseFloat(prevSet.kg) || 0;
+    const cur  = calcSetIntensity(exName, curReps, curKg);
+    const prev = calcSetIntensity(exName, pReps, pKg);
+    if (!(prev > 0)) return '';                 /* can't compute % without previous intensity */
+    const pct = Math.round(((cur - prev) / prev) * 100);
+    let txt, color;
+    if (pct > 0)      { txt = '+' + pct + '%'; color = '#34C759'; }
+    else if (pct < 0) { txt = pct + '%';       color = '#FF3B30'; }
+    else              { txt = '=';             color = '#8E8E93'; }
+    return `<span class="set-improve" style="font-size:11px;font-weight:700;color:${color}">${txt}</span>`;
+  }
+
+  /* Force a fixed 7-column grid on a set row and ensure a dedicated % column
+     exists between the ⚡ intensity cell and the ✓ button (so nothing shifts
+     and % never overlaps ✓). */
+  function _layoutSetRow(row) {
+    row.style.gridTemplateColumns = '32px 1fr 1fr 48px 44px 32px 32px';
+    const badge = row.querySelector('.set-intensity-badge');
+    if (badge) { badge.style.textAlign = 'right'; badge.style.color = '#007AFF'; }
+    let imp = row.querySelector('.set-improve-col');
+    if (!imp && badge) {
+      imp = document.createElement('span');
+      imp.className = 'set-improve-col';
+      imp.style.cssText = 'min-width:44px;text-align:left;font-size:11px;font-weight:700;';
+      badge.insertAdjacentElement('afterend', imp);
+    }
+    return imp;
+  }
+
   function updateExIntensity(exId) {
     const card = document.getElementById(exId);
     if (!card) return;
+    /* Align the column header with the 7-column set-row grid (SET·KG·REPS·⚡ only) */
+    const header = card.querySelector('.sets-col-header');
+    if (header) {
+      header.style.gridTemplateColumns = '32px 1fr 1fr 48px 44px 32px 32px';
+      while (header.children.length < 7) header.appendChild(document.createElement('span'));
+    }
     const name = (card.querySelector('.exercise-head input[type="text"]')?.value || '').trim();
     let total  = 0;
-    card.querySelectorAll('.sets-body .set-row').forEach(row => {
+    card.querySelectorAll('.sets-body .set-row').forEach((row, setIndex) => {
       const ins    = row.querySelectorAll('.set-input');
       const isDone = row.classList.contains('set-done');
       /* use snapshot values for confirmed sets so live DOM state never corrupts them */
@@ -1581,7 +1681,9 @@
       const v = calcSetIntensity(name, reps, kg);
       if (isDone) total += v;   /* only confirmed sets count toward the exercise total */
       const badge = row.querySelector('.set-intensity-badge');
+      const impCol = _layoutSetRow(row);
       if (badge) badge.textContent = v > 0 ? fmtInt(v) : '';
+      if (impCol) impCol.innerHTML = isDone ? _setImproveHTML(name, setIndex, reps, kg) : '';
     });
     const el = card.querySelector('.ex-intensity-total');
     if (el) el.textContent = total > 0 ? `⚡ ${fmtInt(total)}` : '';
