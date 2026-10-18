@@ -44,6 +44,7 @@
     if (fab) fab.style.display = 'none';
     const tabBar = document.querySelector('.tab-bar');
     if (tabBar) tabBar.style.display = 'none';
+    document.body.classList.add('nav-hidden');
     updateResumeBanner();
     _showWarmupWorkoutCard();
     _updateRestToggleBtn();
@@ -113,6 +114,7 @@
       ws.style.pointerEvents = '';
       const tabBar = document.querySelector('.tab-bar');
       if (tabBar) tabBar.style.display = '';
+    document.body.classList.remove('nav-hidden');
       showTab('home');
       /* Banner land pulse */
       const banner = document.getElementById('resume-banner');
@@ -370,6 +372,7 @@
     if (tb)           div.dataset.tb      = '1';
     if (isKiller)     div.dataset.killer  = '1';
     if (activePlanData && numSets >= 1) div.dataset.planSets = String(numSets);
+    if (opts.journeyTag) div.dataset.journeyTag = opts.journeyTag;
     if (opts.journeyKey) {
       div.dataset.journeyKey   = opts.journeyKey;
       div.dataset.plannedSets  = String(opts.plannedSets || numSets || 1);
@@ -1403,6 +1406,7 @@
     /* show screen */
     const tabBar = document.querySelector('.tab-bar');
     if (tabBar) tabBar.style.display = 'none';
+    document.body.classList.add('nav-hidden');
     const el = document.getElementById('post-workout-screen');
     el.scrollTop = 0;
     el.style.display = 'block';
@@ -1412,6 +1416,7 @@
     document.getElementById('post-workout-screen').style.display = 'none';
     const tabBar = document.querySelector('.tab-bar');
     if (tabBar) tabBar.style.display = '';
+    document.body.classList.remove('nav-hidden');
     showTab('home');
   }
 
@@ -1464,7 +1469,9 @@
           restSecs,
         });
       });
-      exercises.push({ name, tb, sets, ...(killer && { killer: true }) });
+      exercises.push({ name, tb, sets, ...(killer && { killer: true }),
+        ...(card.dataset.journeyTag && { journeyTag: card.dataset.journeyTag }),
+        ...(card.dataset.journeyKey && { journeyKey: card.dataset.journeyKey, plannedSets: card.dataset.plannedSets, plannedReps: card.dataset.plannedReps }) });
     });
     const killerCard = document.getElementById('workout-killer-card');
     const killerVisible = killerCard && killerCard.style.display !== 'none' && _killerRoutine.length > 0;
@@ -1482,6 +1489,7 @@
       killerRoutine:   killerVisible ? [..._killerRoutine]  : null,
       killerResults:   killerVisible ? [..._killerResults]  : null,
       warmup:          _completedWarmup || null,
+      journeyAdds:     JSON.parse(JSON.stringify(_workoutJourneyAdds)),
     };
     localStorage.setItem('activeWorkout', JSON.stringify(snap));
   }
@@ -1503,6 +1511,7 @@
     activePlanData = snap.activePlanData || null;
     exerciseCount  = 0;
     document.getElementById('exercise-list').innerHTML = '';
+    _workoutJourneyAdds = Array.isArray(snap.journeyAdds) ? snap.journeyAdds : [];
 
     snap.exercises.forEach((ex, exIdx) => {
       if (ex.killer) return;  // killer set is now shown as a compact card, not individual cards
@@ -1513,6 +1522,12 @@
       div.className = 'exercise-card';
       div.id = id;
       if (tb)       div.dataset.tb     = '1';
+      if (ex.journeyTag) div.dataset.journeyTag = ex.journeyTag;
+      if (ex.journeyKey) {
+        div.dataset.journeyKey  = ex.journeyKey;
+        div.dataset.plannedSets = String(ex.plannedSets || 1);
+        div.dataset.plannedReps = String(ex.plannedReps || 0);
+      }
       /* restore plan set count so auto-add limit still applies after page refresh */
       if (activePlanData) {
         const planEx = activePlanData.exercises[exIdx];
@@ -1529,6 +1544,7 @@
             </svg>
           </button>
         </div>
+        ${ex.journeyTag ? `<div class="ex-journey-tag">📍 ${_esc(ex.journeyTag)}</div>` : ''}
         <div class="ex-rest-rec"></div>
         <div class="sets-table">
           <div class="sets-col-header">
@@ -2242,7 +2258,17 @@
     startTimer();
     showWorkoutScreen();
     activePlanData = { planName, exercises: normEx, nextIndex: normEx.length };
-    normEx.forEach(ex => createExCard(ex.name, false, ex.sets));
+    const _startJ = _activeJourneyRef ? _journeys.find(x => x.id === _activeJourneyRef.id) : null;
+    const _startSess = (_startJ && _activeJourneyRef) ? ((_startJ.weeks || [])[_activeJourneyRef.w] || {}).sessions?.[_activeJourneyRef.s] : null;
+    normEx.forEach((ex, i) => {
+      const planned = _startSess ? ((_startSess.exercises || [])[i] || {}) : null;
+      createExCard(ex.name, false, ex.sets, _startJ ? {
+        journeyTag: _startJ.name,
+        journeyKey: _activeJourneyRef.id + '-' + _activeJourneyRef.w + '-' + _activeJourneyRef.s,
+        plannedSets: ex.sets,
+        plannedReps: parseFloat(planned && planned.reps) || 0
+      } : {});
+    });
     updatePlanBanner();
     persistActiveWorkout();
   }
@@ -2289,11 +2315,7 @@
   function updatePlanBanner() {
     const banner = document.getElementById('plan-banner');
     if (!banner) return;
-    if (!activePlanData) { banner.style.display = 'none'; return; }
-    const done  = activePlanData.nextIndex;
-    const total = activePlanData.exercises.length;
-    banner.textContent = `📋 ${activePlanData.planName} · ${done}/${total}`;
-    banner.style.display = '';
+    banner.style.display = 'none';  /* banner removed — per-exercise journey tags replace it */
   }
 
   function _showPlanPrestart(plan) {

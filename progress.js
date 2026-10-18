@@ -7,17 +7,17 @@
     sorted.forEach(w => {
       const _ld = new Date(w.date);
       const label = _ld.getDate() + ' ' + _ld.toLocaleDateString('en-US', { month: 'short' });
+      const _seen = {};   /* name → entry for this workout, so repeat occurrences merge */
       w.exercises.forEach(ex => {
         const name = ex.name.trim() || 'Unnamed';
         if (!map[name]) map[name] = [];
-        map[name].push({
-          date:  w.date,
-          label,
-          sets:  ex.sets.map(s => ({
-            reps: Math.max(0, parseInt(s.reps)  || 0),
-            kg:   Math.max(0, parseFloat(s.kg)  || 0)
-          }))
-        });
+        const sets = ex.sets.map(s => ({
+          reps: Math.max(0, parseInt(s.reps)  || 0),
+          kg:   Math.max(0, parseFloat(s.kg)  || 0)
+        }));
+        if (_seen[name]) { _seen[name].sets.push(...sets); return; }
+        _seen[name] = { date: w.date, label, sets };
+        map[name].push(_seen[name]);
       });
     });
     return map;

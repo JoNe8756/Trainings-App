@@ -1348,6 +1348,8 @@
     #resume-banner-label { font-size: 0.9375rem; font-weight: 600; }
     #resume-banner-timer { font-size: 0.8125rem; font-weight: 500; opacity: .88; font-variant-numeric: tabular-nums; }
 
+    body.nav-hidden::after { display: none; }
+
     /* Frosted glass backdrop behind the nav bar + FAB so scrolling content
        blurs/fades out underneath instead of showing through sharply. */
     body::after {

@@ -386,8 +386,9 @@ window.renderExerciseTrendModal = function() {
   var sessions = [];
   var _allWorkouts = JSON.parse(localStorage.getItem('workouts') || '[]');
   _allWorkouts.forEach(function(w) {
-    var ex = (w.exercises || []).find(function(e) { return e.name === name; });
-    if (!ex) return;
+    var _matches = (w.exercises || []).filter(function(e) { return e.name === name; });
+    if (!_matches.length) return;
+    var ex = { sets: [].concat.apply([], _matches.map(function(e) { return e.sets || []; })) };
     var totalReps = 0, totalInt = 0;
     (ex.sets || []).forEach(function(s) {
       var r = parseFloat(s.reps) || 0, k = parseFloat(s.kg) || 0;
