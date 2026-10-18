@@ -251,12 +251,13 @@
     /* ── Floating action button ───────────────────────────── */
     #home-fab-wrap {
       position: fixed;
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+      /* nav bar bottom (env + 12px) + (64px - 56px)/2 = env + 16px → centers match */
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
       left: 50%;
-      transform: translateX(calc(430px / 2 - 80px));
+      transform: translateX(calc(430px / 2 - 72px));
       right: auto;
-      width: 64px;
-      height: 64px;
+      width: 56px;
+      height: 56px;
       max-width: none;
       margin: 0;
       display: none;
@@ -268,8 +269,8 @@
     }
     #home-fab {
       pointer-events: auto;
-      width: 64px;
-      height: 64px;
+      width: 56px;
+      height: 56px;
       flex-shrink: 0;
       border-radius: 50%;
       border: none;
@@ -277,7 +278,7 @@
       background: #007AFF;
       box-shadow: 0 4px 16px rgba(0,0,0,0.5);
       color: #fff;
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 300;
       line-height: 1;
       display: flex;
@@ -1347,15 +1348,37 @@
     #resume-banner-label { font-size: 0.9375rem; font-weight: 600; }
     #resume-banner-timer { font-size: 0.8125rem; font-weight: 500; opacity: .88; font-variant-numeric: tabular-nums; }
 
+    /* Frosted glass backdrop behind the nav bar + FAB so scrolling content
+       blurs/fades out underneath instead of showing through sharply. */
+    body::after {
+      content: "";
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      /* taller so the longer mask fade has room before the solid blur zone */
+      height: calc(env(safe-area-inset-bottom, 0px) + 160px);
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      /* the element itself fades out at the top over 80px — blur and darkening
+         ramp up together, no hard edge or seam */
+      mask-image: linear-gradient(to bottom, transparent 0%, black 80px);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 80px);
+      /* below the nav bar (100) and FAB (1001), above scrolling content */
+      z-index: 99;
+      pointer-events: none;
+    }
+
     /* Floating rounded nav bar; constrained to the app's phone-width frame */
     .tab-bar {
       position: fixed;
       bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
       left: 50%;
       /* left edge aligns with the content cards (16px gutter), right edge 8px before the + button */
-      transform: translateX(calc(-50% - 36px));
-      width: calc(min(100%, 430px) - 104px);
-      max-width: calc(430px - 104px);
+      transform: translateX(calc(-50% - 32px));
+      width: calc(min(100%, 430px) - 96px);
+      max-width: calc(430px - 96px);
       z-index: 100;
       will-change: transform;
       background: #1C1C1E;
@@ -1381,10 +1404,33 @@
       border-radius: 999px;
       z-index: 0;
       transform: translateX(0);
-      transition: transform 0.45s cubic-bezier(0.34, 1.3, 0.5, 1),
-                  scale 0.45s cubic-bezier(0.34, 1.3, 0.5, 1);
+      transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1),
+                  scale 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
     }
-    .tab-bar.is-moving #nav-pill { scale: 1.06 0.94; }
+    .tab-bar.is-moving #nav-pill { scale: 1.02 0.98; }
+
+    /* Reusable sliding-pill segmented control — same animation as the nav pill.
+       JS (moveSegmentedPill) sets the pill width and translateX per control. */
+    .segmented-control { position: relative; }
+    .segmented-control > :not(.segment-pill) { position: relative; z-index: 1; }
+    .segment-pill {
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      left: 4px;
+      width: 50%;            /* overridden by moveSegmentedPill to 100%/segments */
+      background: rgba(0,122,255,0.25);
+      border-radius: 999px;
+      z-index: 0;
+      transform: translateX(0);
+      transition: left 0.35s cubic-bezier(0.22, 0.61, 0.36, 1),
+                  width 0.35s cubic-bezier(0.22, 0.61, 0.36, 1),
+                  scale 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+    .segmented-control.is-moving .segment-pill { scale: 1.02 0.98; }
+    /* 4px inset on all sides for every segmented control (overrides inline padding) */
+    #progress-range-seg, #plan-int-seg, #exTrendSeg, #break-mode-seg, #jc-level { padding: 4px !important; box-sizing: border-box; }
+
     .tab-btn {
       position: relative;
       z-index: 1;
@@ -2049,12 +2095,21 @@
       display: flex;
       background: var(--fill);
       border-radius: 0.5rem;
-      padding: 0.125rem;
+      padding: 4px;               /* 4px inset all sides so the pill never reaches the edge */
+      box-sizing: border-box;
+      overflow: hidden;           /* clip the pill to the rounded container */
+      /* force own layer + stacking context so the rounded overflow clip actually
+         crops the transformed pill during its bounce (iOS Safari fix) */
+      transform: translateZ(0);
+      isolation: isolate;
       width: 100%;
       max-width: 22rem;
       flex-shrink: 0;
       position: relative;
     }
+    /* three equal segments fit inside the 4px padding without overflowing
+       (overrides the shared pill's inline 100%/3 width) */
+    #lib-seg .segment-pill { width: calc((100% - 8px) / 3) !important; }
     .lib-seg-pill {
       position: absolute;
       top: 0.125rem;
@@ -2068,6 +2123,7 @@
     }
     .lib-seg-btn {
       flex: 1;
+      min-width: 0;             /* equal widths — BETA badge can't push this segment wider */
       background: none;
       border: none;
       border-radius: 0.375rem;

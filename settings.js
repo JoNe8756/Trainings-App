@@ -9,10 +9,19 @@
     const row   = document.getElementById('break-timer-mode-row');
     if (row) row.style.display = _getRestTimerEnabled() ? '' : 'none';
     if (!swBtn || !cdBtn) return;
-    swBtn.style.background = mode === 'stopwatch' ? '#007AFF' : 'transparent';
-    swBtn.style.color      = mode === 'stopwatch' ? '#fff'    : 'var(--tertiary)';
-    cdBtn.style.background = mode === 'countdown'  ? '#007AFF' : 'transparent';
-    cdBtn.style.color      = mode === 'countdown'  ? '#fff'    : 'var(--tertiary)';
+    /* shared sliding pill supplies the highlight — buttons only change text colour */
+    swBtn.classList.toggle('active', mode === 'stopwatch');
+    cdBtn.classList.toggle('active', mode === 'countdown');
+    swBtn.style.color = mode === 'stopwatch' ? '#fff' : 'var(--tertiary)';
+    cdBtn.style.color = mode === 'countdown' ? '#fff' : 'var(--tertiary)';
+    const seg = document.getElementById('break-mode-seg');
+    if (seg) {
+      const idx  = mode === 'stopwatch' ? 0 : 1;
+      const pill = seg.querySelector('.segment-pill');
+      const firstTime = !(pill && pill.style.width);
+      if (firstTime) initSegmentedPill(seg); else moveSegmentedPill(seg, idx, 2);
+      if (pill) pill.style.width = 'calc((100% - 8px) / 2)';
+    }
   }
 
   function ksEditRender() {
@@ -169,41 +178,34 @@
   function updateSettingsFreqDisplay() { updateSettingsGoalsDisplay(); }
 
   // === DATA MANAGEMENT ===
+  /* Transient keys never belong in a backup: in-progress workout state,
+     active timer timestamps, and the last-shown motivational message index. */
+  const _TRANSIENT_KEYS = new Set([
+    'activeWorkout',
+    'activeWorkoutExerciseIndex',
+    'activeRest',
+    'pwLastMsgIdx',
+  ]);
+
   function exportData() {
-    const incl = {
-      history:  document.getElementById('exp-chk-history')?.checked  ?? true,
-      plans:    document.getElementById('exp-chk-plans')?.checked    ?? true,
-      exlib:    document.getElementById('exp-chk-exlib')?.checked    ?? true,
-      settings: document.getElementById('exp-chk-settings')?.checked ?? true,
-    };
-    if (!incl.history && !incl.plans && !incl.exlib && !incl.settings) {
-      showToast('Select at least one category'); return;
+    /* Build the backup from EVERY localStorage key the app writes, minus transient state */
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || _TRANSIENT_KEYS.has(key)) continue;
+      data[key] = localStorage.getItem(key);   /* raw string value, restored verbatim */
     }
     const payload = {
-      exportedAt:  new Date().toISOString(),
-      version:     1,
-      categories:  Object.keys(incl).filter(k => incl[k]),
+      exportVersion: 2,
+      exportedAt:    new Date().toISOString(),
+      data,
     };
-    if (incl.history)  payload.workouts    = JSON.parse(localStorage.getItem('workouts')      || '[]');
-    if (incl.plans)    payload.plans       = JSON.parse(localStorage.getItem('plans')         || '[]');
-    if (incl.exlib) {
-      payload.exLib       = JSON.parse(localStorage.getItem('exLib')       || 'null');
-      payload.customExMeta= JSON.parse(localStorage.getItem('customExMeta')|| '{}');
-    }
-    if (incl.settings) {
-      payload.freqGoal     = JSON.parse(localStorage.getItem('freqGoal')     || 'null');
-      payload.volumeGoal   = JSON.parse(localStorage.getItem('volumeGoal')   || 'null');
-      payload.exerciseGoal = JSON.parse(localStorage.getItem('exerciseGoal') || 'null');
-      payload.userBW       = localStorage.getItem('userBW')     || null;
-      payload.userHeight   = localStorage.getItem('userHeight') || null;
-    }
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    const cats = payload.categories.join('-');
     const date = new Date().toISOString().slice(0, 10);
     a.href     = url;
-    a.download = `workout-backup-${cats}-${date}.json`;
+    a.download = `workout-backup-${date}.json`;
     a.click();
     URL.revokeObjectURL(url);
     showToast('Data exported ✓');
@@ -223,52 +225,36 @@
       try { payload = JSON.parse(e.target.result); }
       catch { showToast('Invalid file — import failed'); return; }
 
-      if (!payload.version) { showToast('Unrecognised format — import failed'); return; }
+      let restored = 0;
 
-      /* Detect which categories are present */
-      const detected = [];
-      if (Array.isArray(payload.workouts))                                        detected.push('Training History');
-      if (Array.isArray(payload.plans))                                           detected.push('Training Plans');
-      if (payload.exLib !== undefined || payload.customExMeta !== undefined)      detected.push('Exercise Library');
-      if (payload.freqGoal !== undefined || payload.volumeGoal !== undefined || payload.exerciseGoal !== undefined || payload.userBW !== undefined || payload.userHeight !== undefined) detected.push('Settings & Goals');
-
-      if (!detected.length) { showToast('No recognisable data in file'); return; }
-
-      const catList = detected.map(c => `  • ${c}`).join('\n');
-      const msg = `Import will overwrite:\n${catList}\n\nCategories not in this file stay untouched.\n\nProceed?`;
-      if (!confirm(msg)) return;
-
-      /* Restore detected categories */
-      if (Array.isArray(payload.workouts)) {
-        localStorage.setItem('workouts', JSON.stringify(payload.workouts));
-        workouts = payload.workouts;
+      if (payload.exportVersion >= 2 && payload.data && typeof payload.data === 'object') {
+        /* v2+: map of raw string values — restore every key present, skip absent ones */
+        if (!confirm('Import this backup?\n\nKeys in the file overwrite existing data; keys not in the file stay untouched.\n\nProceed?')) return;
+        Object.keys(payload.data).forEach(key => {
+          if (_TRANSIENT_KEYS.has(key)) return;
+          const val = payload.data[key];
+          if (val === undefined || val === null) return;   /* skip absent */
+          localStorage.setItem(key, val);
+          restored++;
+        });
+      } else {
+        /* exportVersion missing → treat as v1: legacy top-level keys */
+        const has = (k) => payload[k] !== undefined;
+        const legacyPresent = ['workouts','plans','exLib','customExMeta','freqGoal','volumeGoal','exerciseGoal','userBW','userHeight'].some(has);
+        if (!legacyPresent) { showToast('No recognisable data in file'); return; }
+        if (!confirm('Import this backup?\n\nKeys in the file overwrite existing data; keys not in the file stay untouched.\n\nProceed?')) return;
+        const putJSON = (k) => { if (has(k)) { localStorage.setItem(k, JSON.stringify(payload[k])); restored++; } };
+        const putRaw  = (k) => { if (has(k)) { localStorage.setItem(k, payload[k] ?? ''); restored++; } };
+        putJSON('workouts'); putJSON('plans'); putJSON('exLib'); putJSON('customExMeta');
+        putJSON('freqGoal'); putJSON('volumeGoal'); putJSON('exerciseGoal');
+        putRaw('userBW'); putRaw('userHeight');
       }
-      if (Array.isArray(payload.plans)) {
-        localStorage.setItem('plans', JSON.stringify(payload.plans));
-        plans = payload.plans;
-      }
-      if (payload.exLib !== undefined)
-        localStorage.setItem('exLib', JSON.stringify(payload.exLib));
-      if (payload.customExMeta !== undefined)
-        localStorage.setItem('customExMeta', JSON.stringify(payload.customExMeta));
-      if (payload.freqGoal !== undefined)
-        localStorage.setItem('freqGoal', JSON.stringify(payload.freqGoal));
-      if (payload.volumeGoal !== undefined)
-        localStorage.setItem('volumeGoal', JSON.stringify(payload.volumeGoal));
-      if (payload.exerciseGoal !== undefined)
-        localStorage.setItem('exerciseGoal', JSON.stringify(payload.exerciseGoal));
-      if (payload.userBW !== undefined)
-        localStorage.setItem('userBW',     payload.userBW     ?? '');
-      if (payload.userHeight !== undefined)
-        localStorage.setItem('userHeight', payload.userHeight ?? '');
 
-      /* Refresh UI */
-      closeSettings();
-      renderRecent();
-      renderGoalsSection();
-      renderHighlights();
-      renderActiveJourneys();
-      showToast(`Imported: ${detected.join(', ')} ✓`);
+      if (!restored) { showToast('No data imported'); return; }
+
+      /* Reload the whole app so every tab reflects the restored data immediately */
+      showToast(`Imported ${restored} item(s) ✓`);
+      setTimeout(() => location.reload(), 600);
     };
     reader.readAsText(file);
   }

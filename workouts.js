@@ -1314,6 +1314,15 @@
     /* check journey sessions added mid-workout (strict: all planned sets/reps confirmed) */
     _checkJourneySessionsOnFinish();
 
+    /* XP: +20 for finishing, +15 per new PR, then weekly goal / streak bonuses */
+    if (typeof addXP === 'function') {
+      addXP(20, 'workout');
+      let _prCount = 0;
+      try { _prCount = (typeof findNewPRs === 'function' ? findNewPRs() : []).length; } catch (e) {}
+      for (let i = 0; i < _prCount; i++) addXP(15, 'pr');
+      if (typeof checkWeeklyBonuses === 'function') checkWeeklyBonuses();
+    }
+
     /* clear workout state */
     _workoutActive   = false;
     activePlanData   = null;
@@ -2191,7 +2200,10 @@
         if (j) {
           j.completedSessions = j.completedSessions || [];
           const token = rec.wi + '-' + rec.si;
-          if (!j.completedSessions.includes(token)) j.completedSessions.push(token);
+          if (!j.completedSessions.includes(token)) {
+            j.completedSessions.push(token);
+            if (typeof addXP === 'function') addXP(35, 'journey_session');
+          }
           j.completedDates = j.completedDates || {};
           j.completedDates[token] = new Date().toISOString();
           anyComplete = true;
@@ -2240,7 +2252,11 @@
     if (!j) return;
     j.completedSessions = j.completedSessions || [];
     const token = ref.w + '-' + ref.s;
-    if (!j.completedSessions.includes(token)) { j.completedSessions.push(token); _persistJourneys(); }
+    if (!j.completedSessions.includes(token)) {
+      j.completedSessions.push(token);
+      _persistJourneys();
+      if (typeof addXP === 'function') addXP(35, 'journey_session');
+    }
   }
 
   function startWorkoutFromPlan(planId) {

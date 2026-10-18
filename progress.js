@@ -166,32 +166,28 @@
     const seg = document.getElementById('progress-range-seg');
     if (!seg) return;
     const cur = _getProgressRange();
-    seg.innerHTML = '<div class="range-pill"></div>' + RANGE_OPTS.map(o =>
+    const N   = RANGE_OPTS.length;
+    /* shared sliding-pill pattern */
+    seg.classList.add('segmented-control');
+    seg.style.overflow  = 'hidden';
+    seg.style.transform = 'translateZ(0)';
+    seg.innerHTML = '<div class="segment-pill"></div>' + RANGE_OPTS.map(o =>
       `<button class="chart-mode-btn${o.key === cur ? ' active' : ''}" data-range="${o.key}">${o.label}</button>`
     ).join('');
 
-    const pill = seg.querySelector('.range-pill');
-    function _movePill(btn, animate) {
-      if (!pill) return;
-      if (!animate) pill.style.transition = 'none';
-      pill.style.width  = btn.offsetWidth + 'px';
-      pill.style.transform = `translateX(${btn.offsetLeft}px)`;
-      if (!animate) requestAnimationFrame(() => {
-        pill.style.transition = 'transform 200ms ease-in-out, width 200ms ease-in-out';
-      });
+    function _sizePill() {
+      const p = seg.querySelector('.segment-pill');
+      if (p) p.style.width = 'calc((100% - 8px) / ' + N + ')';
     }
+    requestAnimationFrame(() => { initSegmentedPill(seg); _sizePill(); });
 
-    requestAnimationFrame(() => {
-      const activeBtn = seg.querySelector('.chart-mode-btn.active');
-      if (activeBtn) _movePill(activeBtn, false);
-    });
-
-    seg.querySelectorAll('.chart-mode-btn').forEach(btn => {
+    seg.querySelectorAll('.chart-mode-btn').forEach((btn, i) => {
       btn.addEventListener('click', () => {
         _setProgressRange(btn.dataset.range);
         seg.querySelectorAll('.chart-mode-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        _movePill(btn, true);
+        moveSegmentedPill(seg, i, N);
+        _sizePill();
         _rerangeAllCharts(btn.dataset.range);
       });
     });

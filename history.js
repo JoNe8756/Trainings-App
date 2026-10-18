@@ -402,10 +402,11 @@ window.renderExerciseTrendModal = function() {
 
   // --- Segment control ---
   var horizons = ['1M','3M','6M','1Y','2Y'];
-  var segHTML = '<div style="display:flex;background:#1C1C1E;border-radius:10px;padding:3px;gap:2px;height:36px;box-sizing:border-box;margin:16px 0 0;">';
+  var segHTML = '<div id="exTrendSeg" class="segmented-control" style="display:flex;position:relative;overflow:hidden;transform:translateZ(0);background:#1C1C1E;border-radius:10px;padding:3px 4px;height:36px;box-sizing:border-box;margin:16px 0 0;">';
+  segHTML += '<div class="segment-pill"></div>';
   horizons.forEach(function(h) {
     var active = h === horizon;
-    segHTML += '<button onclick="window.currentTrendHorizon=\'' + h + '\';window.renderExerciseTrendModal();" style="flex:1;height:100%;padding:0;border:none;border-radius:8px;font-size:14px;font-weight:' + (active?'700':'600') + ';font-family:inherit;cursor:pointer;background:' + (active?'#007AFF':'transparent') + ';color:' + (active?'#fff':'#8E8E93') + ';">' + h + '</button>';
+    segHTML += '<button class="' + (active?'active':'') + '" onclick="window.currentTrendHorizon=\'' + h + '\';window.renderExerciseTrendModal();" style="flex:1;min-width:0;position:relative;z-index:1;height:100%;padding:0;border:none;border-radius:8px;font-size:14px;font-weight:' + (active?'700':'600') + ';font-family:inherit;cursor:pointer;background:none;color:' + (active?'#fff':'#8E8E93') + ';">' + h + '</button>';
   });
   segHTML += '</div>';
 
@@ -456,6 +457,12 @@ window.renderExerciseTrendModal = function() {
   requestAnimationFrame(function() {
     _drawTrendChart(document.getElementById('trendRepsCanvas'), sessions, function(s){return s.totalReps;}, 180, horizon);
     _drawTrendChart(document.getElementById('trendIntensityCanvas'), sessions, function(s){return s.totalInt;}, 180, horizon);
+    var seg = document.getElementById('exTrendSeg');
+    if (seg && typeof initSegmentedPill === 'function') {
+      initSegmentedPill(seg);
+      var p = seg.querySelector('.segment-pill');
+      if (p) p.style.width = 'calc((100% - 8px) / ' + horizons.length + ')';
+    }
   });
 };
 

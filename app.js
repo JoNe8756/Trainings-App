@@ -13,6 +13,66 @@
   let _workoutActive = false;  /* true while a workout is in progress */
   let _sessionRestEnabled = null; /* null = follow global setting; true/false = session override */
 
+  /* ── XP & level system ──────────────────────────────────── */
+  /* localStorage "xpData": { totalXP, lastStreakWeek, streakWeeks, xpLog[], lastWeeklyGoalWeek } */
+  let xpData = (function () {
+    try {
+      const d = JSON.parse(localStorage.getItem('xpData'));
+      if (d && typeof d === 'object') return d;
+    } catch (e) {}
+    return { totalXP: 0, lastStreakWeek: null, streakWeeks: 0, xpLog: [], lastWeeklyGoalWeek: null };
+  })();
+
+  // === SEGMENTED CONTROL PILL ===
+  /* Reusable sliding-pill behaviour for every segmented control (same feel as
+     the bottom nav). A container needs class "segmented-control", position
+     relative (via CSS), a first child ".segment-pill", then N segment buttons. */
+  /* Position a pill with explicit left/width (4px inset each side) so it is
+     mathematically exact for any segment count or container width, and never
+     overshoots. Uses calc() so it stays correct on resize and when hidden. */
+  function _placeSegmentPill(pill, activeIndex, totalCount) {
+    if (!pill || !totalCount) return;
+    const seg = '(100% - 8px) / ' + totalCount;   /* 8px = 4px inset on both sides */
+    pill.style.width     = 'calc(' + seg + ')';
+    pill.style.left      = 'calc(4px + (' + seg + ') * ' + activeIndex + ')';
+    pill.style.transform = 'none';
+  }
+
+  function moveSegmentedPill(containerEl, activeIndex, totalCount) {
+    if (!containerEl) return;
+    const pill = containerEl.querySelector('.segment-pill');
+    if (!pill) return;
+    _placeSegmentPill(pill, activeIndex, totalCount);
+    containerEl.classList.add('is-moving');
+    clearTimeout(containerEl._segPillTid);
+    containerEl._segPillTid = setTimeout(() => containerEl.classList.remove('is-moving'), 450);
+  }
+
+  function initSegmentedPill(containerEl) {
+    if (!containerEl) return;
+    const pill = containerEl.querySelector('.segment-pill');
+    if (!pill) return;
+    const segs  = Array.from(containerEl.children).filter(c => !c.classList.contains('segment-pill'));
+    const total = segs.length;
+    let active  = segs.findIndex(s => s.classList.contains('active'));
+    if (active < 0) active = 0;
+    /* position once on init without the slide animation */
+    const prev = pill.style.transition;
+    pill.style.transition = 'none';
+    _placeSegmentPill(pill, active, total);
+    void pill.offsetWidth;                 /* force reflow so the reset sticks */
+    pill.style.transition = prev;
+  }
+
+  /* Initialise every existing segmented control once its buttons are in the DOM */
+  (function _initSegmentedControls() {
+    function wire() {
+      ['lib-seg'].forEach(id => initSegmentedPill(document.getElementById(id)));
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+    else wire();
+  })();
+
   /* ── Exercise library ───────────────────────────────────── */
   const DEFAULT_EX_LIB = {
     Push: ['Push-ups','Dips','Pike push-ups','Handstand push-ups','Negative Slow Handstand Push-ups',
@@ -356,3 +416,339 @@
     'Good mornings':{how:['Place a barbell across your upper traps, feet shoulder-width, slight knee bend.','Hinge at the hips by pushing them back, lowering your torso until near-horizontal.','Drive hips forward to return to upright, maintaining a flat back throughout.'],cues:['Neutral spine is non-negotiable — rounding the lower back under load is genuinely dangerous.','Range of motion is limited by your hamstring flexibility — never force depth.','Start with very light weight; this movement is highly technical.']},
     'Cable crunch':{how:['Kneel in front of a cable with a rope at head height, hold the rope at your temples.','Crunch your rib cage down toward your hips, rounding your spine against the resistance.','Return under control to an upright position.'],cues:['Focus on curling the rib cage DOWN — spinal flexion, not a hip hinge.','Pelvis stays fixed — don\'t generate power by pulling with your hips.','Cables let you progressively overload the abs — a major advantage over bodyweight crunches.']},
   };
+
+  // === XP & LEVEL SYSTEM ===
+  /* Data layer only — see addXP / getLevelInfo / checkWeeklyBonuses below.
+     localStorage key "xpData" is picked up automatically by the export/import
+     in settings.js (DATA MANAGEMENT reads every key), so no change is needed there. */
+
+  const XP_LEVEL_CAP = 50;
+
+  /* Cumulative total XP required to REACH each level (index = level, 1..50).
+     Level 1 = 0 XP, Level 2 = 100 XP. Each step costs 13% more than the previous,
+     rounded to the nearest 10. */
+  const _XP_THRESHOLDS = (function () {
+    const thr = [0, 0];               /* thr[1] = 0 XP needed to be level 1 */
+    for (let lvl = 2; lvl <= XP_LEVEL_CAP; lvl++) {
+      const inc = Math.round((100 * Math.pow(1.13, lvl - 2)) / 10) * 10;
+      thr[lvl] = thr[lvl - 1] + inc;
+    }
+    return thr;
+  })();
+
+  function _xpNormalize(d) {
+    return {
+      totalXP:            (d && d.totalXP)                  || 0,
+      lastStreakWeek:     (d && d.lastStreakWeek)           ?? null,
+      streakWeeks:        (d && d.streakWeeks)              || 0,
+      xpLog:              (d && Array.isArray(d.xpLog)) ? d.xpLog : [],
+      lastWeeklyGoalWeek: (d && d.lastWeeklyGoalWeek)       ?? null,
+    };
+  }
+
+  function getXPData() { return _xpNormalize(xpData); }
+
+  function _saveXPData(d) {
+    xpData = d;
+    localStorage.setItem('xpData', JSON.stringify(d));
+  }
+
+  function _levelForXP(xp) {
+    let level = 1;
+    for (let l = 2; l <= XP_LEVEL_CAP; l++) {
+      if (xp >= _XP_THRESHOLDS[l]) level = l; else break;
+    }
+    return level;
+  }
+
+  function _xpLevelLabel(level) {
+    if (level >= 50) return 'Legend';
+    if (level >= 31) return 'Elite';
+    if (level >= 16) return 'Advanced';
+    if (level >= 6)  return 'Intermediate';
+    return 'Beginner';
+  }
+
+  /* The single entry point for every XP award. Returns true if a level-up occurred. */
+  function addXP(amount, reason) {
+    amount = Math.round(Number(amount) || 0);
+    if (amount <= 0) return false;
+    const d = _xpNormalize(xpData);
+    const before = _levelForXP(d.totalXP);
+    d.totalXP += amount;
+    d.xpLog.push({ date: new Date().toISOString(), amount, reason: reason || 'misc' });
+    if (d.xpLog.length > 200) d.xpLog = d.xpLog.slice(d.xpLog.length - 200);  /* keep newest 200 */
+    _saveXPData(d);
+    return _levelForXP(d.totalXP) > before;
+  }
+
+  function getLevelInfo() {
+    const xp    = _xpNormalize(xpData).totalXP;
+    const level = _levelForXP(xp);
+    const label = _xpLevelLabel(level);
+    if (level >= XP_LEVEL_CAP) {
+      return { level: XP_LEVEL_CAP, label, currentLevelXP: xp - _XP_THRESHOLDS[XP_LEVEL_CAP], xpForNextLevel: 0, totalXP: xp, isMaxLevel: true };
+    }
+    const base = _XP_THRESHOLDS[level];
+    const next = _XP_THRESHOLDS[level + 1];
+    return { level, label, currentLevelXP: xp - base, xpForNextLevel: next - base, totalXP: xp, isMaxLevel: false };
+  }
+
+  /* Week key = the local Monday (YYYY-MM-DD) of the week containing `date`. */
+  function _xpWeekKey(date) {
+    const d = date ? new Date(date) : new Date();
+    if (isNaN(d.getTime())) return null;
+    const day = d.getDay();
+    const daysBack = day === 0 ? 6 : day - 1;
+    const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - daysBack);
+    const m  = String(monday.getMonth() + 1).padStart(2, '0');
+    const dd = String(monday.getDate()).padStart(2, '0');
+    return `${monday.getFullYear()}-${m}-${dd}`;
+  }
+
+  /* Consecutive weeks (ending this week) that each have at least one workout. */
+  function _xpConsecutiveWeeks() {
+    const weeksWith = new Set();
+    (typeof workouts !== 'undefined' ? workouts : []).forEach(w => {
+      const k = w && w.date ? _xpWeekKey(w.date) : null;
+      if (k) weeksWith.add(k);
+    });
+    let streak = 0;
+    const cursor = new Date();
+    while (weeksWith.has(_xpWeekKey(cursor))) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 7);
+    }
+    return streak;
+  }
+
+  /* Award the weekly frequency-goal bonus (+50) and the streak bonus
+     (+5 per streak week, capped +50), each at most once per calendar week.
+     Safe to call on load and after every workout finish. */
+  function checkWeeklyBonuses() {
+    const thisWeek = _xpWeekKey(new Date());
+    let awarded = false;
+
+    /* Weekly frequency goal reached → +50, once per week */
+    let goal = null;
+    try { goal = JSON.parse(localStorage.getItem('freqGoal') || 'null'); } catch (e) {}
+    if (goal && goal.period === 'week' && goal.target > 0 && _xpNormalize(xpData).lastWeeklyGoalWeek !== thisWeek) {
+      const done = (typeof workouts !== 'undefined' ? workouts : [])
+        .filter(w => w && w.date && _xpWeekKey(w.date) === thisWeek).length;
+      if (done >= goal.target) {
+        const d = _xpNormalize(xpData);
+        d.lastWeeklyGoalWeek = thisWeek;
+        _saveXPData(d);                 /* mark first so addXP preserves it */
+        addXP(50, 'weekly_goal');
+        awarded = true;
+      }
+    }
+
+    /* Keep streakWeeks current, then award the streak bonus once per week */
+    const streak = _xpConsecutiveWeeks();
+    if (_xpNormalize(xpData).streakWeeks !== streak) {
+      const d = _xpNormalize(xpData);
+      d.streakWeeks = streak;
+      _saveXPData(d);
+    }
+    if (streak > 0 && _xpNormalize(xpData).lastStreakWeek !== thisWeek) {
+      const d = _xpNormalize(xpData);
+      d.lastStreakWeek = thisWeek;
+      _saveXPData(d);                   /* mark first so addXP preserves it */
+      addXP(Math.min(5 * streak, 50), 'streak');
+      awarded = true;
+    }
+    return awarded;
+  }
+
+  // === XP CARD ===
+  /* Renders the XP/Level card on the Summary tab, directly below the greeting
+     header and above the GOALS section. Reuses the .goal-card styles so it
+     matches the goals cards, with a purple accent bar to distinguish it. */
+  function renderXPCard() {
+    const label = document.getElementById('goals-section-label');
+    if (!label || !label.parentNode) return;           /* Summary DOM not ready */
+
+    let card = document.getElementById('xp-card');
+    if (!card) {
+      card = document.createElement('div');
+      card.id = 'xp-card';
+      card.style.margin = '0.5rem var(--gutter) 0';     /* same gutters as #goals-section */
+      label.parentNode.insertBefore(card, label);       /* above GOALS */
+    }
+
+    const info = getLevelInfo();
+    const XP_ACCENT = '#BF5AF2';                         /* purple — distinct from blue/green goal bars */
+
+    let body;
+    if (info.isMaxLevel) {
+      body = `<div class="goal-card-msg" style="color:${XP_ACCENT};font-weight:600">MAX LEVEL — Legend</div>`;
+    } else {
+      const pct       = info.xpForNextLevel > 0 ? Math.min(100, Math.round(info.currentLevelXP / info.xpForNextLevel * 100)) : 0;
+      const remaining = Math.max(0, info.xpForNextLevel - info.currentLevelXP);
+      body =
+        `<div class="goal-card-bar-track"><div class="goal-card-bar-fill" style="width:${pct}%;background:${XP_ACCENT}"></div></div>` +
+        `<div class="goal-card-msg">${remaining} XP to Level ${info.level + 1}</div>`;
+    }
+
+    card.innerHTML =
+      `<div class="goal-card">
+        <div class="goal-card-values" style="display:flex;align-items:baseline;justify-content:space-between;gap:.5rem">
+          <span>Level ${info.level} — ${info.label}</span>
+          <span class="goal-target" style="font-size:.8125rem">${info.totalXP} XP</span>
+        </div>
+        ${body}
+      </div>`;
+  }
+
+  /* Wire the card into the Summary render pipeline. renderGoalsSection() runs
+     whenever Summary is shown and after each workout, so patch it to refresh
+     the XP card too, and render once on load. */
+  (function _initXPCard() {
+    function wire() {
+      if (typeof renderGoalsSection === 'function' && !renderGoalsSection._xpWrapped) {
+        const _orig = renderGoalsSection;
+        renderGoalsSection = function () {
+          const r = _orig.apply(this, arguments);
+          try { renderXPCard(); } catch (e) {}
+          return r;
+        };
+        renderGoalsSection._xpWrapped = true;
+      }
+      try { renderXPCard(); } catch (e) {}
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+    else wire();
+  })();
+
+  // === XP BREAKDOWN ===
+  /* Renders the "XP Earned" breakdown on the post-workout summary, below the
+     stats, listing exactly the awards earned in this workout. `entries` is the
+     slice of xpLog added during this completion flow. */
+  function _renderXPBreakdown(entries) {
+    const host = document.getElementById('pw-stats');
+    if (!host || !host.parentNode) return;
+
+    let box = document.getElementById('pw-xp-breakdown');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'pw-xp-breakdown';
+      box.style.cssText = 'width:100%;margin-top:10px;';
+      host.parentNode.insertBefore(box, host.nextSibling);   /* directly below the stats */
+    }
+
+    if (!entries || !entries.length) { box.innerHTML = ''; return; }
+
+    let workoutXP = 0, prCount = 0, prXP = 0, weeklyXP = 0, streakXP = 0;
+    entries.forEach(e => {
+      if      (e.reason === 'workout')      workoutXP += e.amount;
+      else if (e.reason === 'pr')         { prCount++; prXP += e.amount; }
+      else if (e.reason === 'weekly_goal')  weeklyXP += e.amount;
+      else if (e.reason === 'streak')       streakXP += e.amount;
+    });
+    const total = entries.reduce((s, e) => s + (e.amount || 0), 0);
+
+    const rows = [];
+    if (workoutXP)      rows.push(['Workout completed', workoutXP]);
+    if (prCount === 1)  rows.push(['Personal record', prXP]);
+    else if (prCount > 1) rows.push([prCount + ' Personal records', prXP]);
+    if (weeklyXP)       rows.push(['Weekly goal reached', weeklyXP]);
+    if (streakXP)       rows.push([(getXPData().streakWeeks || 0) + ' week streak', streakXP]);
+
+    const line = (label, amt, bold) =>
+      `<div style="display:flex;align-items:center;justify-content:space-between;padding:${bold ? '12px 0 0' : '6px 0'};${bold ? 'border-top:1px solid rgba(255,255,255,.08);margin-top:6px;' : ''}">
+         <span style="font-size:.875rem;color:${bold ? '#fff' : '#8E8E93'};font-weight:${bold ? '700' : '500'}">${label}</span>
+         <span style="font-size:${bold ? '1rem' : '.9375rem'};font-weight:${bold ? '800' : '700'};color:#BF5AF2;letter-spacing:-.2px">+${amt} XP</span>
+       </div>`;
+
+    box.innerHTML =
+      `<div style="background:#1C1C1E;border-radius:12px;padding:16px 20px;">
+         <div style="font-size:.875rem;color:#8E8E93;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px">XP Earned</div>
+         ${rows.map(r => line(r[0], r[1], false)).join('')}
+         ${line('Total', total, true)}
+       </div>`;
+  }
+
+  // === LEVEL UP CELEBRATION ===
+  /* Snapshot of the level at the start of a workout-completion flow. Set when
+     _doFinishWorkout begins (before any XP is awarded) and consumed when the
+     post-workout summary is about to show. */
+  let _xpLevelBeforeFinish = null;
+  /* Last xpLog entry before this workout's awards — used to slice out exactly
+     this workout's awards for the summary breakdown (robust to the 200-cap). */
+  let _xpLastEntryBeforeFinish = null;
+
+  function _showLevelUpCelebration(info, onContinue) {
+    const done = () => { if (typeof onContinue === 'function') onContinue(); };
+    const existing = document.getElementById('levelup-overlay');
+    if (existing) existing.remove();
+
+    const pct = info.isMaxLevel ? 100
+      : (info.xpForNextLevel > 0 ? Math.min(100, Math.round(info.currentLevelXP / info.xpForNextLevel * 100)) : 0);
+
+    const ov = document.createElement('div');
+    ov.id = 'levelup-overlay';
+    ov.style.cssText =
+      'position:fixed;inset:0;z-index:100050;background:#000;display:flex;flex-direction:column;' +
+      'align-items:center;justify-content:center;text-align:center;padding:2rem;opacity:0;transition:opacity .25s ease;';
+    ov.innerHTML =
+      `<div style="font-size:5rem;line-height:1;margin-bottom:1.25rem">🎉</div>
+       <div style="font-size:2rem;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:.5rem">Level Up!</div>
+       <div style="font-size:1.0625rem;color:#8E8E93;margin-bottom:2rem">You're now Level ${info.level} — ${info.label}</div>
+       <div style="width:min(300px,80%);height:8px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden;margin-bottom:2.5rem">
+         <div id="levelup-bar" style="height:100%;width:0;border-radius:99px;background:#BF5AF2;transition:width 1s cubic-bezier(.4,0,.2,1)"></div>
+       </div>
+       <button id="levelup-continue" style="background:#BF5AF2;color:#fff;border:none;border-radius:14px;padding:14px 48px;font-size:1.0625rem;font-weight:700;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent">Continue</button>`;
+    document.body.appendChild(ov);
+
+    requestAnimationFrame(() => {
+      ov.style.opacity = '1';
+      const bar = document.getElementById('levelup-bar');
+      if (bar) requestAnimationFrame(() => { bar.style.width = pct + '%'; });  /* animate fill ~1s */
+    });
+
+    document.getElementById('levelup-continue').onclick = () => {
+      ov.style.opacity = '0';
+      setTimeout(() => { ov.remove(); done(); }, 200);
+    };
+  }
+
+  /* Patch the workout-completion flow so a level-up earned this workout shows
+     the celebration once (for the highest level reached) before the summary. */
+  (function _initLevelUpCelebration() {
+    function wire() {
+      if (typeof _doFinishWorkout === 'function' && !_doFinishWorkout._xpWrapped) {
+        const _origFinish = _doFinishWorkout;
+        _doFinishWorkout = function () {
+          _xpLevelBeforeFinish = getLevelInfo().level;   /* before any XP is awarded */
+          const lg = getXPData().xpLog;
+          _xpLastEntryBeforeFinish = lg.length ? lg[lg.length - 1] : null;
+          return _origFinish.apply(this, arguments);
+        };
+        _doFinishWorkout._xpWrapped = true;
+      }
+      if (typeof _showPostWorkout === 'function' && !_showPostWorkout._xpWrapped) {
+        const _origSPW = _showPostWorkout;
+        _showPostWorkout = function (w) {
+          const after  = getLevelInfo();
+          const before = _xpLevelBeforeFinish;
+          _xpLevelBeforeFinish = null;
+          /* slice out exactly this workout's awards */
+          const log = getXPData().xpLog;
+          const idx = _xpLastEntryBeforeFinish ? log.indexOf(_xpLastEntryBeforeFinish) : -1;
+          const awards = log.slice(idx + 1);
+          _xpLastEntryBeforeFinish = null;
+          const self = this;
+          const proceed = () => { _origSPW.call(self, w); try { _renderXPBreakdown(awards); } catch (e) {} };
+          if (before != null && after.level > before) {
+            _showLevelUpCelebration(after, proceed);  /* breakdown shows after dismissing the overlay */
+            return;
+          }
+          proceed();
+        };
+        _showPostWorkout._xpWrapped = true;
+      }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+    else wire();
+  })();

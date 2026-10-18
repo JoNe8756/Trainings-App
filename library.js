@@ -795,8 +795,9 @@
       <input id="jc-duration-custom" type="text" inputmode="numeric" class="journey-card-input" style="margin-top:8px;padding:12px" placeholder="Or enter custom minutes" value="${_esc(_journeyInputs.durationCustom)}" oninput="_jcCustom('duration',this)">
 
       <div class="journey-sec-label">Current level</div>
-      <div class="journey-chip-row" id="jc-level">
-        ${lv.map(l => `<button class="journey-chip${_journeyInputs.level===l?' active':''}" onclick="_jcPickLevel('${l}')">${l}</button>`).join('')}
+      <div class="journey-chip-row segmented-control" id="jc-level" style="position:relative;overflow:hidden;transform:translateZ(0);background:#1C1C1E;border-radius:10px;padding:4px;gap:0;box-sizing:border-box;">
+        <div class="segment-pill"></div>
+        ${lv.map(l => `<button class="journey-chip${_journeyInputs.level===l?' active':''}" onclick="_jcPickLevel('${l}')" style="background:none;position:relative;z-index:1;">${l}</button>`).join('')}
       </div>
 
       <div style="margin-top:24px">
@@ -804,6 +805,14 @@
         <div id="jc-apikey-error" style="margin-top:12px"></div>
       </div>`;
     _updateJourneyGenBtn();
+    requestAnimationFrame(() => {
+      const seg = document.getElementById('jc-level');
+      if (seg) {
+        initSegmentedPill(seg);
+        const p = seg.querySelector('.segment-pill');
+        if (p) p.style.width = 'calc((100% - 8px) / 3)';
+      }
+    });
   }
 
   function _jcPickWeeks(w) { _journeyInputs.weeks = w; _journeyInputs.weeksCustom = ''; const el = document.getElementById('jc-weeks-custom'); if (el) el.value = ''; _syncJourneyChips('jc-weeks', w); _updateJourneyGenBtn(); }
@@ -812,7 +821,16 @@
 
   function _jcPickDuration(d) { _journeyInputs.duration = d; _journeyInputs.durationCustom = ''; const el = document.getElementById('jc-duration-custom'); if (el) el.value = ''; _syncJourneyChips('jc-duration', d); _updateJourneyGenBtn(); }
 
-  function _jcPickLevel(l) { _journeyInputs.level = l; _syncJourneyChips('jc-level', l); _updateJourneyGenBtn(); }
+  function _jcPickLevel(l) {
+    _journeyInputs.level = l;
+    _syncJourneyChips('jc-level', l);
+    const seg = document.getElementById('jc-level');
+    const idx = ['Beginner','Intermediate','Advanced'].indexOf(l);
+    moveSegmentedPill(seg, idx < 0 ? 0 : idx, 3);
+    const p = seg && seg.querySelector('.segment-pill');
+    if (p) p.style.width = 'calc((100% - 8px) / 3)';
+    _updateJourneyGenBtn();
+  }
 
   function _jcCustom(which, inp) {
     const digits = inp.value.replace(/[^0-9]/g, '');
@@ -1438,20 +1456,12 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     const exBtn   = document.getElementById('lib-seg-exercises');
     const plBtn   = document.getElementById('lib-seg-plans');
     const jnBtn   = document.getElementById('lib-seg-journeys');
-    const pill    = document.getElementById('lib-seg-pill');
-    const activeBtn = seg === 'exercises' ? exBtn : seg === 'plans' ? plBtn : jnBtn;
     exBtn?.classList.toggle('active', seg === 'exercises');
     plBtn?.classList.toggle('active', seg === 'plans');
     jnBtn?.classList.toggle('active', seg === 'journeys');
-    if (pill && activeBtn) {
-      const firstPos = !pill.style.width || pill.style.width === '0px';
-      if (firstPos) pill.style.transition = 'none';
-      pill.style.width     = activeBtn.offsetWidth + 'px';
-      pill.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
-      if (firstPos) requestAnimationFrame(() => {
-        pill.style.transition = 'transform 200ms ease-in-out, width 200ms ease-in-out';
-      });
-    }
+    /* shared sliding-pill highlight */
+    const _segIdx = seg === 'exercises' ? 0 : seg === 'plans' ? 1 : 2;
+    moveSegmentedPill(document.getElementById('lib-seg'), _segIdx, 3);
     document.getElementById('lib-exercises-content').style.display = seg === 'exercises' ? '' : 'none';
     document.getElementById('lib-plans-content').style.display     = seg === 'plans'     ? '' : 'none';
     document.getElementById('lib-journeys-content').style.display  = seg === 'journeys'  ? '' : 'none';
@@ -1608,12 +1618,13 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
         <div style="font-size:12px;color:#8E8E93;margin-top:4px;">Plan Name</div>
       </div>`;
 
-    /* 2. Intensity trend — always visible. Selector matches exercise trend modal. */
+    /* 2. Intensity trend — always visible. Shared sliding-pill selector. */
     const horizons = ['1M','3M','6M','1Y','2Y'];
-    let segHTML = '<div style="display:flex;background:#1C1C1E;border-radius:10px;padding:3px;gap:2px;height:36px;box-sizing:border-box;margin-bottom:12px;">';
+    let segHTML = '<div id="plan-int-seg" class="segmented-control" style="display:flex;position:relative;overflow:hidden;transform:translateZ(0);background:#1C1C1E;border-radius:10px;padding:3px 4px;height:36px;box-sizing:border-box;margin-bottom:12px;">';
+    segHTML += '<div class="segment-pill"></div>';
     horizons.forEach(h => {
       const active = h === _planIntHorizon;
-      segHTML += `<button onclick="_planSetIntHorizon('${h}')" style="flex:1;height:100%;padding:0;border:none;border-radius:8px;font-size:14px;font-weight:${active?'700':'600'};font-family:inherit;cursor:pointer;background:${active?'#007AFF':'transparent'};color:${active?'#fff':'#8E8E93'};">${h}</button>`;
+      segHTML += `<button class="${active ? 'active' : ''}" onclick="_planSetIntHorizon('${h}')" style="flex:1;min-width:0;position:relative;z-index:1;height:100%;padding:0;border:none;border-radius:8px;font-size:14px;font-weight:${active?'700':'600'};font-family:inherit;cursor:pointer;background:none;color:${active?'#fff':'#8E8E93'};">${h}</button>`;
     });
     segHTML += '</div>';
 
@@ -1662,6 +1673,12 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
       const canvas = document.getElementById('plan-int-canvas');
       if (canvas && typeof _drawTrendChart === 'function') {
         _drawTrendChart(canvas, _planIntSessions(), function(x){ return x.totalInt; }, 200, _planIntHorizon);
+      }
+      const seg = document.getElementById('plan-int-seg');
+      if (seg) {
+        initSegmentedPill(seg);
+        const p = seg.querySelector('.segment-pill');
+        if (p) p.style.width = 'calc((100% - 8px) / ' + horizons.length + ')';
       }
     });
   }

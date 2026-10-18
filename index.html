@@ -262,8 +262,8 @@
       <div class="nav-bar-title">Library</div>
     </div>
     <div class="lib-seg-wrap">
-      <div class="lib-seg" id="lib-seg">
-        <div class="lib-seg-pill" id="lib-seg-pill"></div>
+      <div class="lib-seg segmented-control" id="lib-seg">
+        <div class="segment-pill" id="lib-seg-pill"></div>
         <button class="lib-seg-btn active" id="lib-seg-exercises" onclick="showLibSeg('exercises')">Exercises</button>
         <button class="lib-seg-btn"        id="lib-seg-plans"     onclick="showLibSeg('plans')">Plans</button>
         <button class="lib-seg-btn"        id="lib-seg-journeys"  onclick="showLibSeg('journeys')">Journeys<span class="lib-beta-badge">BETA</span></button>
@@ -785,9 +785,10 @@
             <div style="font-size:.75rem;color:var(--tertiary);margin-top:.1rem">Stopwatch counts up; Countdown counts down</div>
           </div>
         </div>
-        <div id="break-mode-seg" style="display:flex;width:100%;background:rgba(255,255,255,0.08);border-radius:9px;padding:2px;box-sizing:border-box;">
-          <button id="break-mode-sw"  onclick="_setBreakTimerMode('stopwatch')"  style="flex:1;padding:.35rem 0;border:none;border-radius:7px;font-size:.8125rem;font-weight:600;font-family:inherit;cursor:pointer;transition:background 180ms,color 180ms">Stopwatch</button>
-          <button id="break-mode-cd"  onclick="_setBreakTimerMode('countdown')"  style="flex:1;padding:.35rem 0;border:none;border-radius:7px;font-size:.8125rem;font-weight:600;font-family:inherit;cursor:pointer;transition:background 180ms,color 180ms">Countdown</button>
+        <div id="break-mode-seg" class="segmented-control" style="display:flex;position:relative;overflow:hidden;transform:translateZ(0);width:100%;background:rgba(255,255,255,0.08);border-radius:9px;padding:2px 4px;box-sizing:border-box;">
+          <div class="segment-pill"></div>
+          <button id="break-mode-sw"  onclick="_setBreakTimerMode('stopwatch')"  style="flex:1;min-width:0;position:relative;z-index:1;padding:.35rem 0;border:none;border-radius:7px;font-size:.8125rem;font-weight:600;font-family:inherit;cursor:pointer;background:none;transition:color 180ms">Stopwatch</button>
+          <button id="break-mode-cd"  onclick="_setBreakTimerMode('countdown')"  style="flex:1;min-width:0;position:relative;z-index:1;padding:.35rem 0;border:none;border-radius:7px;font-size:.8125rem;font-weight:600;font-family:inherit;cursor:pointer;background:none;transition:color 180ms">Countdown</button>
         </div>
       </div>
     </div>
