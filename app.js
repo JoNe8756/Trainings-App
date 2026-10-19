@@ -639,21 +639,26 @@
 
     if (!entries || !entries.length) { box.innerHTML = ''; return; }
 
-    let workoutXP = 0, prCount = 0, prXP = 0, weeklyXP = 0, streakXP = 0;
+    let workoutXP = 0, prCount = 0, prXP = 0, weeklyXP = 0, streakXP = 0, otherXP = 0;
+    const journeyRows = [];
     entries.forEach(e => {
       if      (e.reason === 'workout')      workoutXP += e.amount;
+      else if (e.reason === 'journey_session') journeyRows.push(['Journey session completed', e.amount]);
       else if (e.reason === 'pr')         { prCount++; prXP += e.amount; }
       else if (e.reason === 'weekly_goal')  weeklyXP += e.amount;
       else if (e.reason === 'streak')       streakXP += e.amount;
+      else                                  otherXP += e.amount || 0;
     });
     const total = entries.reduce((s, e) => s + (e.amount || 0), 0);
 
     const rows = [];
     if (workoutXP)      rows.push(['Workout completed', workoutXP]);
+    journeyRows.forEach(r => rows.push(r));
     if (prCount === 1)  rows.push(['Personal record', prXP]);
     else if (prCount > 1) rows.push([prCount + ' Personal records', prXP]);
     if (weeklyXP)       rows.push(['Weekly goal reached', weeklyXP]);
     if (streakXP)       rows.push([(getXPData().streakWeeks || 0) + ' week streak', streakXP]);
+    if (otherXP)        rows.push(['Other XP', otherXP]);
 
     const line = (label, amt, bold) =>
       `<div style="display:flex;align-items:center;justify-content:space-between;padding:${bold ? '12px 0 0' : '6px 0'};${bold ? 'border-top:1px solid rgba(255,255,255,.08);margin-top:6px;' : ''}">
