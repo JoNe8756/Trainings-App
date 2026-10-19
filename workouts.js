@@ -402,13 +402,16 @@
           <span class="btn-add-set-icon">+</span> Add Set
         </button>
       </div>`;
+    const _prevCardCount = _exGetCards().length;
     document.getElementById('exercise-list').appendChild(div);
     const setsToAdd = Math.max(1, numSets);
     for (let i = 0; i < setsToAdd; i++) addSet(id);
     _syncAddSetBtn(id);
     _updateRestRec(id);
     persistActiveWorkout();
-    _exCurrentIdx = _exGetCards().length - 1;
+    /* Journey cards never move the viewed exercise (first card of a fresh workout shows index 0) */
+    if (opts.journeyKey) _exCurrentIdx = _prevCardCount === 0 ? 0 : _exCurrentIdx;
+    else _exCurrentIdx = _exGetCards().length - 1;
     _exNavUpdate();
   }
 
@@ -2269,6 +2272,8 @@
         plannedReps: parseFloat(planned && planned.reps) || 0
       } : {});
     });
+    _exCurrentIdx = 0;
+    _exNavUpdate();
     updatePlanBanner();
     persistActiveWorkout();
   }
