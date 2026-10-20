@@ -1198,30 +1198,43 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
       let body;
       if (mode === 'detail') {
         const next = _journeyNextSession(journey);
+        const _inProgKeys = _activeJourneySessionKeys();
         body = sess.map((s, si) => {
           const exCount = (s.exercises || []).length;
           const done = completed.includes(wi + '-' + si);
           const isCurrent = !!next && next.wi === wi && next.si === si;
-          const locked = !done && !isCurrent;
+          const inProg = _inProgKeys.includes(journey.id + '-' + wi + '-' + si);
+          const locked = !done && !isCurrent && !inProg;
           const actualSecs = done ? ((journey.completedDurations || {})[wi + '-' + si] || 0) : 0;
           const durTxt = actualSecs > 0 ? ' · ' + Math.max(1, Math.round(actualSecs / 60)) + ' min'
             : (!done && journey.sessionDuration > 0 ? ' · ~' + journey.sessionDuration + ' min' : '');
           const doneDate = done ? _fmtJDate(_journeySessionDoneDate(journey, wi, si), true) : '';
-          const cardStyle = (isCurrent ? 'background:#1A3A5C;' : '') + (locked ? 'opacity:.5;cursor:default;' : '');
-          const tap = locked ? '' : `onclick="_openJourneySession(${journey.id},${wi},${si})"`;
+          const cardStyle = (isCurrent && !inProg ? 'background:#1A3A5C;' : '') + (locked ? 'opacity:.5;cursor:default;' : '');
+          const tap = inProg ? `onclick="_closeJourneySession();_closeJourneyDetail();resumeWorkout()"` : locked ? '' : `onclick="_openJourneySession(${journey.id},${wi},${si})"`;
           let bottom = '';
-          if (done) {
+          if (inProg) {
+            bottom = `<div style="display:flex;justify-content:flex-end;margin-top:8px"><span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,122,255,.18);color:#0A84FF;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px"><span style="width:8px;height:8px;border-radius:50%;background:#0A84FF;animation:journeyGenPulse 1.2s ease-in-out infinite"></span>In Progress</span></div>`;
+          } else if (done) {
             bottom = `<div style="font-size:12px;color:#34C759;margin-top:2px">✓ Done${doneDate ? ' · ' + doneDate : ''}</div>
               <div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="journey-start-btn" onclick="event.stopPropagation();_startJourneySession(${journey.id},${wi},${si})">▶ Repeat Session</button></div>`;
           } else if (isCurrent) {
             bottom = `<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="journey-start-btn" onclick="event.stopPropagation();_startJourneySession(${journey.id},${wi},${si})">▶ Start Session</button></div>`;
           }
-          return `<div class="journey-session-card" style="${cardStyle}" ${tap}>
+          let revealHTML = '';
+          if (locked && _journeyReveal) {
+            revealHTML = '<div style="margin-top:8px;border-top:.5px solid #2C2C2E">' + (s.exercises || []).map(e =>
+              `<div style="padding:8px 0;border-bottom:.5px solid #2C2C2E">
+                <div style="font-size:13px;font-weight:600;color:#fff">${_esc(e.name || '')} <span style="color:#8E8E93;font-weight:500">· ${_esc(String(e.sets || ''))} × ${_esc(String(e.reps || ''))}</span></div>
+                ${e.notes ? `<div style="font-size:12px;color:#8E8E93;margin-top:2px">${_esc(e.notes)}</div>` : ''}
+              </div>`).join('') + '</div>';
+          }
+          return `<div class="journey-session-card" style="${cardStyle}${locked ? ';-webkit-user-select:none;user-select:none;-webkit-touch-callout:none' : ''}" ${tap}>
             <div style="display:flex;align-items:center;gap:8px">
               ${done ? '<span style="color:#34C759;font-weight:700">✓</span>' : ''}
               <span style="flex:1;font-size:14px;font-weight:700;color:${done ? '#8E8E93' : '#fff'}">${_esc(s.day || ('Session ' + (si+1)))} · ${_esc(s.planName || '')}</span>
             </div>
             <div style="font-size:12px;color:#8E8E93;margin-top:2px">${exCount} exercise${exCount!==1?'s':''}${durTxt}</div>
+            ${revealHTML}
             ${bottom}
           </div>`;
         }).join('');
@@ -1309,7 +1322,15 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
   }
 
   // === JOURNEY DETAIL ===
+  let _journeyReveal = false, _jLPTimer = null;   /* in-memory only; reset on open/close of Journey Detail */
+  function _jLPStart() {
+    clearTimeout(_jLPTimer);
+    _jLPTimer = setTimeout(() => { _jLPTimer = null; if (!_journeyReveal) { _journeyReveal = true; _renderJourneyDetail(); } }, 500);
+  }
+  function _jLPCancel() { clearTimeout(_jLPTimer); _jLPTimer = null; }
+
   function _openJourneyDetail(id, expandWeekIdx) {
+    _journeyReveal = false;
     _journeyDetailId = id;
     _journeyWeekOpen = {};
     if (expandWeekIdx != null) _journeyWeekOpen['dtw' + expandWeekIdx] = true;
@@ -1317,7 +1338,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     document.getElementById('journey-detail').style.display = '';
   }
 
-  function _closeJourneyDetail() { document.getElementById('journey-detail').style.display = 'none'; }
+  function _closeJourneyDetail() { _journeyReveal = false; _jLPCancel(); document.getElementById('journey-detail').style.display = 'none'; }
 
   function _renderJourneyDetail() {
     const el = document.getElementById('journey-detail-inner');
@@ -1336,6 +1357,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
         </div>
         <div style="height:8px;background:#2C2C2E;border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:#007AFF"></div></div>
       </div>
+      ${_journeyReveal ? '' : `<div style="margin-top:12px"><span class="journey-lock-pill" onpointerdown="_jLPStart()" onpointerup="_jLPCancel()" onpointerleave="_jLPCancel()" onpointercancel="_jLPCancel()" oncontextmenu="return false">🔒 Hold to preview upcoming weeks</span></div>`}
       <div class="journey-sec-label">Weeks</div>
       ${_journeyWeeksHTML(j, 'dtw', 'detail')}
       <button onclick="_resetJourney(${j.id})" style="display:block;width:100%;background:none;border:none;color:#FF3B30;font-family:inherit;font-size:15px;font-weight:600;text-align:center;padding:20px 0 8px;cursor:pointer;-webkit-tap-highlight-color:transparent">Reset Journey</button>

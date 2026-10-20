@@ -4920,3 +4920,14 @@
         scroll-behavior: auto !important;
       }
     }
+
+    /* Journey Detail: global press-and-hold reveal trigger */
+    .journey-lock-pill { display:inline-block; background:#2C2C2E; border-radius:999px; padding:6px 14px; font-size:12px; color:#fff; line-height:1.2; cursor:pointer; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:manipulation; -webkit-tap-highlight-color:transparent; transition:transform .5s ease, background .5s ease; }
+    .journey-lock-pill:active { transform:scale(.94); background:#1C1C1E; }
+
+    /* Exercise card: inline how-to accordion */
+    .ex-info-body { display:grid; grid-template-rows:0fr; padding:0 1rem; transition:grid-template-rows .25s ease; }
+    .ex-info-body.open { grid-template-rows:1fr; border-top:.5px solid var(--separator); }
+    .ex-info-inner { overflow:hidden; min-height:0; }
+    .ex-info-body.open .ex-info-inner { padding-top:12px; padding-bottom:4px; }
+    .ex-info-inner .detail-card { margin:0 0 .75rem; padding:0 12px; }

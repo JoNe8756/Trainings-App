@@ -11,6 +11,11 @@
   let _workoutPausedAt = 0; /* Date.now() when last pause began, 0 = not paused */
   let exerciseCount  = 0;
   let _workoutActive = false;  /* true while a workout is in progress */
+  /* journey session keys ("journeyId-w-s") being logged in the open workout (same state as the resume banner) */
+  function _activeJourneySessionKeys() {
+    if (!_workoutActive) return [];
+    return Array.from(document.querySelectorAll('#exercise-list .exercise-card[data-journey-key]')).map(c => c.dataset.journeyKey);
+  }
   let _sessionRestEnabled = null; /* null = follow global setting; true/false = session override */
 
   /* ── XP & level system ──────────────────────────────────── */
