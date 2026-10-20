@@ -563,7 +563,8 @@
       /* generating card replaces the New Journey button */
       html += `<div class="journey-gen-card">
         <span class="journey-banner-spinner"></span>
-        <span style="font-size:15px;color:#fff">Journey generation in progress...</span>
+        <span style="font-size:15px;color:#fff;flex:1">Journey generation in progress...</span>
+        <button onclick="_cancelJourneyGeneration()" style="background:none;border:none;color:#007AFF;font-size:15px;font-weight:600;cursor:pointer;padding:4px 0 4px 12px;-webkit-tap-highlight-color:transparent">Cancel</button>
       </div>`;
     } else {
       if (_journeyGenState === 'error') {
@@ -957,8 +958,10 @@
   function _journeyRecentText() {
     const cutoff = Date.now() - 14 * 86400000;   /* 2 weeks */
     const lines = [];
+    let _sessCount = 0;
     workouts.forEach(w => {
-      if (new Date(w.date).getTime() < cutoff) return;
+      if (new Date(w.date).getTime() < cutoff || _sessCount >= 5) return;
+      _sessCount++;
       const d = new Date(w.date).toLocaleDateString('en-US', { month:'short', day:'numeric' });
       let intensity = 0;
       const exStr = (w.exercises || []).map(ex => {
@@ -1062,7 +1065,21 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     if (s) s.style.display = on ? 'block' : 'none';
   }
 
+  let _journeyGenController = null, _journeyGenCancelled = false;
+
+  function _cancelJourneyGeneration() {
+    _journeyGenCancelled = true;
+    if (_journeyGenController) _journeyGenController.abort();
+    console.log('Gemini generation cancelled by user');
+    _journeyGenState = null;
+    _setJourneyHeaderSpinner(false);
+    renderLibJourneys();
+    _renderJourneyCreator();   /* inputs preserved in _journeyInputs */
+    document.getElementById('journey-creator').style.display = '';
+  }
+
   async function _runJourneyGeneration() {
+    _journeyGenCancelled = false;
     const key = localStorage.getItem('geminiApiKey');
     if (!key) { _journeyGenState = 'error'; renderLibJourneys(); return; }
     _journeyGenState = 'loading';
@@ -1071,12 +1088,22 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     renderLibJourneys();
     const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + key;
     const prompt = _journeyGenPrompt;
-    const MAX_ATTEMPTS = 3, TIMEOUT_MS = 60000, RETRY_DELAY_MS = 5000;
+    const MAX_ATTEMPTS = 3, TIMEOUT_MS = 120000, RETRY_DELAY_MS = 5000;
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      if (_journeyGenCancelled) return;
       const controller = new AbortController();
+      _journeyGenController = controller;
       const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
       try {
+        const _cnt = (a, b) => {
+          const i = prompt.indexOf(a), j = prompt.indexOf(b);
+          return (i < 0 || j < i) ? 0 : prompt.slice(i, j).split('\n').filter(l => l.startsWith('- ')).length;
+        };
+        console.log('Gemini attempt ' + attempt + ' payload — prompt chars: ' + prompt.length +
+          ', exercises: ' + _cnt("USER'S EXERCISE LIBRARY:", 'COACHING INSTRUCTIONS:') +
+          ', history sessions: ' + _cnt("USER'S RECENT TRAINING", "USER'S EXERCISE LIBRARY:") +
+          ', PRs: ' + _cnt("USER'S CURRENT PERFORMANCE", "USER'S RECENT TRAINING"));
         const response = await fetch(geminiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1089,14 +1116,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
         console.log('Gemini response status:', response.status);
         console.log('Gemini response:', JSON.stringify(responseData).substring(0, 200));
 
-        if (!response.ok) {
-          /* Retry only on 503 (service unavailable); fail immediately otherwise */
-          if (response.status === 503 && attempt < MAX_ATTEMPTS) {
-            await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
-            continue;
-          }
-          throw new Error('API returned ' + response.status + ': ' + JSON.stringify(responseData));
-        }
+        if (!response.ok) throw new Error('API returned ' + response.status + ': ' + JSON.stringify(responseData));
 
         const rawText = responseData.candidates[0].content.parts[0].text;
         console.log('Raw Gemini response:', rawText.substring(0, 500));
@@ -1124,9 +1144,11 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
           goal: journey.goal || _journeyInputs.goal,
           weeks: journey.weeks || [],
           createdAt: new Date().toISOString(),
+          sessionDuration: _jDuration(),
           completedSessions: []
         });
         _persistJourneys();
+        console.log('Gemini attempt ' + attempt + ' succeeded');
         _journeyGenState = null;
         _journeySuccessFlash = true;
         _setJourneyHeaderSpinner(false);
@@ -1136,15 +1158,20 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
         return;
       } catch (err) {
         clearTimeout(timer);
-        const msg = (err && err.name === 'AbortError') ? 'Request timed out after 60s' : (err && err.message ? err.message : 'unknown error');
-        console.log('Gemini attempt ' + attempt + ' failed:', msg);
+        if (_journeyGenCancelled) return;
+        const msg = (err && err.name === 'AbortError') ? 'Request timed out after 120s' : (err && err.message ? err.message : 'unknown error');
+        if (attempt < MAX_ATTEMPTS) {
+          console.log('Gemini attempt ' + attempt + ' failed: ' + msg + ', retrying...');
+          await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
+          continue;   /* loop top re-checks _journeyGenCancelled */
+        }
+        console.log('Gemini attempt ' + attempt + ' failed: ' + msg + ' — giving up');
         _journeyGenState = 'error';
         _setJourneyHeaderSpinner(false);
         renderLibJourneys();
         return;
       }
     }
-          sessionDuration: _jDuration(),
   }
 
   function _parseJourneyJSON(text) {
@@ -1176,6 +1203,9 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
           const done = completed.includes(wi + '-' + si);
           const isCurrent = !!next && next.wi === wi && next.si === si;
           const locked = !done && !isCurrent;
+          const actualSecs = done ? ((journey.completedDurations || {})[wi + '-' + si] || 0) : 0;
+          const durTxt = actualSecs > 0 ? ' · ' + Math.max(1, Math.round(actualSecs / 60)) + ' min'
+            : (!done && journey.sessionDuration > 0 ? ' · ~' + journey.sessionDuration + ' min' : '');
           const doneDate = done ? _fmtJDate(_journeySessionDoneDate(journey, wi, si), true) : '';
           const cardStyle = (isCurrent ? 'background:#1A3A5C;' : '') + (locked ? 'opacity:.5;cursor:default;' : '');
           const tap = locked ? '' : `onclick="_openJourneySession(${journey.id},${wi},${si})"`;
@@ -1203,9 +1233,6 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
       const doneCount = sess.filter((_, si) => completed.includes(wi + '-' + si)).length;
       const rightStatus = mode === 'detail'
         ? `<span style="font-size:13px;color:#8E8E93;margin-right:8px">${doneCount}/${sess.length}</span>`
-          const actualSecs = done ? ((journey.completedDurations || {})[wi + '-' + si] || 0) : 0;
-          const durTxt = actualSecs > 0 ? ' · ' + Math.max(1, Math.round(actualSecs / 60)) + ' min'
-            : (!done && journey.sessionDuration > 0 ? ' · ~' + journey.sessionDuration + ' min' : '');
         : '';
       let weekStatus = '';
       if (mode === 'detail' && doneCount > 0) {
@@ -1271,6 +1298,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
       goal: _journeyPreview.goal || _journeyInputs.goal,
       weeks: _journeyPreview.weeks || [],
       createdAt: new Date().toISOString(),
+      sessionDuration: _jDuration(),
       completedSessions: []
     };
     _journeys.unshift(j);
@@ -1298,7 +1326,6 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     const total = _journeyTotalSessions(j), done = (j.completedSessions || []).length;
     const pct = total ? Math.round(done / total * 100) : 0;
     el.innerHTML = `
-      sessionDuration: _jDuration(),
       <div style="font-size:24px;font-weight:700;color:#fff;letter-spacing:-.4px">${_esc(j.name)}</div>
       <div class="journey-ai-badge" style="margin-top:4px">✨ AI Generated</div>
       <div style="font-size:14px;color:#8E8E93;margin-top:4px">${_esc(j.goal)}</div>
