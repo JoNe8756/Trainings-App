@@ -383,12 +383,14 @@
       <div class="exercise-head">
         <input type="text" placeholder="Exercise name" value="${name.replace(/"/g, '&quot;')}"
           oninput="updateExIntensity('${id}'); updateGhostHint('${id}')" />
+        ${_exInfoBtnHTML(id)}
         <button class="btn-delete-ex" onclick="removeExercise('${id}')" title="Remove exercise">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.03 9.47a.75.75 0 0 1-1.06 1.06L8 9.06l-1.97 1.97a.75.75 0 0 1-1.06-1.06L6.94 8 4.97 6.03a.75.75 0 0 1 1.06-1.06L8 6.94l1.97-1.97a.75.75 0 0 1 1.06 1.06L9.06 8l1.97 1.97z"/>
           </svg>
         </button>
       </div>
+      ${_exInfoBodyHTML(id)}
       ${opts.journeyTag ? `<div class="ex-journey-tag">📍 ${_esc(opts.journeyTag)}</div>` : ''}
       <div class="ex-rest-rec"></div>
       <div class="sets-table">
@@ -404,6 +406,7 @@
       </div>`;
     const _prevCardCount = _exGetCards().length;
     document.getElementById('exercise-list').appendChild(div);
+    _initExInfo(div, id);
     const setsToAdd = Math.max(1, numSets);
     for (let i = 0; i < setsToAdd; i++) addSet(id);
     _syncAddSetBtn(id);
@@ -413,6 +416,43 @@
     if (opts.journeyKey) _exCurrentIdx = _prevCardCount === 0 ? 0 : _exCurrentIdx;
     else _exCurrentIdx = _exGetCards().length - 1;
     _exNavUpdate();
+  }
+
+  /* Shared ⓘ how-to markup/init — used by both createExCard and restoreActiveWorkout */
+  function _exInfoBtnHTML(id) {
+    return `<button class="ex-info-btn" type="button" onclick="_toggleExInfo('${id}')" title="How to" style="display:none;background:none;border:none;color:#8E8E93;font-size:16px;line-height:1;padding:0 6px;cursor:pointer;-webkit-tap-highlight-color:transparent">ⓘ</button>`;
+  }
+  function _exInfoBodyHTML(id) {
+    return `<div class="ex-info-body" onclick="_toggleExInfo('${id}')"><div class="ex-info-inner"></div></div>`;
+  }
+  function _initExInfo(div, id) {
+    _syncExInfo(id);
+    div.querySelector('.exercise-head input').addEventListener('input', () => _syncExInfo(id));
+  }
+
+  /* Library how-to info (ⓘ) — icon only when the exercise has stored detail; always starts collapsed */
+  function _syncExInfo(id) {
+    const card = document.getElementById(id);
+    if (!card) return;
+    const name = card.querySelector('.exercise-head input').value.trim();
+    const d = EXERCISE_DETAIL[name] || EXERCISE_DETAIL[Object.keys(EXERCISE_DETAIL).find(k => k.toLowerCase() === name.toLowerCase())] || null;
+    const btn = card.querySelector('.ex-info-btn'), body = card.querySelector('.ex-info-body');
+    body.classList.remove('open');
+    const inner = body.firstElementChild;
+    if (!d || !((d.how && d.how.length) || (d.cues && d.cues.length))) { btn.style.display = 'none'; inner.innerHTML = ''; return; }
+    const _hdr = (t, pad) => `<div style="font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.65px;color:var(--tertiary);padding:${pad} 0 .375rem">${t}</div>`;
+    const howHTML = (d.how || []).map((step, i) => `
+      <div class="detail-step"><div class="detail-step-num">${i + 1}</div><div>${step}</div></div>`).join('');
+    const cuesHTML = (d.cues || []).map(cue => `
+      <div class="detail-cue"><div class="detail-cue-dot">✓</div><div>${cue}</div></div>`).join('');
+    inner.innerHTML = (howHTML ? _hdr('How to Perform', '0') + `<div class="detail-card">${howHTML}<div style="height:.5rem"></div></div>` : '') +
+      (cuesHTML ? _hdr('Key Form Cues', '.25rem') + `<div class="detail-card">${cuesHTML}<div style="height:.5rem"></div></div>` : '');
+    btn.style.display = '';
+  }
+
+  function _toggleExInfo(id) {
+    const body = document.querySelector('#' + id + ' .ex-info-body');
+    if (body) body.classList.toggle('open');
   }
 
   function removeExercise(id) {
@@ -1541,12 +1581,14 @@
         <div class="exercise-head">
           <input type="text" placeholder="Exercise name" value="${(ex.name || '').replace(/"/g, '&quot;')}"
             oninput="updateExIntensity('${id}'); persistActiveWorkout();" />
+          ${_exInfoBtnHTML(id)}
           <button class="btn-delete-ex" onclick="removeExercise('${id}')" title="Remove exercise">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.03 9.47a.75.75 0 0 1-1.06 1.06L8 9.06l-1.97 1.97a.75.75 0 0 1-1.06-1.06L6.94 8 4.97 6.03a.75.75 0 0 1 1.06-1.06L8 6.94l1.97-1.97a.75.75 0 0 1 1.06 1.06L9.06 8l1.97 1.97z"/>
             </svg>
           </button>
         </div>
+        ${_exInfoBodyHTML(id)}
         ${ex.journeyTag ? `<div class="ex-journey-tag">📍 ${_esc(ex.journeyTag)}</div>` : ''}
         <div class="ex-rest-rec"></div>
         <div class="sets-table">
@@ -1561,6 +1603,7 @@
           </button>
         </div>`;
       document.getElementById('exercise-list').appendChild(div);
+      _initExInfo(div, id);
 
       /* Restore sets */
       const body = div.querySelector('.sets-body');
