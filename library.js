@@ -1144,6 +1144,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
         return;
       }
     }
+          sessionDuration: _jDuration(),
   }
 
   function _parseJourneyJSON(text) {
@@ -1190,7 +1191,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
               ${done ? '<span style="color:#34C759;font-weight:700">✓</span>' : ''}
               <span style="flex:1;font-size:14px;font-weight:700;color:${done ? '#8E8E93' : '#fff'}">${_esc(s.day || ('Session ' + (si+1)))} · ${_esc(s.planName || '')}</span>
             </div>
-            <div style="font-size:12px;color:#8E8E93;margin-top:2px">${exCount} exercise${exCount!==1?'s':''}</div>
+            <div style="font-size:12px;color:#8E8E93;margin-top:2px">${exCount} exercise${exCount!==1?'s':''}${durTxt}</div>
             ${bottom}
           </div>`;
         }).join('');
@@ -1202,6 +1203,9 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
       const doneCount = sess.filter((_, si) => completed.includes(wi + '-' + si)).length;
       const rightStatus = mode === 'detail'
         ? `<span style="font-size:13px;color:#8E8E93;margin-right:8px">${doneCount}/${sess.length}</span>`
+          const actualSecs = done ? ((journey.completedDurations || {})[wi + '-' + si] || 0) : 0;
+          const durTxt = actualSecs > 0 ? ' · ' + Math.max(1, Math.round(actualSecs / 60)) + ' min'
+            : (!done && journey.sessionDuration > 0 ? ' · ~' + journey.sessionDuration + ' min' : '');
         : '';
       let weekStatus = '';
       if (mode === 'detail' && doneCount > 0) {
@@ -1294,6 +1298,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     const total = _journeyTotalSessions(j), done = (j.completedSessions || []).length;
     const pct = total ? Math.round(done / total * 100) : 0;
     el.innerHTML = `
+      sessionDuration: _jDuration(),
       <div style="font-size:24px;font-weight:700;color:#fff;letter-spacing:-.4px">${_esc(j.name)}</div>
       <div class="journey-ai-badge" style="margin-top:4px">✨ AI Generated</div>
       <div style="font-size:14px;color:#8E8E93;margin-top:4px">${_esc(j.goal)}</div>

@@ -2225,6 +2225,7 @@
           }
           j.completedDates = j.completedDates || {};
           j.completedDates[token] = new Date().toISOString();
+          if (workouts[0] && workouts[0].duration > 0) { j.completedDurations = j.completedDurations || {}; j.completedDurations[token] = workouts[0].duration; }
           anyComplete = true;
         }
       } else {
@@ -2283,6 +2284,7 @@
     if (!j) return;
     j.completedSessions = j.completedSessions || [];
     const token = ref.w + '-' + ref.s;
+    if (workouts[0] && workouts[0].duration > 0) { j.completedDurations = j.completedDurations || {}; j.completedDurations[token] = workouts[0].duration; _persistJourneys(); }
     if (!j.completedSessions.includes(token)) {
       j.completedSessions.push(token);
       _persistJourneys();
