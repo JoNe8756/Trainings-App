@@ -520,6 +520,11 @@
 
 
   // === JOURNEYS LIST ===
+  // === JOURNEY UNLOCK GATE ===
+  const JOURNEY_MIN_TRAININGS = 5;
+  function getTrainingCount() { return Array.isArray(workouts) ? workouts.length : 0; }
+  function _journeyLockedMsg() { return '🔒 Journeys unlock after ' + JOURNEY_MIN_TRAININGS + ' trainings'; }
+
   function renderLibJourneys() {
     const el = document.getElementById('lib-journeys-inner');
     if (!el) return;
@@ -573,12 +578,22 @@
           <div style="font-size:13px;color:#007AFF;margin-top:4px">Tap to retry</div>
         </div>`;
       }
+      const _tc = getTrainingCount();
+      if (_tc < JOURNEY_MIN_TRAININGS) {
+        html += `<div style="margin:0 var(--gutter) 10px;background:#1C1C1E;border-radius:12px;padding:16px">
+          <div style="font-size:15px;color:#fff">${_journeyLockedMsg()}</div>
+          <div style="font-size:13px;color:#8E8E93;margin-top:4px">Gemini builds your journey from your training history. Log a few more workouts first.</div>
+          <div style="font-size:11px;color:#8E8E93;text-align:right;margin-top:12px;margin-bottom:4px">${_tc} / ${JOURNEY_MIN_TRAININGS} trainings</div>
+          <div style="height:4px;background:#2C2C2E;border-radius:999px;overflow:hidden"><div style="height:100%;width:${Math.min(100, _tc / JOURNEY_MIN_TRAININGS * 100)}%;background:#007AFF;border-radius:999px"></div></div>
+        </div>`;
+      } else {
       html += `<button class="btn-plan-create" onclick="_openJourneyCreator()">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
           <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4.25v2.5h2.5a.75.75 0 0 1 0 1.5h-2.5v2.5a.75.75 0 0 1-1.5 0v-2.5h-2.5a.75.75 0 0 1 0-1.5h2.5v-2.5a.75.75 0 0 1 1.5 0z"/>
         </svg>
         New Journey
       </button>`;
+      }
     }
     el.innerHTML = html;
     _initJourneySwipe(el);
@@ -749,6 +764,7 @@
 
   // === JOURNEY CREATOR ===
   function _openJourneyCreator() {
+    if (getTrainingCount() < JOURNEY_MIN_TRAININGS) { showToast(_journeyLockedMsg()); return; }
     _journeyInputs = { goal: '', weeks: 8, weeksCustom: '', days: 3, daysCustom: '', duration: 60, durationCustom: '', level: 'Intermediate' };
     _renderJourneyCreator();
     document.getElementById('journey-creator').style.display = '';
