@@ -251,13 +251,13 @@
     /* ── Floating action button ───────────────────────────── */
     #home-fab-wrap {
       position: fixed;
-      /* nav bar bottom (env + 12px) + (64px - 56px)/2 = env + 16px → centers match */
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+      /* nav bar bottom (env + 44px) + (56px - 48px)/2 = env + 48px → centers match */
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 48px);
       left: 50%;
-      transform: translateX(calc(430px / 2 - 72px));
+      transform: translateX(calc(430px / 2 - 80px));
       right: auto;
-      width: 56px;
-      height: 56px;
+      width: 48px;
+      height: 48px;
       max-width: none;
       margin: 0;
       display: none;
@@ -269,8 +269,8 @@
     }
     #home-fab {
       pointer-events: auto;
-      width: 56px;
-      height: 56px;
+      width: 48px;
+      height: 48px;
       flex-shrink: 0;
       border-radius: 50%;
       border: none;
@@ -278,7 +278,7 @@
       background: #007AFF;
       box-shadow: 0 4px 16px rgba(0,0,0,0.5);
       color: #fff;
-      font-size: 26px;
+      font-size: 22px;
       font-weight: 300;
       line-height: 1;
       display: flex;
@@ -1359,7 +1359,7 @@
       right: 0;
       bottom: 0;
       /* taller so the longer mask fade has room before the solid blur zone */
-      height: calc(env(safe-area-inset-bottom, 0px) + 160px);
+      height: calc(env(safe-area-inset-bottom, 0px) + 182px);
       background: rgba(0,0,0,0.5);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
@@ -1375,12 +1375,12 @@
     /* Floating rounded nav bar; constrained to the app's phone-width frame */
     .tab-bar {
       position: fixed;
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 44px);
       left: 50%;
       /* left edge aligns with the content cards (16px gutter), right edge 8px before the + button */
-      transform: translateX(calc(-50% - 32px));
-      width: calc(min(100%, 430px) - 96px);
-      max-width: calc(430px - 96px);
+      transform: translateX(calc(-50% - 36px));
+      width: calc(min(100%, 430px) - 104px);
+      max-width: calc(430px - 104px);
       z-index: 100;
       will-change: transform;
       background: #1C1C1E;
@@ -1391,7 +1391,7 @@
       display: flex;
       align-items: center;
       justify-content: space-evenly;
-      height: 64px;
+      height: 56px;
       padding-left: 6px;
       padding-right: 6px;
     }
@@ -1450,7 +1450,7 @@
       align-items: center;
       justify-content: center;
       gap: 3px;
-      padding: 6px 0;
+      padding: 4px 0;
       margin: 0;
       color: #8E8E93;
       font-size: 10px;

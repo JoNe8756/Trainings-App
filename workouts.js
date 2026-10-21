@@ -5,6 +5,12 @@
    and init-time renderers reference these at page load. */
 
   // === INTENSITY INDEX ===
+  // === ISOMETRIC INTENSITY ===
+  // Seconds-based sets: intensity = seconds x difficulty^ISO_DIFFICULTY_EXPONENT / ISO_DIVISOR x weightFactor.
+  // Exponent makes harder holds score disproportionately more; divisor scales results to the rep-based range.
+  const ISO_DIFFICULTY_EXPONENT = 2.5;
+  const ISO_DIVISOR = 37;
+
   function calcSetIntensity(name, reps, kg) {
     const meta = getExMeta(name);
     const rawReps = parseFloat(reps);
@@ -13,11 +19,11 @@
     const w    = (isFinite(rawKg)   && rawKg   > 0) ? rawKg   : 0;
     const diff = (isFinite(meta.diff) && meta.diff > 0) ? meta.diff : 1;
     if (!raw) return 0;
-    const r    = meta.tb ? raw / 6 : raw;
     const bw   = Math.max(getUserBW() || 0, 1);  // never divide by zero
-    const base = meta.type === 'w'
-      ? diff * r * (w || 1)
-      : diff * r * (1 + w / bw);
+    const wf   = meta.type === 'w' ? (w || 1) : (1 + w / bw);
+    const base = meta.tb
+      ? raw * Math.pow(diff, ISO_DIFFICULTY_EXPONENT) / ISO_DIVISOR * wf
+      : diff * raw * wf;
     const result = Math.round(base * heightLeverFactor(name));
     return isFinite(result) ? result : 0;
   }
@@ -2241,6 +2247,7 @@
   }
 
   // === JOURNEY SESSION INTEGRATION ===
+  const JOURNEY_COMPLETION_THRESHOLD = 0.8;
   function _checkJourneySessionsOnFinish() {
     if (!_workoutJourneyAdds.length) return;
     const cards = Array.from(document.querySelectorAll('#exercise-list .exercise-card'));
@@ -2250,12 +2257,13 @@
       rec.exercises.forEach(pe => {
         const matching = cards.filter(c => c.dataset.journeyKey === rec.key &&
           (c.querySelector('.exercise-head input')?.value.trim() === pe.name));
-        let good = 0;
+        let sets = 0, total = 0;
         matching.forEach(c => c.querySelectorAll('.sets-body .set-row.set-done').forEach(row => {
           const reps = parseFloat(row.dataset.confirmedReps) || 0;
-          if (reps >= pe.plannedReps) good++;
+          if (reps > 0) { sets++; total += reps; }
         }));
-        if (good < pe.plannedSets) unfinished++;
+        const needed = Math.ceil(pe.plannedSets * pe.plannedReps * JOURNEY_COMPLETION_THRESHOLD - 1e-9);
+        if (sets < pe.plannedSets || total < needed) unfinished++;
       });
       if (unfinished === 0) {
         const j = _journeys.find(x => x.id === rec.journeyId);

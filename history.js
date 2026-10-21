@@ -424,14 +424,14 @@ window.renderExerciseTrendModal = function() {
       var intStr = inten > 0 ? ('⚡ ' + (typeof fmtInt==='function' ? fmtInt(inten) : Math.round(inten).toLocaleString())) : '';
       rowsHTML += '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;' + (idx>0?'border-top:.5px solid #2C2C2E;':'') + '">' +
         '<span style="font-size:12px;color:#8E8E93;min-width:28px;">S'+(idx+1)+'</span>' +
-        '<span style="flex:1;font-size:14px;color:#fff;">'+(r>0?r+' reps':'—')+(k>0?' · '+k+'kg':'')+'</span>' +
+        '<span style="flex:1;font-size:14px;color:#fff;">'+(r>0?r+(isTimeBased(name)?'s':' reps'):'—')+(k>0?' · '+k+'kg':'')+'</span>' +
         '<span style="font-size:12px;color:#8E8E93;">'+intStr+'</span>' +
         '</div>';
     });
     breakdownHTML += '<div style="background:#1C1C1E;border-radius:12px;margin-bottom:10px;overflow:hidden;">' +
       '<button onclick="var el=document.getElementById(\'' + uid + '\');el.style.display=el.style.display===\'none\'?\'block\':\'none\';" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;padding:14px 16px;font-family:inherit;cursor:pointer;">' +
       '<span style="font-size:15px;font-weight:600;color:#fff;">'+dStr+'</span>' +
-      '<span style="font-size:13px;color:#8E8E93;">'+sess.totalReps+' reps</span>' +
+      '<span style="font-size:13px;color:#8E8E93;">'+sess.totalReps+(isTimeBased(name)?'s':' reps')+'</span>' +
       '</button>' +
       '<div id="'+uid+'" style="display:none;padding:0 16px 8px;">'+rowsHTML+'</div>' +
       '</div>';
@@ -443,7 +443,7 @@ window.renderExerciseTrendModal = function() {
     '<div style="font-size:28px;font-weight:700;color:#fff;letter-spacing:-.4px;margin-top:4px;">'+name+'</div>' +
     '<div style="font-size:13px;color:#8E8E93;">Performance Over Time</div>' +
     segHTML +
-    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#8E8E93;margin:20px 0 8px;">REPS</div>' +
+    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#8E8E93;margin:20px 0 8px;">'+(isTimeBased(name)?'SECONDS':'REPS')+'</div>' +
     '<div style="background:#1C1C1E;border-radius:12px;padding:16px;margin-bottom:12px;">' +
     '<canvas id="trendRepsCanvas" style="display:block;width:100%;height:180px;"></canvas>' +
     '</div>' +
@@ -456,7 +456,7 @@ window.renderExerciseTrendModal = function() {
 
   // --- Draw charts after paint ---
   requestAnimationFrame(function() {
-    _drawTrendChart(document.getElementById('trendRepsCanvas'), sessions, function(s){return s.totalReps;}, 180, horizon);
+    _drawTrendChart(document.getElementById('trendRepsCanvas'), sessions, function(s){return s.totalReps;}, 180, horizon, isTimeBased(name) ? 's' : '');
     _drawTrendChart(document.getElementById('trendIntensityCanvas'), sessions, function(s){return s.totalInt;}, 180, horizon);
     var seg = document.getElementById('exTrendSeg');
     if (seg && typeof initSegmentedPill === 'function') {
@@ -467,7 +467,7 @@ window.renderExerciseTrendModal = function() {
   });
 };
 
-function _drawTrendChart(canvas, sessions, valFn, height, rangeKey) {
+function _drawTrendChart(canvas, sessions, valFn, height, rangeKey, unitSuffix) {
   if (!canvas) return;
   var dpr = window.devicePixelRatio || 1;
   var parent = canvas.parentElement;
@@ -556,7 +556,7 @@ function _drawTrendChart(canvas, sessions, valFn, height, rangeKey) {
 
   /* dot tooltips */
   var _dots = [];
-  for (var di=0; di<n; di++) _dots.push({ x: xOf(di), y: yOf(vals[di]), label: labels[di], value: String(Math.round(vals[di])) });
+  for (var di=0; di<n; di++) _dots.push({ x: xOf(di), y: yOf(vals[di]), label: labels[di], value: String(Math.round(vals[di])) + (unitSuffix || '') });
   _attachDotTooltip(canvas, _dots);
 
   if (parent) parent.scrollLeft = parent.scrollWidth;

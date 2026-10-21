@@ -376,6 +376,15 @@
     </div>`;
   }
 
+  // === UNIT LABELS ===
+  function isTimeBased(name) {
+    if (!!getExMeta(name).tb) return true;
+    try {
+      return JSON.parse(localStorage.getItem('workouts') || '[]').some(w =>
+        (w.exercises || []).some(e => e.name === name && ((e.sets || [])[0] || {}).tb));
+    } catch (e) { return false; }
+  }
+
   // === PROGRESS TAB ===
   function renderProgress() {
     const container = document.getElementById('progress-charts');
@@ -642,7 +651,7 @@
     ctx.textBaseline = 'middle';
     ctx.translate(9, PAD.top + cH / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText('Reps', 0, 0);
+    ctx.fillText(isTimeBased(name) ? 'Seconds' : 'Reps', 0, 0);
     ctx.restore();
 
     const pts = bestReps.map((r, i) => ({ x: xOf(i), y: yOf(r) }));
@@ -716,10 +725,10 @@
     ctx.fillStyle    = labelColor;
     ctx.textAlign    = 'right';
     ctx.textBaseline = 'top';
-    ctx.fillText('Reps', PAD.left + cW, PAD.top - 14);
+    ctx.fillText(isTimeBased(name) ? 'Seconds' : 'Reps', PAD.left + cW, PAD.top - 14);
     ctx.restore();
 
-    _attachDotTooltip(canvas, bestReps.map((v, i) => ({ x: xOf(i), y: yOf(v), label: _agg.labels[i], value: String(Math.round(v)) })));
+    _attachDotTooltip(canvas, bestReps.map((v, i) => ({ x: xOf(i), y: yOf(v), label: _agg.labels[i], value: String(Math.round(v)) + (isTimeBased(name) ? 's' : '') })));
     _scrollChartRight(wrap);
   }
 

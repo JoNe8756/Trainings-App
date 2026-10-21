@@ -662,6 +662,7 @@
         const j = _journeys.find(x => x.id === id);
         if (!j) return;
         j.completedSessions = [];
+        j.manualCompletions = {};
         _persistJourneys();
         _renderJourneyDetail();
       }
@@ -979,6 +980,36 @@
   }
 
   // === GEMINI API ===
+  // === GOAL EXERCISE GUARANTEE ===
+  /* Ensure every session contains journey.goalExercise (case-insensitive); skipped if the field is missing/empty */
+  function _ensureGoalExercise(journey) {
+    const goal = (journey && typeof journey.goalExercise === 'string') ? journey.goalExercise.trim() : '';
+    if (!goal) return;
+    const key = goal.toLowerCase();
+    const has = s => (s.exercises || []).some(e => ((e && e.name) || '').trim().toLowerCase() === key);
+    const sessions = [];
+    (journey.weeks || []).forEach((w, wi) => (w.sessions || []).forEach((s, si) => sessions.push({ wi, si, s })));
+    sessions.forEach(({ wi, si, s }) => {
+      if (has(s)) return;
+      /* nearest other session (by position in journey order) that already has the goal exercise */
+      const idx = sessions.findIndex(x => x.s === s);
+      let src = null, best = Infinity;
+      sessions.forEach((x, i) => {
+        if (x.s === s || !has(x.s)) return;
+        const dist = Math.abs(i - idx);
+        if (dist < best) { best = dist; src = (x.s.exercises || []).find(e => ((e && e.name) || '').trim().toLowerCase() === key); }
+      });
+      if (!Array.isArray(s.exercises)) s.exercises = [];
+      s.exercises.unshift({
+        name: goal,
+        sets: src && src.sets != null ? src.sets : 3,
+        reps: src && src.reps != null ? src.reps : 5,
+        rest: src && src.rest != null ? src.rest : 90,
+        notes: 'Goal exercise'
+      });
+    });
+  }
+
   function _buildJourneyPrompt() {
     const i = _journeyInputs;
     const weeks = _jWeeks(), days = _jDays(), duration = _jDuration();
@@ -1011,12 +1042,14 @@ COACHING INSTRUCTIONS:
 8. For strength goals: include periodisation — not every week at max intensity, include deload weeks
 9. Session duration must be respected — calculate realistic sets, reps and rest periods that fit within ${duration} minutes
 10. Week 1 must be achievable at the user's current level — do not start too hard
+11. The goal exercise MUST appear in EVERY session of EVERY week, with sets/reps that progress toward the goal. Other exercises support it, but this exercise is never skipped.
 
 RESPONSE FORMAT:
 Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation text before or after. Use this exact structure:
 {
   "name": "Specific descriptive journey name",
   "goal": "Detailed goal description",
+  "goalExercise": "Exact name of the single exercise that most directly represents the user's goal, chosen from the user's exercise library where possible",
   "weeks": [
     {
       "week": 1,
@@ -1137,6 +1170,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
 
         const journey = JSON.parse(cleanText);
         if (!journey || !Array.isArray(journey.weeks) || !journey.weeks.length) throw new Error('Could not parse journey from response');
+        _ensureGoalExercise(journey);
         /* save the generated journey so it appears in the list automatically */
         _journeys.unshift({
           id: Date.now(),
@@ -1214,11 +1248,17 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
           let bottom = '';
           if (inProg) {
             bottom = `<div style="display:flex;justify-content:flex-end;margin-top:8px"><span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,122,255,.18);color:#0A84FF;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px"><span style="width:8px;height:8px;border-radius:50%;background:#0A84FF;animation:journeyGenPulse 1.2s ease-in-out infinite"></span>In Progress</span></div>`;
+          } else if (done && (journey.manualCompletions || {})[wi + '-' + si]) {
+            const mc = journey.manualCompletions[wi + '-' + si];
+            bottom = `<div style="font-size:12px;color:#34C759;margin-top:2px">✓ Done manually${doneDate ? ' · ' + doneDate : ''}</div>
+              <div style="font-size:11px;color:#8E8E93;margin-top:2px">${_esc(mc.reason || '')}</div>
+              <div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="journey-start-btn" onclick="event.stopPropagation();_startJourneySession(${journey.id},${wi},${si})">▶ Repeat Session</button></div>`;
           } else if (done) {
             bottom = `<div style="font-size:12px;color:#34C759;margin-top:2px">✓ Done${doneDate ? ' · ' + doneDate : ''}</div>
               <div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="journey-start-btn" onclick="event.stopPropagation();_startJourneySession(${journey.id},${wi},${si})">▶ Repeat Session</button></div>`;
           } else if (isCurrent) {
-            bottom = `<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="journey-start-btn" onclick="event.stopPropagation();_startJourneySession(${journey.id},${wi},${si})">▶ Start Session</button></div>`;
+            bottom = `<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="journey-start-btn" onclick="event.stopPropagation();_startJourneySession(${journey.id},${wi},${si})">▶ Start Session</button></div>
+              <div style="text-align:right;margin-top:0"><a href="#" class="journey-manual-link" data-jid="${journey.id}" data-wi="${wi}" data-si="${si}" style="display:inline-flex;align-items:center;justify-content:flex-end;min-height:44px;padding:0 4px;font-size:13px;color:#8E8E93;text-decoration:none">Mark as done manually</a></div>`;
           }
           let revealHTML = '';
           if (locked && _journeyReveal) {
@@ -1321,6 +1361,66 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     renderLibJourneys();
   }
 
+  // === MANUAL SESSION COMPLETION ===
+  const _MANUAL_REASONS = ['Trained without my phone', 'Forgot to start tracking', 'App problem or bug', 'Did a different workout instead', 'Other'];
+  function _closeManualComplete() { const m = document.getElementById('manual-complete-modal'); if (m) m.remove(); }
+  function _openManualComplete(jid, wi, si) {
+    console.log("manual complete tapped", jid + '-' + wi + '-' + si);
+    const j = _journeys.find(x => x.id === jid);
+    const sess = j && ((j.weeks || [])[wi] || {}).sessions?.[si];
+    if (!sess) return;
+    _closeManualComplete();
+    const d = new Date(), today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    let sel = -1;
+    const ov = document.createElement('div');
+    ov.id = 'manual-complete-modal';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML = `<div style="background:#1C1C1E;border-radius:20px;padding:24px;width:100%;max-width:400px;max-height:90vh;overflow-y:auto">
+      <div style="font-size:20px;font-weight:700;color:#fff">Mark session as done</div>
+      <div style="font-size:13px;color:#8E8E93;margin-top:4px">${_esc((sess.day || ('Session ' + (si + 1))) + ' · ' + (sess.planName || ''))}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px">
+        <span style="font-size:15px;color:#fff">Date</span>
+        <input type="date" id="mc-date" value="${today}" max="${today}" style="background:#2C2C2E;color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:15px;color-scheme:dark">
+      </div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#8E8E93;margin:20px 0 6px">Reason</div>
+      <div id="mc-reasons">${_MANUAL_REASONS.map((r, i) => `<div class="mc-row" data-i="${i}" style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:.5px solid #2C2C2E;color:#fff;font-size:15px;cursor:pointer"><span>${_esc(r)}</span><span class="mc-check" style="color:#007AFF;font-weight:700;visibility:hidden">✓</span></div>`).join('')}</div>
+      <input type="text" id="mc-other" maxlength="120" placeholder="Optional details" style="display:none;width:100%;box-sizing:border-box;margin-top:10px;background:#2C2C2E;color:#fff;border:none;border-radius:8px;padding:10px;font-size:15px">
+      <button id="mc-ok" disabled style="display:block;width:100%;margin-top:20px;background:#007AFF;color:#fff;border:none;border-radius:999px;padding:12px;font-size:16px;font-weight:600;opacity:.4">Mark as done</button>
+      <button id="mc-cancel" style="display:block;width:100%;margin-top:8px;background:none;color:#8E8E93;border:none;padding:10px;font-size:15px">Cancel</button>
+    </div>`;
+    document.body.appendChild(ov);
+    const ok = ov.querySelector('#mc-ok'), other = ov.querySelector('#mc-other');
+    ov.querySelectorAll('.mc-row').forEach(row => row.addEventListener('click', () => {
+      sel = parseInt(row.dataset.i, 10);
+      ov.querySelectorAll('.mc-check').forEach((c, i) => c.style.visibility = i === sel ? 'visible' : 'hidden');
+      other.style.display = sel === _MANUAL_REASONS.length - 1 ? '' : 'none';
+      ok.disabled = false; ok.style.opacity = '1';
+    }));
+    ov.querySelector('#mc-cancel').addEventListener('click', _closeManualComplete);
+    ov.addEventListener('click', e => { if (e.target === ov) _closeManualComplete(); });
+    ok.addEventListener('click', () => {
+      if (sel < 0) return;
+      const dv = ov.querySelector('#mc-date').value;
+      if (!dv || dv > today) { showToast('Choose a date that is not in the future'); return; }
+      let reason = _MANUAL_REASONS[sel];
+      const extra = other.value.trim();
+      if (sel === _MANUAL_REASONS.length - 1 && extra) reason += ': ' + extra;
+      const token = wi + '-' + si;
+      j.completedSessions = j.completedSessions || [];
+      if (!j.completedSessions.includes(token)) j.completedSessions.push(token);
+      const [yy, mm, dd] = dv.split('-').map(Number);
+      j.completedDates = j.completedDates || {};
+      j.completedDates[token] = new Date(yy, mm - 1, dd, 12).toISOString();
+      if (j.completedDurations) delete j.completedDurations[token];
+      j.manualCompletions = j.manualCompletions || {};
+      j.manualCompletions[token] = { manual: true, reason };
+      _persistJourneys();
+      _closeManualComplete();
+      _renderJourneyDetail();
+      if (typeof renderLibJourneys === 'function') renderLibJourneys();
+    });
+  }
+
   // === JOURNEY DETAIL ===
   let _journeyReveal = false, _jLPTimer = null;   /* in-memory only; reset on open/close of Journey Detail */
   function _jLPStart() {
@@ -1362,6 +1462,10 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
       ${_journeyWeeksHTML(j, 'dtw', 'detail')}
       <button onclick="_resetJourney(${j.id})" style="display:block;width:100%;background:none;border:none;color:#FF3B30;font-family:inherit;font-size:15px;font-weight:600;text-align:center;padding:20px 0 8px;cursor:pointer;-webkit-tap-highlight-color:transparent">Reset Journey</button>
       <button onclick="_deleteJourneyFromDetail(${j.id})" style="display:block;width:100%;background:none;border:none;color:#FF3B30;font-family:inherit;font-size:15px;font-weight:600;text-align:center;padding:8px 0 4px;cursor:pointer;-webkit-tap-highlight-color:transparent">Delete Journey</button>`;
+    el.querySelectorAll('.journey-manual-link').forEach(a => a.addEventListener('click', e => {
+      e.stopPropagation(); e.preventDefault();
+      _openManualComplete(parseInt(a.dataset.jid, 10), parseInt(a.dataset.wi, 10), parseInt(a.dataset.si, 10));
+    }));
   }
 
   function _openJourneySession(journeyId, wi, si) {
