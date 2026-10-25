@@ -63,6 +63,9 @@ Contains: Personal Info, Training Goals, Workout Setup, Preferences,
 Data Management, About, Gemini API key storage and guide modal.
 Edit this file for: any settings screen issues.
 
+### sync.js
+Holds the Supabase client, auth helpers, and (later) sync. Keys starting with `sb-` are auth session keys and are excluded from backups. The secret / service_role key must never be added to this repo.
+
 ## Key Data Structures (localStorage)
 
 - `workouts` — array of all workout sessions

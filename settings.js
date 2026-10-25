@@ -190,6 +190,8 @@
     'backupBannerSnoozeUntil',
     'storagePersisted',
   ]);
+  /* supabase-js auth session keys start with "sb-": never exported, imported over, or wiped */
+  function isTransientKey(key) { return _TRANSIENT_KEYS.has(key) || (typeof key === 'string' && key.startsWith('sb-')); }
 
   // === EXPORT CATEGORIES ===
   /* Export/import are category-based. Every new localStorage key must be added to a category here;
@@ -207,7 +209,7 @@
 
   /* Category id for a key, or null for transient keys and geminiApiKey. */
   function getCategoryForKey(key) {
-    if (!key || _TRANSIENT_KEYS.has(key) || key === 'geminiApiKey') return null;
+    if (!key || isTransientKey(key) || key === 'geminiApiKey') return null;
     const c = EXPORT_CATEGORIES.find(c => c.keys.includes(key) || c.prefixes.some(p => key.startsWith(p)));
     return c ? c.id : 'settings';
   }
@@ -280,7 +282,7 @@
     const data = {}, counts = {};
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (!key || _TRANSIENT_KEYS.has(key)) continue;
+      if (!key || isTransientKey(key)) continue;
       if (key === 'geminiApiKey') { if (_expGemini) data[key] = localStorage.getItem(key); continue; }
       const cat = getCategoryForKey(key);
       if (!_expSel.has(cat)) continue;
@@ -392,7 +394,7 @@
         }
         const pairs = [];
         for (const key of Object.keys(payload.data)) {
-          if (_TRANSIENT_KEYS.has(key)) continue;
+          if (isTransientKey(key)) continue;
           const val = payload.data[key];
           if (val === undefined || val === null) continue;
           if (typeof val !== 'string') { showToast('Invalid backup file'); return; }
@@ -405,13 +407,13 @@
         const when = payload.exportedAt ? new Date(payload.exportedAt).toLocaleString() : 'unknown date';
         const names = EXPORT_CATEGORIES.filter(c => fileCats.includes(c.id)).map(c => c.label).join(', ');
         if (!confirm(`This replaces: ${names}. Everything else on this device stays as it is.\n\nBackup from ${when}\n${pairs.length} items, ${nW} training${nW === 1 ? '' : 's'}.\n\nProceed?`)) return;
-        Object.keys(localStorage).forEach(k => { if (fileCats.includes(getCategoryForKey(k))) localStorage.removeItem(k); });
+        Object.keys(localStorage).forEach(k => { if (!isTransientKey(k) && fileCats.includes(getCategoryForKey(k))) localStorage.removeItem(k); });
         pairs.forEach(([k, v]) => { localStorage.setItem(k, v); restored++; });
       } else if (payload.exportVersion >= 2 && payload.data && typeof payload.data === 'object') {
         /* v2: map of raw string values — restore every key present, skip absent ones */
         if (!confirm('Import this backup?\n\nThis merges the backup into your current data. Keys in the file overwrite existing data; keys not in the file stay untouched.\n\nProceed?')) return;
         Object.keys(payload.data).forEach(key => {
-          if (_TRANSIENT_KEYS.has(key)) return;
+          if (isTransientKey(key)) return;
           const val = payload.data[key];
           if (val === undefined || val === null) return;   /* skip absent */
           localStorage.setItem(key, val);
@@ -954,3 +956,115 @@
   function wuGenToggleChanged(checked) {
     _setWarmupGeneralEnabled(checked);
   }
+
+
+  // === ACCOUNT & SYNC ===
+  const _ACCT_CHEVRON = '<svg class="settings-chevron" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,1 6,6 1,11"/></svg>';
+  let _acctUser = null;
+  let _acctBusy = false;
+  let _acctMsg = '';
+  let _acctMsgColor = '#FF3B30';
+
+  function _acctSubtitle() { return _acctUser ? _acctUser.email : 'Not logged in'; }
+
+  function _acctUpdateRowSubtitle() {
+    const el = document.getElementById('acct-row-sub');
+    if (el) el.textContent = _acctSubtitle();
+  }
+
+  function renderAccountScreen() {
+    const body = document.getElementById('acct-body');
+    if (!body) return;
+    const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const inputCss = 'width:100%;box-sizing:border-box;background:var(--card-inner,#2C2C2E);color:#fff;border:none;border-radius:10px;padding:.75rem .875rem;font-size:1rem;margin-bottom:.625rem;outline:none';
+    const btnCss = 'width:100%;border:none;border-radius:12px;padding:.8rem;font-size:1rem;font-weight:600;cursor:pointer;margin-top:.5rem';
+    const dis = _acctBusy ? ' disabled style="opacity:.5"' : '';
+    let html;
+    if (!syncClient) {
+      html = '<div class="settings-card" style="padding:1rem"><div style="color:var(--tertiary,#8E8E93)">Sync unavailable right now</div></div>';
+    } else if (_acctUser) {
+      html = `<div class="settings-card" style="padding:1rem">
+          <div style="font-size:1rem">${esc(_acctUser.email)}</div>
+          <div style="color:var(--tertiary,#8E8E93);font-size:.8125rem;margin-top:.25rem">Logged in</div>
+        </div>
+        <div style="margin:1rem var(--gutter,1rem) 0">
+          <button id="acct-logout" style="${btnCss};background:#1C1C1E;color:#FF3B30"${_acctBusy ? ' disabled' : ''}>${_acctBusy ? 'Please wait…' : 'Log out'}</button>
+          <div id="acct-err" style="color:#FF3B30;font-size:.8125rem;margin-top:.5rem;min-height:1em">${esc(_acctMsg)}</div>
+        </div>`;
+    } else {
+      html = `<div class="settings-card" style="padding:1rem">
+          <input id="acct-email" type="email" autocomplete="email" autocapitalize="none" placeholder="Email" style="${inputCss}">
+          <input id="acct-pass" type="password" autocomplete="current-password" minlength="8" placeholder="Password (min 8 characters)" style="${inputCss};margin-bottom:0">
+        </div>
+        <div style="margin:1rem var(--gutter,1rem) 0">
+          <div id="acct-err" style="color:${_acctMsgColor};font-size:.8125rem;margin-bottom:.5rem;min-height:1em">${esc(_acctMsg)}</div>
+          <button id="acct-login" style="${btnCss};background:#007AFF;color:#fff"${_acctBusy ? ' disabled' : ''}>${_acctBusy ? 'Please wait…' : 'Log in'}</button>
+          <button id="acct-signup" style="${btnCss};background:#1C1C1E;color:#007AFF"${_acctBusy ? ' disabled' : ''}>Create account</button>
+          <div style="color:var(--tertiary,#8E8E93);font-size:.75rem;margin-top:1rem;line-height:1.4">Your data stays on this device until you log in. Sync comes in the next update.</div>
+        </div>`;
+    }
+    body.innerHTML = html;
+    const emailEl = document.getElementById('acct-email');
+    const passEl = document.getElementById('acct-pass');
+    const run = async (fn) => {
+      if (_acctBusy) return;
+      const email = (emailEl.value || '').trim();
+      const pass = passEl.value || '';
+      if (!email || !email.includes('@')) { _acctMsg = 'Enter a valid email'; _acctMsgColor = '#FF3B30'; return renderAccountScreen(); }
+      if (pass.length < 8) { _acctMsg = 'Password too short'; _acctMsgColor = '#FF3B30'; return renderAccountScreen(); }
+      _acctBusy = true; _acctMsg = ''; renderAccountScreen();
+      const res = await fn(email, pass);
+      _acctBusy = false;
+      if (res.ok) {
+        _acctUser = await getSyncUser();
+        _acctMsg = res.message || '';
+        _acctMsgColor = '#8E8E93';
+        _acctUpdateRowSubtitle();
+      } else { _acctMsg = res.error; _acctMsgColor = '#FF3B30'; }
+      renderAccountScreen();
+    };
+    document.getElementById('acct-login')?.addEventListener('click', () => run(signInWithEmail));
+    document.getElementById('acct-signup')?.addEventListener('click', () => run(signUpWithEmail));
+    document.getElementById('acct-logout')?.addEventListener('click', async () => {
+      if (_acctBusy || !confirm('Log out? Your data stays on this device.')) return;
+      _acctBusy = true; _acctMsg = ''; renderAccountScreen();
+      const res = await signOutUser();
+      _acctBusy = false;
+      if (res.ok) { _acctUser = null; _acctUpdateRowSubtitle(); } else { _acctMsg = res.error; _acctMsgColor = '#FF3B30'; }
+      renderAccountScreen();
+    });
+  }
+
+  function _acctInit() {
+    const root = document.getElementById('settings-root');
+    if (!root || document.getElementById('settings-account')) return;
+    /* Row at the top of the Settings folder list */
+    const card = root.querySelector('.settings-card');
+    const row = document.createElement('div');
+    row.className = 'settings-row settings-row-tappable';
+    row.innerHTML = '<div class="settings-row-icon icon-blue">☁️</div>' +
+      '<div class="settings-row-label" style="flex:1">Account &amp; Sync<div id="acct-row-sub" style="font-size:.75rem;color:var(--tertiary);margin-top:.1rem">Not logged in</div></div>' + _ACCT_CHEVRON;
+    row.addEventListener('click', () => { _acctMsg = ''; settingsPush('settings-account'); renderAccountScreen(); });
+    if (card) card.insertBefore(row, card.firstChild);
+    /* Sub-screen with the same header style as the other Settings screens */
+    const panel = document.createElement('div');
+    panel.id = 'settings-account';
+    panel.className = 'settings-panel sub';
+    panel.innerHTML = '<div class="settings-nav"><button class="settings-back-btn" id="acct-back">' +
+      '<svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg></button>' +
+      '<div class="settings-nav-title">Account &amp; Sync</div></div><div class="settings-body" id="acct-body"></div>';
+    root.parentNode.insertBefore(panel, root.nextSibling);
+    document.getElementById('acct-back').addEventListener('click', () => settingsPop());
+    /* Swipe-back: the shared handler only knows its fixed panel list, so handle this panel first */
+    let sx = null, sy = null;
+    document.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { capture: true, passive: true });
+    document.addEventListener('touchend', e => {
+      if (sx === null || !panel.classList.contains('open')) { sx = null; return; }
+      const dx = e.changedTouches[0].clientX - sx, dy = Math.abs(e.changedTouches[0].clientY - sy);
+      const edge = sx <= 20; sx = null;
+      if (edge && dx >= 60 && dy <= 40) { e.stopImmediatePropagation(); settingsPop(); }
+    }, { capture: true });
+    getSyncUser().then(u => { _acctUser = u; _acctUpdateRowSubtitle(); });
+    onSyncAuthChange(u => { _acctUser = u; _acctUpdateRowSubtitle(); if (panel.classList.contains('open') && !_acctBusy) renderAccountScreen(); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _acctInit); else _acctInit();

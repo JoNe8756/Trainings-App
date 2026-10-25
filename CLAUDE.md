@@ -20,6 +20,7 @@ See ARCHITECTURE.md for full detail. Summary:
 - summary.js — Summary tab rendering
 - xp.js — XP & Levels detail screen (opened from Summary XP card)
 - badges.js — badge definitions, earned state (badgeData), Badges screen
+- sync.js — Supabase client, auth helpers, (later) sync. Keys starting with "sb-" are auth session keys, excluded from backups. NEVER add the secret/service_role key.
 - settings.js — all Settings screens, data import/export
 
 ## Working Conventions
