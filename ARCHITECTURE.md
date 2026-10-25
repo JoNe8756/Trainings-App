@@ -45,6 +45,15 @@ handling.
 Edit this file for: exercise library, training plans, journey
 generation and display.
 
+### stack.js
+Reusable iOS-notification-style card stack: `createCardStack(containerEl, cards, stackKey)` (transform-based collapse/expand, state kept in memory per key) and `bindCardStackHeader`. Used for Summary Journeys and Goals.
+
+### summary.js
+Summary tab rendering (layout markup, XP card, goals, highlights, active journeys, last training).
+
+### xp.js
+XP & Levels detail screen (opened by tapping the Summary XP card): milestones, streak, XP by source, XP rules. Reads XP_RULES and helpers from app.js.
+
 ### settings.js
 All settings screens.
 Contains: Personal Info, Training Goals, Workout Setup, Preferences,

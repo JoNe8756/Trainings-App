@@ -16,6 +16,9 @@ See ARCHITECTURE.md for full detail. Summary:
 - progress.js — Progress tab, chart drawing, data aggregation
 - history.js — History tab, workout detail, exercise trend modal
 - library.js — exercises, training plans, journeys, Gemini API
+- stack.js — reusable iOS-notification-style card stack (Journeys, Goals)
+- summary.js — Summary tab rendering
+- xp.js — XP & Levels detail screen (opened from Summary XP card)
 - settings.js — all Settings screens, data import/export
 
 ## Working Conventions

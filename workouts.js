@@ -1368,10 +1368,10 @@
 
     /* XP: +20 for finishing, +15 per new PR, then weekly goal / streak bonuses */
     if (typeof addXP === 'function') {
-      addXP(20, 'workout');
+      addXP(XP_RULES.workout, 'workout');
       let _prCount = 0;
       try { _prCount = (typeof findNewPRs === 'function' ? findNewPRs() : []).length; } catch (e) {}
-      for (let i = 0; i < _prCount; i++) addXP(15, 'pr');
+      for (let i = 0; i < _prCount; i++) addXP(XP_RULES.pr, 'pr');
       if (typeof checkWeeklyBonuses === 'function') checkWeeklyBonuses();
     }
 
@@ -2272,7 +2272,7 @@
           const token = rec.wi + '-' + rec.si;
           if (!j.completedSessions.includes(token)) {
             j.completedSessions.push(token);
-            if (typeof addXP === 'function') addXP(35, 'journey_session');
+            if (typeof addXP === 'function') addXP(XP_RULES.journeySession, 'journey_session');
           }
           j.completedDates = j.completedDates || {};
           j.completedDates[token] = new Date().toISOString();
@@ -2339,7 +2339,7 @@
     if (!j.completedSessions.includes(token)) {
       j.completedSessions.push(token);
       _persistJourneys();
-      if (typeof addXP === 'function') addXP(35, 'journey_session');
+      if (typeof addXP === 'function') addXP(XP_RULES.journeySession, 'journey_session');
     }
   }
 

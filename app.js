@@ -19,13 +19,13 @@
   let _sessionRestEnabled = null; /* null = follow global setting; true/false = session override */
 
   /* ── XP & level system ──────────────────────────────────── */
-  /* localStorage "xpData": { totalXP, lastStreakWeek, streakWeeks, xpLog[], lastWeeklyGoalWeek } */
+  /* localStorage "xpData": { totalXP, lastStreakWeek, streakWeeks, xpLog[], lastWeeklyGoalWeek, xpBySource{} } */
   let xpData = (function () {
     try {
       const d = JSON.parse(localStorage.getItem('xpData'));
       if (d && typeof d === 'object') return d;
     } catch (e) {}
-    return { totalXP: 0, lastStreakWeek: null, streakWeeks: 0, xpLog: [], lastWeeklyGoalWeek: null };
+    return { totalXP: 0, lastStreakWeek: null, streakWeeks: 0, xpLog: [], lastWeeklyGoalWeek: null, xpBySource: { workout: 0, journey_session: 0, pr: 0, weekly_goal: 0, streak: 0 } };
   })();
 
   // === SEGMENTED CONTROL PILL ===
@@ -429,6 +429,10 @@
 
   const XP_LEVEL_CAP = 50;
 
+  /* Single source of truth for every XP amount (also read by the XP detail screen). */
+  const XP_RULES = { workout: 20, journeySession: 35, pr: 15, weeklyGoal: 50, streakPerWeek: 5, streakCap: 50 };
+  const _XP_SOURCES = ['workout', 'journey_session', 'pr', 'weekly_goal', 'streak'];
+
   /* Cumulative total XP required to REACH each level (index = level, 1..50).
      Level 1 = 0 XP, Level 2 = 100 XP. Each step costs 13% more than the previous,
      rounded to the nearest 10. */
@@ -441,6 +445,23 @@
     return thr;
   })();
 
+  /* Running XP total per source. If missing, rebuild from the (capped) xpLog. */
+  function _xpSourcesFrom(d) {
+    const out = {};
+    _XP_SOURCES.forEach(k => { out[k] = 0; });
+    if (d && d.xpBySource && typeof d.xpBySource === 'object') {
+      _XP_SOURCES.forEach(k => { out[k] = Number(d.xpBySource[k]) || 0; });
+    } else if (d && Array.isArray(d.xpLog)) {
+      d.xpLog.forEach(e => { if (e && e.reason in out) out[e.reason] += Number(e.amount) || 0; });
+    }
+    return out;
+  }
+
+  /* Cumulative total XP required to reach `level` (uses the same curve as above). */
+  function getXPForLevel(level) {
+    return _XP_THRESHOLDS[Math.max(1, Math.min(XP_LEVEL_CAP, level))];
+  }
+
   function _xpNormalize(d) {
     return {
       totalXP:            (d && d.totalXP)                  || 0,
@@ -448,6 +469,7 @@
       streakWeeks:        (d && d.streakWeeks)              || 0,
       xpLog:              (d && Array.isArray(d.xpLog)) ? d.xpLog : [],
       lastWeeklyGoalWeek: (d && d.lastWeeklyGoalWeek)       ?? null,
+      xpBySource:         _xpSourcesFrom(d),
     };
   }
 
@@ -481,6 +503,7 @@
     const d = _xpNormalize(xpData);
     const before = _levelForXP(d.totalXP);
     d.totalXP += amount;
+    if (d.xpBySource && (reason in d.xpBySource)) d.xpBySource[reason] += amount;
     d.xpLog.push({ date: new Date().toISOString(), amount, reason: reason || 'misc' });
     if (d.xpLog.length > 200) d.xpLog = d.xpLog.slice(d.xpLog.length - 200);  /* keep newest 200 */
     _saveXPData(d);
@@ -544,7 +567,7 @@
         const d = _xpNormalize(xpData);
         d.lastWeeklyGoalWeek = thisWeek;
         _saveXPData(d);                 /* mark first so addXP preserves it */
-        addXP(50, 'weekly_goal');
+        addXP(XP_RULES.weeklyGoal, 'weekly_goal');
         awarded = true;
       }
     }
@@ -560,71 +583,19 @@
       const d = _xpNormalize(xpData);
       d.lastStreakWeek = thisWeek;
       _saveXPData(d);                   /* mark first so addXP preserves it */
-      addXP(Math.min(5 * streak, 50), 'streak');
+      addXP(Math.min(XP_RULES.streakPerWeek * streak, XP_RULES.streakCap), 'streak');
       awarded = true;
     }
     return awarded;
   }
 
-  // === XP CARD ===
-  /* Renders the XP/Level card on the Summary tab, directly below the greeting
-     header and above the GOALS section. Reuses the .goal-card styles so it
-     matches the goals cards, with a purple accent bar to distinguish it. */
-  function renderXPCard() {
-    const label = document.getElementById('goals-section-label');
-    if (!label || !label.parentNode) return;           /* Summary DOM not ready */
-
-    let card = document.getElementById('xp-card');
-    if (!card) {
-      card = document.createElement('div');
-      card.id = 'xp-card';
-      card.style.margin = '0.5rem var(--gutter) 0';     /* same gutters as #goals-section */
-      label.parentNode.insertBefore(card, label);       /* above GOALS */
-    }
-
-    const info = getLevelInfo();
-    const XP_ACCENT = '#BF5AF2';                         /* purple — distinct from blue/green goal bars */
-
-    let body;
-    if (info.isMaxLevel) {
-      body = `<div class="goal-card-msg" style="color:${XP_ACCENT};font-weight:600">MAX LEVEL — Legend</div>`;
-    } else {
-      const pct       = info.xpForNextLevel > 0 ? Math.min(100, Math.round(info.currentLevelXP / info.xpForNextLevel * 100)) : 0;
-      const remaining = Math.max(0, info.xpForNextLevel - info.currentLevelXP);
-      body =
-        `<div class="goal-card-bar-track"><div class="goal-card-bar-fill" style="width:${pct}%;background:${XP_ACCENT}"></div></div>` +
-        `<div class="goal-card-msg">${remaining} XP to Level ${info.level + 1}</div>`;
-    }
-
-    card.innerHTML =
-      `<div class="goal-card">
-        <div class="goal-card-values" style="display:flex;align-items:baseline;justify-content:space-between;gap:.5rem">
-          <span>Level ${info.level} — ${info.label}</span>
-          <span class="goal-target" style="font-size:.8125rem">${info.totalXP} XP</span>
-        </div>
-        ${body}
-      </div>`;
+  /* Display-only streak state: a stored streak is stale if lastStreakWeek is older than last calendar week. */
+  function getStreakStatus() {
+    const xd = _xpNormalize(xpData);
+    const prev = new Date(); prev.setDate(prev.getDate() - 7);
+    const active = xd.streakWeeks > 0 && !!xd.lastStreakWeek && xd.lastStreakWeek >= _xpWeekKey(prev);
+    return { active, weeks: active ? xd.streakWeeks : 0, trainedThisWeek: active && xd.lastStreakWeek === _xpWeekKey(new Date()) };
   }
-
-  /* Wire the card into the Summary render pipeline. renderGoalsSection() runs
-     whenever Summary is shown and after each workout, so patch it to refresh
-     the XP card too, and render once on load. */
-  (function _initXPCard() {
-    function wire() {
-      if (typeof renderGoalsSection === 'function' && !renderGoalsSection._xpWrapped) {
-        const _orig = renderGoalsSection;
-        renderGoalsSection = function () {
-          const r = _orig.apply(this, arguments);
-          try { renderXPCard(); } catch (e) {}
-          return r;
-        };
-        renderGoalsSection._xpWrapped = true;
-      }
-      try { renderXPCard(); } catch (e) {}
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
-    else wire();
-  })();
 
   // === XP BREAKDOWN ===
   /* Renders the "XP Earned" breakdown on the post-workout summary, below the
