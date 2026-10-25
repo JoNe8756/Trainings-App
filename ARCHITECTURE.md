@@ -66,12 +66,21 @@ Edit this file for: any settings screen issues.
 ## Key Data Structures (localStorage)
 
 - `workouts` — array of all workout sessions
-- `exercises` — array of all exercises with difficulty ratings
-- `trainingPlans` — array of training plans
+- `plans` — array of training plans
+- `exLib` / `customExMeta` — exercise library and custom exercise metadata
+- `xpData` — XP, level, streak and per-source totals
+- `badgeData` — earned badge timestamps and seeded flag
+- `freqGoal` / `volumeGoal` / `exerciseGoal` — training goals
+- `userBW` / `userHeight` — body weight and height
+- `warmup*` / `killerSet*` — warmup and Killer Set routines, times, history
+- `restTimerEnabled` / `breakTimerMode` / `ghostMode` — workout preferences
+- `restPerf:<exerciseName>` — per-exercise rest-timer performance points
 - `trainingJourneys` — array of AI-generated journeys
 - `geminiApiKey` — Gemini API key for journey generation
-- `userSettings` — user preferences and personal info
-- `personalRecords` — personal bests per exercise
+
+Export and import are category-based via `EXPORT_CATEGORIES` in settings.js (every new localStorage key must be added to a category; unmapped keys default to settings). They cover all keys except `_TRANSIENT_KEYS`
+(active workout state and backup-tracking keys). Export format v3 is a full
+replace on import; v1/v2 files merge. `geminiApiKey` is exported only if opted in.
 
 ## Key Rules
 - Always edit the specific file listed above — never edit index.html

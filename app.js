@@ -26,7 +26,16 @@
       const d = JSON.parse(localStorage.getItem('xpData'));
       if (d && typeof d === 'object') return d;
     } catch (e) {}
-    return { totalXP: 0, lastStreakWeek: null, streakWeeks: 0, xpLog: [], lastWeeklyGoalWeek: null, xpBySource: { workout: 0, journey_session: 0, pr: 0, weekly_goal: 0, streak: 0 } };
+    return { totalXP: 0, lastStreakWeek: null, streakWeeks: 0, xpLog: [], lastWeeklyGoalWeek: null, xpBySource: { workout: 0, journey_session: 0, pr: 0, weekly_goal: 0, streak: 0, badges: 0 } };
+  })();
+
+  // === STORAGE PERSISTENCE REQUEST ===
+  /* Once per app start: ask the browser to protect localStorage from eviction; result shown in Data Management. */
+  (function _requestPersistentStorage() {
+    if (!(navigator.storage && navigator.storage.persist && navigator.storage.persisted)) return;
+    navigator.storage.persisted().then(p => p ? true : navigator.storage.persist())
+      .then(ok => localStorage.setItem('storagePersisted', String(!!ok)))
+      .catch(() => {});
   })();
 
   // === SEGMENTED CONTROL PILL ===
@@ -432,7 +441,9 @@
 
   /* Single source of truth for every XP amount (also read by the XP detail screen). */
   const XP_RULES = { workout: 20, journeySession: 35, pr: 15, weeklyGoal: 50, streakPerWeek: 5, streakCap: 50 };
-  const _XP_SOURCES = ['workout', 'journey_session', 'pr', 'weekly_goal', 'streak'];
+  // === BADGE XP ===
+  const BADGE_XP = { bronze: 5, silver: 15, gold: 40 };
+  const _XP_SOURCES = ['workout', 'journey_session', 'pr', 'weekly_goal', 'streak', 'badges'];
 
   /* Cumulative total XP required to REACH each level (index = level, 1..50).
      Level 1 = 0 XP, Level 2 = 100 XP. Each step costs 13% more than the previous,
@@ -498,14 +509,14 @@
   }
 
   /* The single entry point for every XP award. Returns true if a level-up occurred. */
-  function addXP(amount, reason) {
+  function addXP(amount, reason, label) {
     amount = Math.round(Number(amount) || 0);
     if (amount <= 0) return false;
     const d = _xpNormalize(xpData);
     const before = _levelForXP(d.totalXP);
     d.totalXP += amount;
     if (d.xpBySource && (reason in d.xpBySource)) d.xpBySource[reason] += amount;
-    d.xpLog.push({ date: new Date().toISOString(), amount, reason: reason || 'misc' });
+    d.xpLog.push({ date: new Date().toISOString(), amount, reason: reason || 'misc', ...(label && { label }) });
     if (d.xpLog.length > 200) d.xpLog = d.xpLog.slice(d.xpLog.length - 200);  /* keep newest 200 */
     _saveXPData(d);
     return _levelForXP(d.totalXP) > before;
@@ -611,12 +622,13 @@
       box = document.createElement('div');
       box.id = 'pw-xp-breakdown';
       box.style.cssText = 'width:100%;margin-top:10px;';
-      host.parentNode.insertBefore(box, host.nextSibling);   /* directly below the stats */
+      const anchor = document.getElementById('pw-badges') || host;
+      host.parentNode.insertBefore(box, anchor.nextSibling);   /* below the stats (and the Badges earned block) */
     }
 
     if (!entries || !entries.length) { box.innerHTML = ''; return; }
 
-    let workoutXP = 0, prCount = 0, prXP = 0, weeklyXP = 0, streakXP = 0, otherXP = 0;
+    let workoutXP = 0, prCount = 0, prXP = 0, weeklyXP = 0, streakXP = 0, badgeXP = 0, otherXP = 0;
     const journeyRows = [];
     entries.forEach(e => {
       if      (e.reason === 'workout')      workoutXP += e.amount;
@@ -624,6 +636,7 @@
       else if (e.reason === 'pr')         { prCount++; prXP += e.amount; }
       else if (e.reason === 'weekly_goal')  weeklyXP += e.amount;
       else if (e.reason === 'streak')       streakXP += e.amount;
+      else if (e.reason === 'badges')       badgeXP += e.amount;
       else                                  otherXP += e.amount || 0;
     });
     const total = entries.reduce((s, e) => s + (e.amount || 0), 0);
@@ -635,6 +648,7 @@
     else if (prCount > 1) rows.push([prCount + ' Personal records', prXP]);
     if (weeklyXP)       rows.push(['Weekly goal reached', weeklyXP]);
     if (streakXP)       rows.push([(getXPData().streakWeeks || 0) + ' week streak', streakXP]);
+    if (badgeXP)        rows.push(['Badges', badgeXP]);
     if (otherXP)        rows.push(['Other XP', otherXP]);
 
     const line = (label, amt, bold) =>

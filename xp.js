@@ -13,7 +13,7 @@
   ];
   const _XP_SOURCES_UI = [
     ['workout', 'Workouts', '#0A84FF'], ['journey_session', 'Journey sessions', '#BF5AF2'], ['pr', 'Personal records', '#FFD60A'],
-    ['weekly_goal', 'Weekly goals', '#30D158'], ['streak', 'Streak bonuses', '#FF9F0A'],
+    ['weekly_goal', 'Weekly goals', '#30D158'], ['streak', 'Streak bonuses', '#FF9F0A'], ['badges', 'Badges', '#FF453A'],
   ];
   let _xpDetailHidden = null;
 
@@ -166,6 +166,7 @@
       row('Personal record', `+${XP_RULES.pr}`) +
       row('Weekly goal', `+${XP_RULES.weeklyGoal}`) +
       row('Streak bonus', `+${XP_RULES.streakPerWeek} per week (max +${XP_RULES.streakCap})`) +
+      row('Badge earned', `${BADGE_XP.bronze} / ${BADGE_XP.silver} / ${BADGE_XP.gold} XP`) +
       '<div class="xp-tip-note">Manually completed journey sessions give no XP</div>';
   }
 

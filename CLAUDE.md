@@ -46,9 +46,13 @@ bottom nav with sliding pill highlight (shared .segment-pill
 pattern used across all segmented controls in the app).
 
 ## Data Keys (localStorage)
-workouts, exercises, trainingPlans, trainingJourneys, userSettings,
-personalRecords, geminiApiKey, xpData. See ARCHITECTURE.md for
-full schema detail.
+workouts, plans, exLib, customExMeta, trainingJourneys, xpData,
+badgeData, freqGoal, volumeGoal, exerciseGoal, userBW, userHeight,
+geminiApiKey, warmup*, killerSet*, restTimerEnabled, breakTimerMode,
+ghostMode, restPerf:<exerciseName>. Export/import work on all keys
+except _TRANSIENT_KEYS in settings.js; they are category-based via
+EXPORT_CATEGORIES in settings.js (add every new key there; unmapped
+keys default to settings). See ARCHITECTURE.md.
 
 ## Git Workflow
 After any confirmed working change: git add . → git commit -m

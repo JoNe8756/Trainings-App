@@ -486,6 +486,41 @@
     }
   }
 
+  // === BACKUP BANNER ===
+  /* Reminder card above the XP hero. Uses _backupStatus() / exportData() from settings.js. */
+  function renderBackupBanner() {
+    const xp = document.getElementById('xp-card');
+    if (!xp) return;
+    let box = document.getElementById('backup-banner');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'backup-banner';
+      xp.parentNode.insertBefore(box, xp);
+    }
+    box.innerHTML = '';
+    if (typeof _backupStatus !== 'function') return;
+    const st = _backupStatus();
+    if (Date.now() < (Number(localStorage.getItem('backupBannerSnoozeUntil')) || 0)) return;
+    const due = st.at
+      ? (st.since >= 10 || (st.days >= 14 && st.since >= 1))
+      : st.total >= 5;
+    if (!due) return;
+    const sub = st.at
+      ? `Last backup ${_backupAgoText(st.days)} · ${st.since} new training${st.since === 1 ? '' : 's'}`
+      : 'No backup yet';
+    box.innerHTML = `<div class="sum-backup"><span class="sum-backup-ic">⚠️</span>
+      <div class="sum-backup-txt"><div class="sum-backup-t">Back up your data</div><div class="sum-backup-s"></div></div>
+      <button class="sum-backup-btn" type="button">Back up</button>
+      <button class="sum-backup-x" type="button" aria-label="Dismiss">✕</button></div>`;
+    box.querySelector('.sum-backup-s').textContent = sub;
+    box.querySelector('.sum-backup-btn').addEventListener('click', () => exportData());
+    box.querySelector('.sum-backup-x').addEventListener('click', () => {
+      localStorage.setItem('backupBannerSnoozeUntil', String(Date.now() + 3 * 86400000));
+      renderBackupBanner();
+    });
+  }
+  window.addEventListener('load', () => { try { renderBackupBanner(); } catch (e) {} });
+
   // === XP CARD ===
   /* Renders the XP/Level card on the Summary tab, directly below the greeting
      header and above the GOALS section. Reuses the .goal-card styles so it
@@ -552,6 +587,7 @@
         const _orig = renderGoalsSection;
         renderGoalsSection = function () {
           const r = _orig.apply(this, arguments);
+          try { renderBackupBanner(); } catch (e) {}
           try { renderXPCard(); } catch (e) {}
           return r;
         };

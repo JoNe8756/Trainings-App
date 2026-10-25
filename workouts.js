@@ -1375,6 +1375,11 @@
       if (typeof checkWeeklyBonuses === 'function') checkWeeklyBonuses();
     }
 
+    // === BADGE AWARDS ON FINISH ===
+    /* once per finished workout, after all other XP (incl. journey sessions logged above) */
+    _pwNewBadges = [];
+    try { if (typeof awardBadges === 'function') _pwNewBadges = awardBadges(); } catch (e) {}
+
     /* clear workout state */
     _workoutActive   = false;
     activePlanData   = null;
@@ -1392,6 +1397,7 @@
   }
 
   // === POST-WORKOUT SUMMARY ===
+  let _pwNewBadges = [];   /* badges earned by the workout being finished; consumed by _showPostWorkout */
   function _showPostWorkout(w) {
     const mins = Math.floor(w.duration / 60), secs = w.duration % 60;
     const durStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
@@ -1428,6 +1434,23 @@
       stat('🏋️', 'Exercises',   exCount) +
       stat('📋', 'Sets',         setCount) +
       stat('⚖️', 'Total Volume', volStr);
+
+    // === POST-WORKOUT BADGES BLOCK ===
+    const _pwBadges = _pwNewBadges; _pwNewBadges = [];
+    let bBox = document.getElementById('pw-badges');
+    if (!bBox) {
+      bBox = document.createElement('div');
+      bBox.id = 'pw-badges';
+      bBox.className = 'pw-badges';
+      const statsEl = document.getElementById('pw-stats');
+      statsEl.parentNode.insertBefore(bBox, statsEl.nextSibling);
+    }
+    bBox.innerHTML = _pwBadges.length
+      ? `<div class="pw-badges-title">Badges earned</div>` + _pwBadges.map(b =>
+        `<div class="pw-badge-row"><span class="bdg-ring pw-badge-ring" style="--tc:${_BADGE_TIER_COLOR[b.tier]}"><span class="bdg-emoji">${b.emoji}</span></span><span class="pw-badge-name"></span><span class="pw-badge-xp">+${BADGE_XP[b.tier]} XP</span></div>`).join('')
+      : '';
+    bBox.querySelectorAll('.pw-badge-name').forEach((el, i) => { el.textContent = _pwBadges[i].name; });
+    bBox.style.display = _pwBadges.length ? '' : 'none';
 
     /* highlights */
     const prs     = findNewPRs ? findNewPRs()              : [];

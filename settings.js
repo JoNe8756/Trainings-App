@@ -185,31 +185,184 @@
     'activeWorkoutExerciseIndex',
     'activeRest',
     'pwLastMsgIdx',
+    'lastBackupAt',
+    'lastBackupTrainingCount',
+    'backupBannerSnoozeUntil',
+    'storagePersisted',
   ]);
 
+  // === EXPORT CATEGORIES ===
+  /* Export/import are category-based. Every new localStorage key must be added to a category here;
+     unmapped keys default to "settings" so they are never lost. */
+  const EXPORT_CATEGORIES = [
+    { id: 'history',  label: 'Training history',    keys: ['workouts', 'killerSetHistory', 'warmupStrengthTimes'], prefixes: ['restPerf:'] },
+    { id: 'plans',    label: 'Training plans',      keys: ['plans'], prefixes: [] },
+    { id: 'library',  label: 'Exercise library',    keys: ['exLib', 'customExMeta'], prefixes: [] },
+    { id: 'journeys', label: 'Journeys & progress', keys: ['trainingJourneys'], prefixes: [] },
+    { id: 'xp',       label: 'XP & badges',         keys: ['xpData', 'badgeData'], prefixes: [] },
+    { id: 'settings', label: 'Settings & goals',    keys: ['freqGoal', 'volumeGoal', 'exerciseGoal', 'userBW', 'userHeight', 'warmupGeneralRoutine', 'warmupStrengthRoutine',
+      'warmupGeneralEnabled', 'warmupStrengthEnabled', 'startWithWarmup', 'killerSetRoutine', 'restTimerEnabled', 'breakTimerMode', 'ghostMode',
+      'exLibExpand1', 'histFolderState', 'progCatCollapsed', 'progressRange', 'chartTapHintDone'], prefixes: [] },
+  ];
+
+  /* Category id for a key, or null for transient keys and geminiApiKey. */
+  function getCategoryForKey(key) {
+    if (!key || _TRANSIENT_KEYS.has(key) || key === 'geminiApiKey') return null;
+    const c = EXPORT_CATEGORIES.find(c => c.keys.includes(key) || c.prefixes.some(p => key.startsWith(p)));
+    return c ? c.id : 'settings';
+  }
+
+  // === BACKUP STATUS ===
+  /* Backup tracking keys are in _TRANSIENT_KEYS, so they are never exported and import leaves them untouched.
+     Trainings are counted from the global `workouts` array (localStorage key "workouts"). */
+  function _backupStatus() {
+    const at = Number(localStorage.getItem('lastBackupAt')) || 0;
+    const base = Number(localStorage.getItem('lastBackupTrainingCount')) || 0;
+    const total = (typeof workouts !== 'undefined' && Array.isArray(workouts)) ? workouts.length : 0;
+    const days = at ? Math.floor((Date.now() - at) / 86400000) : null;
+    return { at, total, since: at ? Math.max(0, total - base) : total, days };
+  }
+
+  function _backupAgoText(days) {
+    if (days === null) return 'Never';
+    if (days <= 0) return 'today';
+    return days === 1 ? 'yesterday' : days + ' days ago';
+  }
+
+  function _recordBackup(partial) {
+    if (partial) { _renderBackupRows(); return; }   /* partial export: leave tracking untouched */
+    localStorage.setItem('lastBackupAt', String(Date.now()));
+    localStorage.setItem('lastBackupTrainingCount', String((typeof workouts !== 'undefined' && Array.isArray(workouts)) ? workouts.length : 0));
+    localStorage.removeItem('backupBannerSnoozeUntil');
+    _renderBackupRows();
+    if (typeof renderBackupBanner === 'function') renderBackupBanner();
+  }
+
+  // === EXPORT CARD STATE ===
+  /* Selection is not persisted: reset to all categories ticked, Gemini key unticked, each time the screen opens. */
+  let _expSel = new Set(EXPORT_CATEGORIES.map(c => c.id));
+  let _expGemini = false;
+
+  function _expCount(id) {
+    const n = (v, one, many) => v + ' ' + (v === 1 ? one : many);
+    try {
+      if (id === 'history' && typeof workouts !== 'undefined') return n(workouts.length, 'training', 'trainings');
+      if (id === 'plans' && typeof plans !== 'undefined') return n(plans.length, 'plan', 'plans');
+      if (id === 'journeys' && typeof _journeys !== 'undefined') return n(_journeys.length, 'journey', 'journeys');
+    } catch (e) {}
+    return '';
+  }
+
+  function _renderExportCard() {
+    const host = document.getElementById('exp-cats');
+    if (!host) return;
+    const tick = on => `<span class="exp-tick${on ? ' on' : ''}"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5,6.5 5,9 9.5,3.5"/></svg></span>`;
+    host.innerHTML = EXPORT_CATEGORIES.map(c => `<div class="exp-row" data-cat="${c.id}">${tick(_expSel.has(c.id))}<span class="exp-lbl"></span><span class="exp-cnt"></span></div>`).join('') +
+      `<div class="exp-sep"></div><div class="exp-row" data-gemini="1">${tick(_expGemini)}<span class="exp-lbl">Include Gemini API key</span></div>
+       <div class="exp-note">Off by default. Leave it off if you save or send the backup anywhere you don't fully control.</div>`;
+    host.querySelectorAll('.exp-row[data-cat]').forEach((row, i) => {
+      row.querySelector('.exp-lbl').textContent = EXPORT_CATEGORIES[i].label;
+      row.querySelector('.exp-cnt').textContent = _expCount(EXPORT_CATEGORIES[i].id);
+      row.addEventListener('click', () => {
+        const id = row.dataset.cat;
+        if (_expSel.has(id)) _expSel.delete(id); else _expSel.add(id);
+        _renderExportCard();
+      });
+    });
+    host.querySelector('.exp-row[data-gemini]').addEventListener('click', () => { _expGemini = !_expGemini; _renderExportCard(); });
+    const btn = document.getElementById('exp-btn');
+    if (btn) { btn.disabled = _expSel.size === 0; btn.classList.toggle('disabled', _expSel.size === 0); }
+  }
+
   function exportData() {
-    /* Build the backup from EVERY localStorage key the app writes, minus transient state */
-    const data = {};
+    if (!_expSel.size) return;
+    const cats = EXPORT_CATEGORIES.map(c => c.id).filter(id => _expSel.has(id));
+    const data = {}, counts = {};
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (!key || _TRANSIENT_KEYS.has(key)) continue;
+      if (key === 'geminiApiKey') { if (_expGemini) data[key] = localStorage.getItem(key); continue; }
+      const cat = getCategoryForKey(key);
+      if (!_expSel.has(cat)) continue;
       data[key] = localStorage.getItem(key);   /* raw string value, restored verbatim */
+      counts[cat] = (counts[cat] || 0) + 1;
     }
+    const includesGeminiKey = 'geminiApiKey' in data;
+    const allSix = cats.length === EXPORT_CATEGORIES.length;
     const payload = {
-      exportVersion: 2,
+      exportVersion: 3,
       exportedAt:    new Date().toISOString(),
+      categories:    cats,
+      includesGeminiKey,
+      counts,
       data,
     };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
     const date = new Date().toISOString().slice(0, 10);
-    a.href     = url;
-    a.download = `workout-backup-${date}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('Data exported ✓');
+    const text = JSON.stringify(payload, null, 2);
+    const fileName = `trainings-app-backup-${date}.json`;
+    const download = () => {
+      const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      const a   = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+      _recordBackup(!allSix);
+      showToast('Data exported ✓');
+    };
+    let file = null;
+    try { file = new File([text], fileName, { type: 'application/json' }); } catch (e) {}
+    /* share must be called synchronously inside the tap handler to keep the user gesture */
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: 'Trainings App backup' })
+        .then(() => { _recordBackup(!allSix); showToast('Data exported ✓'); })
+        .catch(err => { if (err && err.name === 'AbortError') return; download(); });
+    } else {
+      download();
+    }
   }
+
+  // === DATA MANAGEMENT ROWS ===
+  /* Last backup + storage protection rows, injected into the Data Management screen (refreshed on open and after each export). */
+  function _renderBackupRows() {
+    const body = document.querySelector('#settings-data .settings-body');
+    if (!body) return;
+    let box = document.getElementById('dm-backup-status');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'dm-backup-status';
+      body.insertBefore(box, body.firstChild);
+    }
+    const st = _backupStatus();
+    const persisted = localStorage.getItem('storagePersisted') === 'true';
+    box.innerHTML = `<div class="settings-section-header">Backup status</div>
+      <div class="settings-card">
+        <div class="settings-row dm-status-row"><span class="dm-status-lbl">Last backup</span>
+          <span class="dm-status-val"><span id="dm-last-backup"></span><span class="dm-status-sub" id="dm-since"></span></span></div>
+        <div class="settings-row dm-status-row"><span class="dm-status-lbl">Storage protection</span>
+          <span class="dm-status-val dm-status-muted" id="dm-persist"></span></div>
+      </div>
+      <div class="dm-status-note">Backups are the only safe copy of your data.</div>`;
+    document.getElementById('dm-last-backup').textContent = st.at ? _backupAgoText(st.days) : 'Never';
+    const since = document.getElementById('dm-since');
+    since.textContent = st.since + (st.since === 1 ? ' training since' : ' trainings since');
+    document.getElementById('dm-persist').textContent = persisted ? 'On' : 'Not guaranteed';
+  }
+
+  (function _initBackupRows() {
+    if (typeof settingsPush === 'function' && !settingsPush._dmWrapped) {
+      const _orig = settingsPush;
+      settingsPush = function (id) {
+        if (id === 'settings-data') {
+          _expSel = new Set(EXPORT_CATEGORIES.map(c => c.id)); _expGemini = false;
+          _renderBackupRows();
+          _renderExportCard();
+        }
+        return _orig.apply(this, arguments);
+      };
+      settingsPush._dmWrapped = true;
+    }
+  })();
 
   function triggerImport() {
     document.getElementById('import-file-input').value = '';
@@ -227,9 +380,36 @@
 
       let restored = 0;
 
-      if (payload.exportVersion >= 2 && payload.data && typeof payload.data === 'object') {
-        /* v2+: map of raw string values — restore every key present, skip absent ones */
-        if (!confirm('Import this backup?\n\nKeys in the file overwrite existing data; keys not in the file stay untouched.\n\nProceed?')) return;
+      if (payload && payload.exportVersion >= 3) {
+        // === IMPORT V3 REPLACE ===
+        /* (a) validate and build pairs in memory, (b) confirm, (c) only then replace the categories listed in the file */
+        if (!payload.data || typeof payload.data !== 'object' || Array.isArray(payload.data)) { showToast('Invalid backup file'); return; }
+        const allIds = EXPORT_CATEGORIES.map(c => c.id);
+        let fileCats = allIds;
+        if (payload.categories !== undefined) {
+          if (!Array.isArray(payload.categories) || payload.categories.some(c => !allIds.includes(c))) { showToast('Invalid backup file'); return; }
+          fileCats = payload.categories;
+        }
+        const pairs = [];
+        for (const key of Object.keys(payload.data)) {
+          if (_TRANSIENT_KEYS.has(key)) continue;
+          const val = payload.data[key];
+          if (val === undefined || val === null) continue;
+          if (typeof val !== 'string') { showToast('Invalid backup file'); return; }
+          if (key !== 'geminiApiKey' && !fileCats.includes(getCategoryForKey(key))) continue;
+          pairs.push([key, val]);
+        }
+        if (!pairs.length) { showToast('No data in file'); return; }
+        let nW = 0;
+        try { const w = JSON.parse(payload.data.workouts || '[]'); nW = Array.isArray(w) ? w.length : 0; } catch (err) { showToast('Invalid backup file'); return; }
+        const when = payload.exportedAt ? new Date(payload.exportedAt).toLocaleString() : 'unknown date';
+        const names = EXPORT_CATEGORIES.filter(c => fileCats.includes(c.id)).map(c => c.label).join(', ');
+        if (!confirm(`This replaces: ${names}. Everything else on this device stays as it is.\n\nBackup from ${when}\n${pairs.length} items, ${nW} training${nW === 1 ? '' : 's'}.\n\nProceed?`)) return;
+        Object.keys(localStorage).forEach(k => { if (fileCats.includes(getCategoryForKey(k))) localStorage.removeItem(k); });
+        pairs.forEach(([k, v]) => { localStorage.setItem(k, v); restored++; });
+      } else if (payload.exportVersion >= 2 && payload.data && typeof payload.data === 'object') {
+        /* v2: map of raw string values — restore every key present, skip absent ones */
+        if (!confirm('Import this backup?\n\nThis merges the backup into your current data. Keys in the file overwrite existing data; keys not in the file stay untouched.\n\nProceed?')) return;
         Object.keys(payload.data).forEach(key => {
           if (_TRANSIENT_KEYS.has(key)) return;
           const val = payload.data[key];
@@ -242,7 +422,7 @@
         const has = (k) => payload[k] !== undefined;
         const legacyPresent = ['workouts','plans','exLib','customExMeta','freqGoal','volumeGoal','exerciseGoal','userBW','userHeight'].some(has);
         if (!legacyPresent) { showToast('No recognisable data in file'); return; }
-        if (!confirm('Import this backup?\n\nKeys in the file overwrite existing data; keys not in the file stay untouched.\n\nProceed?')) return;
+        if (!confirm('Import this backup?\n\nThis merges the backup into your current data. Keys in the file overwrite existing data; keys not in the file stay untouched.\n\nProceed?')) return;
         const putJSON = (k) => { if (has(k)) { localStorage.setItem(k, JSON.stringify(payload[k])); restored++; } };
         const putRaw  = (k) => { if (has(k)) { localStorage.setItem(k, payload[k] ?? ''); restored++; } };
         putJSON('workouts'); putJSON('plans'); putJSON('exLib'); putJSON('customExMeta');

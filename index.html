@@ -793,24 +793,8 @@
     <div class="settings-card">
       <div class="settings-row" style="align-items:flex-start;padding:.75rem var(--gutter)">
         <div style="flex:1;display:flex;flex-direction:column;gap:.5rem">
-          <div style="font-size:.8125rem;color:var(--tertiary);margin-bottom:.125rem">Select categories to include:</div>
-          <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer">
-            <input type="checkbox" id="exp-chk-history" checked style="width:1.125rem;height:1.125rem;accent-color:var(--blue)">
-            <span style="font-size:.9375rem;color:var(--label)">Training History</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer">
-            <input type="checkbox" id="exp-chk-plans" checked style="width:1.125rem;height:1.125rem;accent-color:var(--blue)">
-            <span style="font-size:.9375rem;color:var(--label)">Training Plans</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer">
-            <input type="checkbox" id="exp-chk-exlib" checked style="width:1.125rem;height:1.125rem;accent-color:var(--blue)">
-            <span style="font-size:.9375rem;color:var(--label)">Exercise Library</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:.625rem;cursor:pointer">
-            <input type="checkbox" id="exp-chk-settings" checked style="width:1.125rem;height:1.125rem;accent-color:var(--blue)">
-            <span style="font-size:.9375rem;color:var(--label)">Settings &amp; Goals</span>
-          </label>
-          <button class="btn-data-action" onclick="exportData()" style="margin-top:.5rem">
+          <div id="exp-cats" class="exp-cats"></div>
+          <button class="btn-data-action" id="exp-btn" onclick="exportData()" style="margin-top:.5rem">
             📤 Export Selected
           </button>
         </div>

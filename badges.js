@@ -129,8 +129,11 @@ function _loadBadgeData() {
   let d = null;
   try { d = JSON.parse(localStorage.getItem('badgeData')); } catch (e) {}
   if (!d || typeof d !== 'object' || !d.earned || typeof d.earned !== 'object') d = { earned: {}, seeded: false };
+  /* unknown ids (old format or removed badges) are silently ignored; seeded is never reset */
   const ids = new Set(BADGES.map(b => b.id));
-  if (Object.keys(d.earned).some(k => !ids.has(k))) { d = { earned: {}, seeded: false }; _saveBadgeData(d); }   /* old id format: reset */
+  const earned = {};
+  Object.keys(d.earned).forEach(k => { if (ids.has(k)) earned[k] = d.earned[k]; });
+  d.earned = earned;
   d.seeded = !!d.seeded;
   return d;
 }
@@ -149,6 +152,21 @@ function checkBadges() {
   d.seeded = true;
   _saveBadgeData(d);
   return fresh;
+}
+
+// === AWARD BADGES ===
+/* Runs checkBadges() up to 3 rounds (badge XP can unlock Level / XP badges), paying each new badge once. Returns all newly earned badges. */
+function awardBadges() {
+  const all = [];
+  for (let round = 0; round < 3; round++) {
+    const fresh = checkBadges();
+    if (!fresh.length) break;
+    fresh.forEach(b => {
+      addXP(BADGE_XP[b.tier] || 0, 'badges', 'Badge: ' + b.name);
+      all.push(b);
+    });
+  }
+  return all;
 }
 
 /* Read-only view: before the first checkBadges() run, qualified badges show as earned (timestamp 0). */
