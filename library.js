@@ -1006,6 +1006,8 @@
     const sessions = [];
     (journey.weeks || []).forEach((w, wi) => (w.sessions || []).forEach((s, si) => sessions.push({ wi, si, s })));
     sessions.forEach(({ wi, si, s }) => {
+      /* JOURNEY TEST SESSIONS: keep Gemini's goal exercise entry and order untouched */
+      if (s.isTest === true) return;
       if (has(s)) return;
       /* nearest other session (by position in journey order) that already has the goal exercise */
       const idx = sessions.findIndex(x => x.s === s);
@@ -1024,6 +1026,13 @@
         notes: 'Goal exercise'
       });
     });
+  }
+
+  // === JOURNEY TEST SESSIONS ===
+  function _testPillHTML(s) {
+    return (s && s.isTest === true)
+      ? ' <span style="display:inline-block;font-size:11px;font-weight:500;background:#2C2C2E;color:#8E8E93;border-radius:999px;padding:2px 8px;margin-left:4px;vertical-align:middle">🎯 Test</span>'
+      : '';
   }
 
   function _buildJourneyPrompt() {
@@ -1059,6 +1068,8 @@ COACHING INSTRUCTIONS:
 9. Session duration must be respected — calculate realistic sets, reps and rest periods that fit within ${duration} minutes
 10. Week 1 must be achievable at the user's current level — do not start too hard
 11. The goal exercise MUST appear in EVERY session of EVERY week, with sets/reps that progress toward the goal. Other exercises support it, but this exercise is never skipped.
+12. Include a TEST session to measure real progress on the goal. Place one test session in every 3rd week (weeks 3, 6, 9 ...) and one in the final week. A test session REPLACES one normal training day of that week, it is not an extra day. In a test session, the goal exercise comes first as 2-3 max-effort attempts (max reps, or longest hold in seconds), followed by only light supporting work, so the session stays short. Set the goal exercise target reps/seconds to the user's current personal record, and write in the notes: Test: give your best, record your max. (Test sessions are the exception to rule 11 only in that the goal exercise is performed as max-effort attempts.)
+13. Keep variety moderate. Use a core of about 5-6 exercises that repeat across most weeks, so progress can be measured. In addition, rotate 2-3 supporting exercises per week for variety. Across the whole journey, aim for roughly 10-14 different exercises in total, not a new set every week. Progress the core exercises through reps, sets or harder variations instead of replacing them. Each session should have about 5-7 exercises, fitting the session duration.
 
 RESPONSE FORMAT:
 Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation text before or after. Use this exact structure:
@@ -1075,6 +1086,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
           "day": "Monday",
           "planName": "Specific session name describing the focus",
           "duration": ${duration},
+          "isTest": false,
           "exercises": [
             {
               "name": "Exercise name from library",
@@ -1287,7 +1299,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
           return `<div class="journey-session-card" style="${cardStyle}${locked ? ';-webkit-user-select:none;user-select:none;-webkit-touch-callout:none' : ''}" ${tap}>
             <div style="display:flex;align-items:center;gap:8px">
               ${done ? '<span style="color:#34C759;font-weight:700">✓</span>' : ''}
-              <span style="flex:1;font-size:14px;font-weight:700;color:${done ? '#8E8E93' : '#fff'}">${_esc(s.day || ('Session ' + (si+1)))} · ${_esc(s.planName || '')}</span>
+              <span style="flex:1;font-size:14px;font-weight:700;color:${done ? '#8E8E93' : '#fff'}">${_esc(s.day || ('Session ' + (si+1)))} · ${_esc(s.planName || '')}${_testPillHTML(s)}</span>
             </div>
             <div style="font-size:12px;color:#8E8E93;margin-top:2px">${exCount} exercise${exCount!==1?'s':''}${durTxt}</div>
             ${revealHTML}
@@ -1296,7 +1308,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
         }).join('');
       } else {
         body = sess.map((s, si) =>
-          `<div style="padding:10px 0;font-size:14px;color:#fff;${si > 0 ? 'border-top:.5px solid #2C2C2E' : ''}">${_esc(s.day || ('Session ' + (si+1)))} · ${_esc(s.planName || '')}</div>`
+          `<div style="padding:10px 0;font-size:14px;color:#fff;${si > 0 ? 'border-top:.5px solid #2C2C2E' : ''}">${_esc(s.day || ('Session ' + (si+1)))} · ${_esc(s.planName || '')}${_testPillHTML(s)}</div>`
         ).join('');
       }
       const doneCount = sess.filter((_, si) => completed.includes(wi + '-' + si)).length;
