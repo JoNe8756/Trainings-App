@@ -730,6 +730,7 @@
       card.addEventListener('click', () => {
         if (decided && horizontal) return;
         if (isOpen()) { card.classList.remove('swiped'); card.style.transform = ''; return; }
+        journeyReturnTo = 'library';
         _openJourneyDetail(Number(card.getAttribute('data-journey-id')));
       });
     });
@@ -1464,6 +1465,15 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     if (expandWeekIdx != null) _journeyWeekOpen['dtw' + expandWeekIdx] = true;
     _renderJourneyDetail();
     document.getElementById('journey-detail').style.display = '';
+  }
+
+  // === JOURNEY DETAIL BACK ===
+  /* Single back handler for the journey detail screen; returns to the Summary tab when opened from there. */
+  function _journeyBack() {
+    const toSummary = journeyReturnTo === 'summary';
+    journeyReturnTo = 'library';
+    _closeJourneyDetail();
+    if (toSummary) showTab('home');
   }
 
   function _closeJourneyDetail() { _journeyReveal = false; _jLPCancel(); document.getElementById('journey-detail').style.display = 'none'; }

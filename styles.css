@@ -5118,3 +5118,49 @@
     .sum-last-plan { font-size: 15px; font-weight: 700; color: #0A84FF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sum-last-meta { font-size: 13px; color: #8E8E93; margin-top: 2px; }
     @media (prefers-reduced-motion: reduce) { .sum-pop { transition: none; } }
+
+    /* === BADGES STYLES === */
+    .xp-badges-row { display: flex; align-items: center; gap: 12px; width: 100%; border: none; color: #fff; font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 14px 16px; }
+    .xp-badges-ic { font-size: 22px; }
+    .xp-badges-lbl { flex: 1; font-size: 16px; font-weight: 600; }
+    .xp-badges-count { font-size: 14px; color: #8E8E93; }
+    .xp-badges-chev { font-size: 22px; color: #8E8E93; line-height: 1; }
+    #badges-body { padding: 8px var(--gutter) calc(env(safe-area-inset-bottom, 0px) + 2rem); color: #fff; font-variant-numeric: tabular-nums; }
+    .bdg-summary { text-align: center; font-size: 13px; color: #8E8E93; margin: 4px 0 8px; }
+    .bdg-title { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: #8E8E93; margin: 20px 4px 8px; }
+    .bdg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .bdg-tile { background: #1C1C1E; border: none; border-radius: 14px; padding: 14px 8px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: #fff; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .bdg-tile.locked { opacity: .55; }
+    .bdg-ring { width: 56px; height: 56px; border-radius: 50%; border: 2.5px solid var(--tc); display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+    .bdg-ring.big { width: 84px; height: 84px; }
+    .bdg-emoji { font-size: 26px; line-height: 1; }
+    .bdg-ring.big .bdg-emoji { font-size: 40px; }
+    .bdg-tile.locked .bdg-emoji, .bdg-ring.locked .bdg-emoji { filter: grayscale(1); }
+    .bdg-name { font-size: 12px; font-weight: 600; text-align: center; line-height: 1.2; }
+    .bdg-bar { width: 100%; height: 3px; background: #2C2C2E; border-radius: 999px; overflow: hidden; }
+    .bdg-bar span { display: block; height: 100%; background: #8E8E93; border-radius: 999px; }
+    .bdg-prog { font-size: 11px; color: #8E8E93; }
+    .bdg-overlay { position: fixed; inset: 0; z-index: 1200; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .bdg-modal { position: relative; background: #1C1C1E; border-radius: 18px; padding: 28px 24px 22px; width: 100%; max-width: 320px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: #fff; text-align: center; }
+    .bdg-x { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border: none; border-radius: 50%; background: #2C2C2E; color: #8E8E93; font-size: 13px; cursor: pointer; }
+    .bdg-m-name { font-size: 20px; font-weight: 700; margin-top: 8px; }
+    .bdg-m-tier { font-size: 11px; font-weight: 700; letter-spacing: .8px; }
+    .bdg-m-desc { font-size: 14px; color: #AEAEB2; }
+    .bdg-m-status { font-size: 15px; font-weight: 600; margin-top: 6px; }
+    .bdg-series { font-size: 13px; font-weight: 600; color: #fff; margin: 14px 4px 8px; display: flex; align-items: center; gap: 6px; }
+    .bdg-done { margin-left: auto; font-size: 11px; font-weight: 600; color: #30D158; }
+    .bdg-hint { text-align: center; line-height: 1.25; }
+
+    /* === BADGES HUB STYLES === */
+    .bdg-strip { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 16px; margin: 0 calc(-1 * var(--gutter)); }
+    .bdg-strip::-webkit-scrollbar { display: none; }
+    .bdg-strip .bdg-tile { width: 104px; flex-shrink: 0; scroll-snap-align: start; }
+    .bdg-series { justify-content: space-between; }
+    .bdg-series-n { font-size: 12px; font-weight: 400; color: #8E8E93; }
+    .bdg-cats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .bdg-cat { background: #1C1C1E; border: none; border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 10px; color: #fff; font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .bdg-cat-ic { font-size: 24px; }
+    .bdg-cat-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .bdg-cat-name { font-size: 14px; font-weight: 600; line-height: 1.2; }
+    .bdg-cat-n { font-size: 12px; color: #8E8E93; }
+    .bdg-cat-chev { font-size: 20px; color: #8E8E93; line-height: 1; }

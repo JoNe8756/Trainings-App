@@ -19,6 +19,7 @@ See ARCHITECTURE.md for full detail. Summary:
 - stack.js — reusable iOS-notification-style card stack (Journeys, Goals)
 - summary.js — Summary tab rendering
 - xp.js — XP & Levels detail screen (opened from Summary XP card)
+- badges.js — badge definitions, earned state (badgeData), Badges screen
 - settings.js — all Settings screens, data import/export
 
 ## Working Conventions

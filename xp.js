@@ -122,9 +122,16 @@
       <div class="xp-divider"></div><div class="xp-src xp-src-total"><span class="xp-src-label">Total</span><span class="xp-src-val"><b>${_xpFmt(total)} XP</b></span></div></div>`;
   }
 
+  // === XP BADGES ROW ===
+  function _xpBadgesRow() {
+    if (typeof badgesSummaryText !== 'function') return '';
+    return `<button class="xp-card xp-badges-row" id="xp-badges-row"><span class="xp-badges-ic">🏅</span><span class="xp-badges-lbl">Badges</span><span class="xp-badges-count" id="xp-badges-count">${badgesSummaryText()}</span><span class="xp-badges-chev">›</span></button>`;
+  }
+
   function _xpDetailHTML() {
     const info = getLevelInfo();
     return _xpHero(info) +
+      _xpBadgesRow() +
       `<div class="xp-title">Milestones</div>${_xpMilestones(info)}` +
       `<div class="xp-title">Ranks</div>${_xpRanks(info)}` +
       `<div class="xp-title">Streak</div>${_xpStreak()}` +
@@ -221,6 +228,8 @@
     _xpDetailAnimate(document.getElementById('xp-detail-body'));
     const info = document.querySelector('#xp-detail-body .xp-info');
     if (info) info.addEventListener('click', e => { e.stopPropagation(); _xpTipToggle(info); });
+    const bRow = document.getElementById('xp-badges-row');
+    if (bRow) bRow.addEventListener('click', () => openBadgesScreen());
     const tabBar = document.querySelector('.tab-bar');
     const fab    = document.getElementById('home-fab-wrap');
     _xpDetailHidden = {
@@ -241,6 +250,7 @@
   }
 
   function closeXPDetail() {
+    if (typeof closeBadgesScreen === 'function') closeBadgesScreen();
     _xpTipClose();
     const panel = document.getElementById('xp-detail');
     if (panel) panel.classList.remove('open');

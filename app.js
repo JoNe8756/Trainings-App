@@ -1,5 +1,6 @@
 /* Extracted from index.html — global state variables and data constants. */
   // === GLOBAL STATE ===
+  let journeyReturnTo = 'library';   /* where journey detail's back goes: 'library' | 'summary' */
   /* ── State ──────────────────────────────────────────────── */
   let workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
   let plans    = JSON.parse(localStorage.getItem('plans')    || '[]');

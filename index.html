@@ -986,6 +986,7 @@
 <script src="stack.js"></script>
 <script src="summary.js"></script>
 <script src="xp.js"></script>
+<script src="badges.js"></script>
 <script src="workouts.js"></script>
 <script>
   const qs = s => "'" + String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
@@ -2370,7 +2371,7 @@
 <!-- ═══════════════ JOURNEY DETAIL ═══════════════ -->
 <div id="journey-detail" class="journey-overlay" style="display:none">
   <div class="settings-nav" style="position:sticky;top:0;z-index:2;background:#000">
-    <button class="settings-back-btn" onclick="_closeJourneyDetail()">
+    <button class="settings-back-btn" onclick="_journeyBack()">
       <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
     </button>
     <div class="settings-nav-title">Journey</div>

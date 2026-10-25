@@ -54,6 +54,9 @@ Summary tab rendering (layout markup, XP card, goals, highlights, active journey
 ### xp.js
 XP & Levels detail screen (opened by tapping the Summary XP card): milestones, streak, XP by source, XP rules. Reads XP_RULES and helpers from app.js.
 
+### badges.js
+Badge definitions (BADGES), `checkBadges()`, earned state in localStorage `badgeData`, and the Badges screen opened from the XP & Levels screen.
+
 ### settings.js
 All settings screens.
 Contains: Personal Info, Training Goals, Workout Setup, Preferences,

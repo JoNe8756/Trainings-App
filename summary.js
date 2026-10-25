@@ -110,6 +110,7 @@
       const btn = card.querySelector('.sum-continue');
       if (btn) btn.addEventListener('click', e => {
         e.stopPropagation();        /* Continue never toggles the stack */
+        journeyReturnTo = 'summary';      /* back from journey detail returns here */
         _startNextJourneySession(j.id);   /* opens journey detail, never starts the workout */
       });
       cards.push(card);
