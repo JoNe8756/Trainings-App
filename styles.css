@@ -5207,7 +5207,38 @@
 .sync-status-val { color:#8E8E93; font-size:.875rem; text-align:right; }
 .sync-status-val[data-state="ok"] { color:#34C759; }
 .sync-status-val[data-state="error"] { color:#FF3B30; }
-.sync-status-val[data-state="cloud-ahead"] { color:#FF9F0A; }
+.sync-status-val[data-state="needs-decision"], .sync-status-val[data-state="workout"] { color:#FF9F0A; }
+.sync-status-val[data-state="needs-decision"] { cursor:pointer; }
 .sync-last { color:#8E8E93; font-size:.8125rem; margin-top:.5rem; }
 .sync-now-btn { width:100%; border:none; border-radius:12px; padding:.8rem; margin-top:.875rem; font-size:1rem; font-weight:600; cursor:pointer; background:#007AFF; color:#fff; }
 .sync-now-btn:disabled { opacity:.5; cursor:default; }
+.sync-safety-item { align-items:center; gap:.75rem; }
+.sync-safety-sub { color:#8E8E93; font-size:.75rem; margin-top:.15rem; }
+.sync-restore-btn { border:none; border-radius:999px; padding:.4rem .875rem; font-size:.875rem; font-weight:600; cursor:pointer; background:rgba(0,122,255,.2); color:#007AFF; }
+
+/* === SECTION: Sync decision sheet (phone-width frame, same approach as .ex-picker-overlay) === */
+.sds-backdrop { position:fixed; inset:0; max-width:min(430px,100%); margin:0 auto; overflow:hidden; z-index:100010; background:rgba(0,0,0,0); transition:background .3s; pointer-events:none; }
+.sds-backdrop.open { background:rgba(0,0,0,.55); pointer-events:all; }
+.sds-sheet { position:absolute; left:0; right:0; bottom:0; max-height:88%; overflow-y:auto; box-sizing:border-box; background:#000; border-radius:16px 16px 0 0; padding:1.25rem 1rem max(1.25rem, env(safe-area-inset-bottom, 0px)); transform:translateY(100%); transition:transform .3s cubic-bezier(.4,0,.2,1); }
+.sds-backdrop.open .sds-sheet { transform:translateY(0); }
+.sds-title { font-size:1.125rem; font-weight:700; color:#fff; }
+.sds-intro { color:#8E8E93; font-size:.875rem; margin:.375rem 0 1rem; line-height:1.4; }
+.sds-card { background:#1C1C1E; border-radius:12px; padding:.875rem; margin-bottom:.75rem; }
+.sds-card-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:.625rem; }
+.sds-cat { font-size:.6875rem; text-transform:uppercase; letter-spacing:.06em; color:#8E8E93; font-weight:600; }
+.sds-both { font-size:.6875rem; color:#FF3B30; font-weight:600; }
+.sds-cols { display:flex; gap:.75rem; }
+.sds-col { flex:1; min-width:0; }
+.sds-col-h { font-size:.75rem; color:#8E8E93; margin-bottom:.2rem; }
+.sds-sum { font-size:.9375rem; color:#fff; }
+.sds-time { font-size:.75rem; color:#8E8E93; margin-top:.15rem; }
+.sds-seg { display:flex; background:#2C2C2E; border-radius:999px; padding:4px; margin-top:.75rem; }
+.sds-seg button { flex:1; background:none; border:none; color:#8E8E93; padding:.5rem; font-size:.875rem; font-weight:600; border-radius:999px; cursor:pointer; font-family:inherit; }
+.sds-seg button.active { color:#fff; }
+.sds-short { display:flex; justify-content:space-between; margin:.25rem 0 .75rem; }
+.sds-link { background:none; border:none; color:#007AFF; font-size:.875rem; cursor:pointer; padding:.25rem 0; font-family:inherit; }
+.sds-note { color:#8E8E93; font-size:.75rem; line-height:1.4; margin-bottom:.75rem; }
+.sds-msg { color:#FF3B30; font-size:.8125rem; min-height:1em; margin-bottom:.5rem; }
+.sds-apply { width:100%; border:none; border-radius:12px; padding:.8rem; font-size:1rem; font-weight:600; cursor:pointer; background:#007AFF; color:#fff; font-family:inherit; }
+.sds-apply:disabled { opacity:.4; cursor:default; }
+.sds-later { display:block; width:100%; background:none; border:none; color:#8E8E93; font-size:.9375rem; padding:.75rem 0 0; cursor:pointer; font-family:inherit; }

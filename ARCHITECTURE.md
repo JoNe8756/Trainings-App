@@ -64,7 +64,7 @@ Data Management, About, Gemini API key storage and guide modal.
 Edit this file for: any settings screen issues.
 
 ### sync.js
-Holds the Supabase client, auth helpers, and upload-only sync: it tracks dirty categories and pushes them to Supabase `user_data` using the EXPORT_CATEGORIES ids; SYNC_EXCLUDED_KEYS stay local; `syncMeta` is a transient key. Keys starting with `sb-` are auth session keys and are excluded from backups. The secret / service_role key must never be added to this repo.
+Holds the Supabase client, auth helpers, and two-way sync: it tracks dirty categories, pushes them to Supabase `user_data` using the EXPORT_CATEGORIES ids, downloads cloud changes, asks which data to keep on first login and on conflicts, and keeps safety copies in `syncSafety` (transient); SYNC_EXCLUDED_KEYS stay local; `syncMeta` is a transient key. Keys starting with `sb-` are auth session keys and are excluded from backups. The secret / service_role key must never be added to this repo.
 
 ## Key Data Structures (localStorage)
 

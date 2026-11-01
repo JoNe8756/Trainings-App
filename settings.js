@@ -190,6 +190,7 @@
     'backupBannerSnoozeUntil',
     'storagePersisted',
     'syncMeta',
+    'syncSafety',
   ]);
   /* supabase-js auth session keys start with "sb-": never exported, imported over, or wiped */
   function isTransientKey(key) { return _TRANSIENT_KEYS.has(key) || (typeof key === 'string' && key.startsWith('sb-')); }
@@ -991,12 +992,21 @@
     const st = getSyncStatus();
     const val = document.getElementById('acct-sync-status');
     if (val) { val.textContent = st.text; val.dataset.state = st.state; }
+    const sc = document.getElementById('acct-safety-count');
+    if (sc) sc.textContent = String(getSafetyCopies().length);
     const last = document.getElementById('acct-sync-last');
     if (last) last.textContent = 'Last synced: ' + _acctAgo(st.lastSyncAt);
     const btn = document.getElementById('acct-sync-now');
     if (btn) { btn.disabled = st.running; btn.textContent = st.running ? 'Syncing...' : 'Sync now'; }
   }
   window.addEventListener('sync-status-changed', _acctRefreshSync);
+
+
+  function _acctSafetyRowHtml() {
+    return `<div class="settings-card" style="margin-top:1rem"><div class="settings-row settings-row-tappable" id="acct-safety-row">
+          <div class="settings-row-label" style="flex:1">Safety copies</div>
+          <span id="acct-safety-count" style="color:var(--tertiary,#8E8E93);margin-right:.5rem"></span>${_ACCT_CHEVRON}</div></div>`;
+  }
 
   function renderAccountScreen() {
     const body = document.getElementById('acct-body');
@@ -1018,6 +1028,7 @@
           <div id="acct-sync-last" class="sync-last"></div>
           <button id="acct-sync-now" class="sync-now-btn">Sync now</button>
         </div>
+        ${_acctSafetyRowHtml()}
         <div style="margin:1rem var(--gutter,1rem) 0">
           <button id="acct-logout" style="${btnCss};background:#1C1C1E;color:#FF3B30"${_acctBusy ? ' disabled' : ''}>${_acctBusy ? 'Please wait…' : 'Log out'}</button>
           <div id="acct-err" style="color:#FF3B30;font-size:.8125rem;margin-top:.5rem;min-height:1em">${esc(_acctMsg)}</div>
@@ -1031,8 +1042,9 @@
           <div id="acct-err" style="color:${_acctMsgColor};font-size:.8125rem;margin-bottom:.5rem;min-height:1em">${esc(_acctMsg)}</div>
           <button id="acct-login" style="${btnCss};background:#007AFF;color:#fff"${_acctBusy ? ' disabled' : ''}>${_acctBusy ? 'Please wait…' : 'Log in'}</button>
           <button id="acct-signup" style="${btnCss};background:#1C1C1E;color:#007AFF"${_acctBusy ? ' disabled' : ''}>Create account</button>
-          <div style="color:var(--tertiary,#8E8E93);font-size:.75rem;margin-top:1rem;line-height:1.4">Your data stays on this device until you log in. Sync comes in the next update.</div>
-        </div>`;
+          <div style="color:var(--tertiary,#8E8E93);font-size:.75rem;margin-top:1rem;line-height:1.4">Your data stays on this device until you log in.</div>
+        </div>
+        ${_acctSafetyRowHtml()}`;
     }
     body.innerHTML = html;
     const emailEl = document.getElementById('acct-email');
@@ -1055,6 +1067,8 @@
       renderAccountScreen();
     };
     document.getElementById('acct-sync-now')?.addEventListener('click', () => { runSync('manual'); });
+    document.getElementById('acct-sync-status')?.addEventListener('click', () => { if (getSyncStatus().state === 'needs-decision') openSyncDecisionSheet(); });
+    document.getElementById('acct-safety-row')?.addEventListener('click', () => { _acctSafetyMsg = ''; settingsPush('settings-safety'); _acctRenderSafety(); });
     _acctRefreshSync();
     document.getElementById('acct-login')?.addEventListener('click', () => run(signInWithEmail));
     document.getElementById('acct-signup')?.addEventListener('click', () => run(signUpWithEmail));
@@ -1066,6 +1080,53 @@
       if (res.ok) { _acctUser = null; _acctUpdateRowSubtitle(); } else { _acctMsg = res.error; _acctMsgColor = '#FF3B30'; }
       renderAccountScreen();
     });
+  }
+
+
+  // === SAFETY COPIES SCREEN ===
+  const _ACCT_REASON_TEXT = { 'cloud-download': 'Before cloud download', 'first-login': 'Before first login choice', 'conflict': 'Before conflict resolution', 'restore': 'Before restore' };
+  let _acctSafetyMsg = '';
+
+  function _acctRenderSafety() {
+    const body = document.getElementById('acct-safety-body');
+    if (!body) return;
+    body.innerHTML = '';
+    const list = getSafetyCopies();
+    const card = document.createElement('div');
+    card.className = 'settings-card';
+    if (!list.length) {
+      const e = document.createElement('div');
+      e.style.cssText = 'padding:1rem;color:var(--tertiary,#8E8E93)';
+      e.textContent = 'No safety copies yet';
+      card.appendChild(e);
+    }
+    list.forEach(c => {
+      const row = document.createElement('div');
+      row.className = 'settings-row sync-safety-item';
+      const info = document.createElement('div');
+      info.style.flex = '1';
+      const t = document.createElement('div');
+      t.textContent = getSyncCategoryLabel(c.category);
+      const sub = document.createElement('div');
+      sub.className = 'sync-safety-sub';
+      sub.textContent = new Date(c.savedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' · ' + (_ACCT_REASON_TEXT[c.reason] || c.reason);
+      info.appendChild(t); info.appendChild(sub);
+      const btn = document.createElement('button');
+      btn.className = 'sync-restore-btn';
+      btn.textContent = 'Restore';
+      btn.addEventListener('click', () => {
+        if (!confirm('Replace the current ' + getSyncCategoryLabel(c.category) + ' data on this device with this copy?')) return;
+        const res = restoreSafetyCopy(c.id);
+        if (!res.ok) { _acctSafetyMsg = res.error; _acctRenderSafety(); }
+      });
+      row.appendChild(info); row.appendChild(btn);
+      card.appendChild(row);
+    });
+    body.appendChild(card);
+    const msg = document.createElement('div');
+    msg.style.cssText = 'color:#FF3B30;font-size:.8125rem;margin:.75rem var(--gutter,1rem)';
+    msg.textContent = _acctSafetyMsg;
+    body.appendChild(msg);
   }
 
   function _acctInit() {
@@ -1088,11 +1149,20 @@
       '<div class="settings-nav-title">Account &amp; Sync</div></div><div class="settings-body" id="acct-body"></div>';
     root.parentNode.insertBefore(panel, root.nextSibling);
     document.getElementById('acct-back').addEventListener('click', () => settingsPop());
-    /* Swipe-back: the shared handler only knows its fixed panel list, so handle this panel first */
+    /* Safety copies list, same header style */
+    const sPanel = document.createElement('div');
+    sPanel.id = 'settings-safety';
+    sPanel.className = 'settings-panel sub';
+    sPanel.innerHTML = '<div class="settings-nav"><button class="settings-back-btn" id="acct-safety-back">' +
+      '<svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg></button>' +
+      '<div class="settings-nav-title">Safety copies</div></div><div class="settings-body" id="acct-safety-body"></div>';
+    panel.parentNode.insertBefore(sPanel, panel.nextSibling);
+    document.getElementById('acct-safety-back').addEventListener('click', () => settingsPop());
+    /* Swipe-back: the shared handler only knows its fixed panel list, so handle these panels first */
     let sx = null, sy = null;
     document.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { capture: true, passive: true });
     document.addEventListener('touchend', e => {
-      if (sx === null || !panel.classList.contains('open')) { sx = null; return; }
+      if (sx === null || !(panel.classList.contains('open') || sPanel.classList.contains('open'))) { sx = null; return; }
       const dx = e.changedTouches[0].clientX - sx, dy = Math.abs(e.changedTouches[0].clientY - sy);
       const edge = sx <= 20; sx = null;
       if (edge && dx >= 60 && dy <= 40) { e.stopImmediatePropagation(); settingsPop(); }
