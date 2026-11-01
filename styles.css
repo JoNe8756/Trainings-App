@@ -5201,3 +5201,13 @@
     .exp-sep { height: 1px; background: rgba(255,255,255,.08); margin: 6px 0; }
     .exp-note { font-size: .8125rem; color: var(--tertiary); line-height: 1.4; padding-bottom: 4px; }
     .btn-data-action:disabled, .btn-data-action.disabled { opacity: .4; pointer-events: none; }
+
+/* === SYNC STATUS === */
+.sync-status-row { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; font-size:1rem; }
+.sync-status-val { color:#8E8E93; font-size:.875rem; text-align:right; }
+.sync-status-val[data-state="ok"] { color:#34C759; }
+.sync-status-val[data-state="error"] { color:#FF3B30; }
+.sync-status-val[data-state="cloud-ahead"] { color:#FF9F0A; }
+.sync-last { color:#8E8E93; font-size:.8125rem; margin-top:.5rem; }
+.sync-now-btn { width:100%; border:none; border-radius:12px; padding:.8rem; margin-top:.875rem; font-size:1rem; font-weight:600; cursor:pointer; background:#007AFF; color:#fff; }
+.sync-now-btn:disabled { opacity:.5; cursor:default; }

@@ -189,6 +189,7 @@
     'lastBackupTrainingCount',
     'backupBannerSnoozeUntil',
     'storagePersisted',
+    'syncMeta',
   ]);
   /* supabase-js auth session keys start with "sb-": never exported, imported over, or wiped */
   function isTransientKey(key) { return _TRANSIENT_KEYS.has(key) || (typeof key === 'string' && key.startsWith('sb-')); }
@@ -965,12 +966,37 @@
   let _acctMsg = '';
   let _acctMsgColor = '#FF3B30';
 
-  function _acctSubtitle() { return _acctUser ? _acctUser.email : 'Not logged in'; }
+  function _acctSubtitle() { return _acctUser ? _acctUser.email + ' · ' + getSyncStatus().short : 'Not logged in'; }
 
   function _acctUpdateRowSubtitle() {
     const el = document.getElementById('acct-row-sub');
     if (el) el.textContent = _acctSubtitle();
   }
+
+  // === SYNC STATUS UI ===
+  function _acctAgo(ts) {
+    if (!ts) return 'Never';
+    const m = Math.floor((Date.now() - ts) / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return m + ' min ago';
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + (h === 1 ? ' hour ago' : ' hours ago');
+    const d = Math.floor(h / 24);
+    return d + (d === 1 ? ' day ago' : ' days ago');
+  }
+
+  /* Updates only the status elements so typed input on the logged-out form is never wiped */
+  function _acctRefreshSync() {
+    _acctUpdateRowSubtitle();
+    const st = getSyncStatus();
+    const val = document.getElementById('acct-sync-status');
+    if (val) { val.textContent = st.text; val.dataset.state = st.state; }
+    const last = document.getElementById('acct-sync-last');
+    if (last) last.textContent = 'Last synced: ' + _acctAgo(st.lastSyncAt);
+    const btn = document.getElementById('acct-sync-now');
+    if (btn) { btn.disabled = st.running; btn.textContent = st.running ? 'Syncing...' : 'Sync now'; }
+  }
+  window.addEventListener('sync-status-changed', _acctRefreshSync);
 
   function renderAccountScreen() {
     const body = document.getElementById('acct-body');
@@ -986,6 +1012,11 @@
       html = `<div class="settings-card" style="padding:1rem">
           <div style="font-size:1rem">${esc(_acctUser.email)}</div>
           <div style="color:var(--tertiary,#8E8E93);font-size:.8125rem;margin-top:.25rem">Logged in</div>
+        </div>
+        <div class="settings-card" style="padding:1rem;margin-top:1rem">
+          <div class="sync-status-row"><span>Sync status</span><span id="acct-sync-status" class="sync-status-val"></span></div>
+          <div id="acct-sync-last" class="sync-last"></div>
+          <button id="acct-sync-now" class="sync-now-btn">Sync now</button>
         </div>
         <div style="margin:1rem var(--gutter,1rem) 0">
           <button id="acct-logout" style="${btnCss};background:#1C1C1E;color:#FF3B30"${_acctBusy ? ' disabled' : ''}>${_acctBusy ? 'Please wait…' : 'Log out'}</button>
@@ -1023,6 +1054,8 @@
       } else { _acctMsg = res.error; _acctMsgColor = '#FF3B30'; }
       renderAccountScreen();
     };
+    document.getElementById('acct-sync-now')?.addEventListener('click', () => { runSync('manual'); });
+    _acctRefreshSync();
     document.getElementById('acct-login')?.addEventListener('click', () => run(signInWithEmail));
     document.getElementById('acct-signup')?.addEventListener('click', () => run(signUpWithEmail));
     document.getElementById('acct-logout')?.addEventListener('click', async () => {
