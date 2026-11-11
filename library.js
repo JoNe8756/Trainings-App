@@ -568,13 +568,13 @@
       /* generating card replaces the New Journey button */
       html += `<div class="journey-gen-card">
         <span class="journey-banner-spinner"></span>
-        <span style="font-size:15px;color:#fff;flex:1">Journey generation in progress...</span>
+        <span id="journey-gen-text" style="font-size:15px;color:#fff;flex:1">${_esc(_journeyGenWaitText || 'Journey generation in progress...')}</span>
         <button onclick="_cancelJourneyGeneration()" style="background:none;border:none;color:#007AFF;font-size:15px;font-weight:600;cursor:pointer;padding:4px 0 4px 12px;-webkit-tap-highlight-color:transparent">Cancel</button>
       </div>`;
     } else {
       if (_journeyGenState === 'error') {
         html += `<div onclick="_retryJourneyGeneration()" style="margin:0 var(--gutter) 10px;background:#1C1C1E;border-radius:12px;padding:16px;cursor:pointer;-webkit-tap-highlight-color:transparent">
-          <div style="font-size:15px;color:#fff">❌ Generation failed</div>
+          <div style="font-size:15px;color:#fff">❌ ${_esc(_journeyGenMsg || 'Generation failed')}</div>
           <div style="font-size:13px;color:#007AFF;margin-top:4px">Tap to retry</div>
         </div>`;
       }
@@ -1127,45 +1127,125 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     if (s) s.style.display = on ? 'block' : 'none';
   }
 
+  // === GEMINI RATE LIMIT HANDLING ===
+  const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash-lite'];
+  const GEMINI_MAX_ATTEMPTS = 4;
+  const GEMINI_MIN_RETRY_WAIT_MS = 15000;
+  const GEMINI_MAX_RETRY_WAIT_MS = 60000;
+
   let _journeyGenController = null, _journeyGenCancelled = false;
+  let _journeyGenMsg = '', _journeyGenWaitText = '', _journeyGenWaitTimer = null, _journeyGenWaitResolve = null;
+
+  /* strip the API key (and any key= URL fragment) from text before it is shown or logged */
+  function _geminiScrub(text) {
+    let t = String(text == null ? '' : text);
+    const k = localStorage.getItem('geminiApiKey');
+    if (k) t = t.split(k).join('[key]');
+    return t.replace(/key=[^&\s"']+/gi, 'key=[key]');
+  }
+
+  /* classify a failed HTTP response → { kind, status, retryMs } */
+  function _geminiClassify(status, data) {
+    const e = (data && data.error) || {};
+    const text = ((e.message || '') + ' ' + JSON.stringify(e.details || [])).toLowerCase();
+    let retryMs = 0;
+    (e.details || []).forEach(d => {
+      const m = d && typeof d.retryDelay === 'string' && d.retryDelay.match(/^([\d.]+)s$/);
+      if (m) retryMs = Math.round(parseFloat(m[1]) * 1000);
+    });
+    let kind = 'other';
+    if (status === 401 || status === 403 || (status === 400 && /api key|api_key|key not valid|invalid.*key/.test(text))) kind = 'auth';
+    else if (status === 429 || e.status === 'RESOURCE_EXHAUSTED') kind = /perday|per day/.test(text) ? 'daily' : 'rate';
+    else if (status === 404 || /not found|not_found/.test(text + ' ' + String(e.status || '').toLowerCase())) kind = 'notfound';
+    else if (status >= 500) kind = 'server';
+    return { kind, status, retryMs };
+  }
+
+  function _geminiFailMessage(kind, status) {
+    switch (kind) {
+      case 'daily':   return 'Gemini daily limit reached. Try again tomorrow.';
+      case 'rate':    return 'Gemini is rate limited. Wait a minute and tap retry.';
+      case 'auth':    return 'API key invalid or missing. Check Settings.';
+      case 'server':  return 'Gemini is overloaded right now. Try again in a few minutes.';
+      case 'network': return 'No connection.';
+      case 'timeout': return 'Gemini took too long. Tap to retry.';
+      default:        return 'Generation failed (code ' + (status || 'unknown') + ').';
+    }
+  }
+
+  function _geminiSetWaitText(txt) {
+    _journeyGenWaitText = txt;
+    const el = document.getElementById('journey-gen-text');
+    if (el) el.textContent = txt || 'Journey generation in progress...';
+  }
+
+  /* cancellable countdown wait; updates the status card each second */
+  function _geminiWait(ms) {
+    return new Promise(resolve => {
+      const end = Date.now() + ms;
+      _journeyGenWaitResolve = resolve;
+      const tick = () => {
+        const left = Math.ceil((end - Date.now()) / 1000);
+        if (left <= 0 || _journeyGenCancelled) {
+          clearInterval(_journeyGenWaitTimer); _journeyGenWaitTimer = null; _journeyGenWaitResolve = null;
+          resolve();
+          return;
+        }
+        _geminiSetWaitText('Waiting for the Gemini rate limit... retry in ' + left + ' s');
+      };
+      _journeyGenWaitTimer = setInterval(tick, 1000);
+      tick();
+    });
+  }
 
   function _cancelJourneyGeneration() {
     _journeyGenCancelled = true;
     if (_journeyGenController) _journeyGenController.abort();
+    if (_journeyGenWaitTimer) { clearInterval(_journeyGenWaitTimer); _journeyGenWaitTimer = null; }
+    if (_journeyGenWaitResolve) { _journeyGenWaitResolve(); _journeyGenWaitResolve = null; }
     console.log('Gemini generation cancelled by user');
     _journeyGenState = null;
+    _journeyGenMsg = ''; _journeyGenWaitText = '';
     _setJourneyHeaderSpinner(false);
     renderLibJourneys();
     _renderJourneyCreator();   /* inputs preserved in _journeyInputs */
     document.getElementById('journey-creator').style.display = '';
   }
 
+  function _geminiFinishError(kind, status) {
+    _journeyGenMsg = _geminiFailMessage(kind, status);
+    _journeyGenWaitText = '';
+    _journeyGenState = 'error';
+    _setJourneyHeaderSpinner(false);
+    renderLibJourneys();
+  }
+
   async function _runJourneyGeneration() {
     _journeyGenCancelled = false;
+    _journeyGenMsg = ''; _journeyGenWaitText = '';
     const key = localStorage.getItem('geminiApiKey');
-    if (!key) { _journeyGenState = 'error'; renderLibJourneys(); return; }
+    if (!key) { _geminiFinishError('auth', 0); return; }
     _journeyGenState = 'loading';
     _journeySuccessFlash = false;
     _setJourneyHeaderSpinner(true);
     renderLibJourneys();
-    const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + key;
     const prompt = _journeyGenPrompt;
-    const MAX_ATTEMPTS = 3, TIMEOUT_MS = 120000, RETRY_DELAY_MS = 5000;
+    const TIMEOUT_MS = 120000;
+    const serverHits = {};   // === GEMINI 5XX OVERLOAD: per-model 5xx count ===
+    let modelIdx = 0, attempts = 0, lastKind = 'other', lastStatus = 0;
 
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    while (attempts < GEMINI_MAX_ATTEMPTS && modelIdx < GEMINI_MODELS.length) {
       if (_journeyGenCancelled) return;
+      attempts++;
+      const model = GEMINI_MODELS[modelIdx];
+      const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + key;
       const controller = new AbortController();
       _journeyGenController = controller;
-      const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+      let timedOut = false;
+      const timer = setTimeout(() => { timedOut = true; controller.abort(); }, TIMEOUT_MS);
+      let waitMs = 0;      /* >0 → retry same model after this wait */
       try {
-        const _cnt = (a, b) => {
-          const i = prompt.indexOf(a), j = prompt.indexOf(b);
-          return (i < 0 || j < i) ? 0 : prompt.slice(i, j).split('\n').filter(l => l.startsWith('- ')).length;
-        };
-        console.log('Gemini attempt ' + attempt + ' payload — prompt chars: ' + prompt.length +
-          ', exercises: ' + _cnt("USER'S EXERCISE LIBRARY:", 'COACHING INSTRUCTIONS:') +
-          ', history sessions: ' + _cnt("USER'S RECENT TRAINING", "USER'S EXERCISE LIBRARY:") +
-          ', PRs: ' + _cnt("USER'S CURRENT PERFORMANCE", "USER'S RECENT TRAINING"));
+        console.log('Gemini attempt ' + attempts + '/' + GEMINI_MAX_ATTEMPTS + ' model ' + model + ' prompt chars: ' + prompt.length);
         const response = await fetch(geminiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1173,68 +1253,82 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
           signal: controller.signal
         });
         clearTimeout(timer);
-
-        const responseData = await response.json();
+        let responseData = null;
+        try { responseData = await response.json(); } catch (e) { responseData = null; }
         console.log('Gemini response status:', response.status);
-        console.log('Gemini response:', JSON.stringify(responseData).substring(0, 200));
 
-        if (!response.ok) throw new Error('API returned ' + response.status + ': ' + JSON.stringify(responseData));
-
-        const rawText = responseData.candidates[0].content.parts[0].text;
-        console.log('Raw Gemini response:', rawText.substring(0, 500));
-
-        // Clean the response
-        let cleanText = rawText
-          .replace(/```json/g, '')
-          .replace(/```/g, '')
-          .trim();
-
-        // Extract JSON object
-        const firstBrace = cleanText.indexOf('{');
-        const lastBrace = cleanText.lastIndexOf('}');
-        if (firstBrace === -1 || lastBrace === -1) {
-          throw new Error('No JSON object found in response');
+        if (!response.ok) {
+          const c = _geminiClassify(response.status, responseData);
+          lastKind = c.kind; lastStatus = c.status;
+          console.log('Gemini failure: ' + c.kind + ' (' + c.status + ')');
+          if (c.kind === 'auth') { _geminiFinishError('auth', c.status); return; }
+          if (c.kind === 'daily' || c.kind === 'notfound') { modelIdx++; continue; }
+          if (c.kind === 'rate') waitMs = Math.min(GEMINI_MAX_RETRY_WAIT_MS, c.retryMs > 0 ? c.retryMs : GEMINI_MIN_RETRY_WAIT_MS);
+          else if (c.kind === 'server') {
+            /* 5xx = model overload: wait and retry same model once, then switch model without waiting */
+            serverHits[model] = (serverHits[model] || 0) + 1;
+            if (serverHits[model] >= 2) { modelIdx++; continue; }
+            waitMs = GEMINI_MIN_RETRY_WAIT_MS;
+          }
+          else { _geminiFinishError('other', c.status); return; }
+        } else {
+          let journey = null;
+          try {
+            const rawText = responseData.candidates[0].content.parts[0].text;
+            const cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const firstBrace = cleanText.indexOf('{'), lastBrace = cleanText.lastIndexOf('}');
+            if (firstBrace === -1 || lastBrace === -1) throw new Error('no json');
+            journey = JSON.parse(cleanText.substring(firstBrace, lastBrace + 1));
+            if (!journey || !Array.isArray(journey.weeks) || !journey.weeks.length) throw new Error('bad journey');
+          } catch (pe) {
+            lastKind = 'other'; lastStatus = response.status;
+            console.log('Gemini response could not be parsed');
+            waitMs = GEMINI_MIN_RETRY_WAIT_MS;
+            journey = null;
+          }
+          if (journey) {
+            _ensureGoalExercise(journey);
+            /* save the generated journey so it appears in the list automatically */
+            const saved = {
+              id: Date.now(),
+              name: journey.name || 'My Journey',
+              goal: journey.goal || _journeyInputs.goal,
+              weeks: journey.weeks || [],
+              createdAt: new Date().toISOString(),
+              sessionDuration: _jDuration(),
+              completedSessions: []
+            };
+            if (modelIdx > 0) saved.generatedWith = model;
+            _journeys.unshift(saved);
+            _persistJourneys();
+            console.log('Gemini attempt ' + attempts + ' succeeded with ' + model);
+            _journeyGenState = null; _journeyGenMsg = ''; _journeyGenWaitText = '';
+            _journeySuccessFlash = true;
+            _setJourneyHeaderSpinner(false);
+            renderLibJourneys();
+            clearTimeout(_journeyFlashTimer);
+            _journeyFlashTimer = setTimeout(() => { _journeySuccessFlash = false; renderLibJourneys(); }, 3000);
+            return;
+          }
         }
-        cleanText = cleanText.substring(firstBrace, lastBrace + 1);
-
-        const journey = JSON.parse(cleanText);
-        if (!journey || !Array.isArray(journey.weeks) || !journey.weeks.length) throw new Error('Could not parse journey from response');
-        _ensureGoalExercise(journey);
-        /* save the generated journey so it appears in the list automatically */
-        _journeys.unshift({
-          id: Date.now(),
-          name: journey.name || 'My Journey',
-          goal: journey.goal || _journeyInputs.goal,
-          weeks: journey.weeks || [],
-          createdAt: new Date().toISOString(),
-          sessionDuration: _jDuration(),
-          completedSessions: []
-        });
-        _persistJourneys();
-        console.log('Gemini attempt ' + attempt + ' succeeded');
-        _journeyGenState = null;
-        _journeySuccessFlash = true;
-        _setJourneyHeaderSpinner(false);
-        renderLibJourneys();
-        clearTimeout(_journeyFlashTimer);
-        _journeyFlashTimer = setTimeout(() => { _journeySuccessFlash = false; renderLibJourneys(); }, 3000);
-        return;
       } catch (err) {
         clearTimeout(timer);
         if (_journeyGenCancelled) return;
-        const msg = (err && err.name === 'AbortError') ? 'Request timed out after 120s' : (err && err.message ? err.message : 'unknown error');
-        if (attempt < MAX_ATTEMPTS) {
-          console.log('Gemini attempt ' + attempt + ' failed: ' + msg + ', retrying...');
-          await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
-          continue;   /* loop top re-checks _journeyGenCancelled */
-        }
-        console.log('Gemini attempt ' + attempt + ' failed: ' + msg + ' — giving up');
-        _journeyGenState = 'error';
-        _setJourneyHeaderSpinner(false);
-        renderLibJourneys();
-        return;
+        if (timedOut || (err && err.name === 'AbortError')) { lastKind = 'timeout'; lastStatus = 0; }
+        else { lastKind = 'network'; lastStatus = 0; }
+        console.log('Gemini attempt ' + attempts + ' failed: ' + lastKind + ' ' + _geminiScrub(err && err.name));
+        waitMs = GEMINI_MIN_RETRY_WAIT_MS;
+      }
+
+      if (waitMs > 0 && attempts < GEMINI_MAX_ATTEMPTS) {
+        await _geminiWait(waitMs);
+        if (_journeyGenCancelled) return;
+        _geminiSetWaitText('');
       }
     }
+    if (_journeyGenCancelled) return;
+    console.log('Gemini giving up: ' + lastKind);
+    _geminiFinishError(lastKind, lastStatus);
   }
 
   function _parseJourneyJSON(text) {
@@ -1487,6 +1581,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     el.innerHTML = `
       <div style="font-size:24px;font-weight:700;color:#fff;letter-spacing:-.4px">${_esc(j.name)}</div>
       <div class="journey-ai-badge" style="margin-top:4px">✨ AI Generated</div>
+      ${j.generatedWith ? `<div style="font-size:11px;color:#8E8E93;margin-top:4px">Generated with ${_esc(j.generatedWith)}</div>` : ''}
       <div style="font-size:14px;color:#8E8E93;margin-top:4px">${_esc(j.goal)}</div>
       <div style="margin-top:12px;background:#1C1C1E;border-radius:12px;padding:16px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
