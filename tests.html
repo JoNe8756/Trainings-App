@@ -1020,6 +1020,112 @@ runTest('[DESIGN] Plateau needs exactly 3 matching sessions — not 2', () => {
 });
 
 /* ══════════════════════════════════════════════════════════
+   GEMINI ERROR CLASSIFICATION (copied from library.js)
+   ══════════════════════════════════════════════════════════ */
+function _geminiScrub(text) {
+  let t = String(text == null ? '' : text);
+  const k = localStorage.getItem('geminiApiKey');
+  if (k) t = t.split(k).join('[key]');
+  return t.replace(/key=[^&\s"']+/gi, 'key=[key]');
+}
+
+function _geminiClassify(status, data) {
+  const e = (data && data.error) || {};
+  const text = ((e.message || '') + ' ' + JSON.stringify(e.details || [])).toLowerCase();
+  let retryMs = 0;
+  (e.details || []).forEach(d => {
+    const m = d && typeof d.retryDelay === 'string' && d.retryDelay.match(/^([\d.]+)s$/);
+    if (m) retryMs = Math.round(parseFloat(m[1]) * 1000);
+  });
+  let kind = 'other';
+  if (status === 401 || status === 403 || (status === 400 && /api key|api_key|key not valid|invalid.*key/.test(text))) kind = 'auth';
+  else if (status === 429 || e.status === 'RESOURCE_EXHAUSTED') kind = /perday|per day/.test(text) ? 'daily' : 'rate';
+  else if (status === 404 || /not found|not_found/.test(text + ' ' + String(e.status || '').toLowerCase())) kind = 'notfound';
+  else if (status >= 500) kind = 'server';
+  return { kind, status, retryMs };
+}
+
+function _geminiFailMessage(kind, status) {
+  switch (kind) {
+    case 'daily':   return 'Gemini daily limit reached. Try again tomorrow.';
+    case 'rate':    return 'Gemini is rate limited. Wait a minute and tap retry.';
+    case 'auth':    return 'API key invalid or missing. Check Settings.';
+    case 'server':  return 'Gemini is overloaded right now. Try again in a few minutes.';
+    case 'network': return 'No connection.';
+    case 'timeout': return 'Gemini took too long. Tap to retry.';
+    default:        return 'Generation failed (code ' + (status || 'unknown') + ').';
+  }
+}
+
+suite('Gemini Error Handling');
+
+runTest('401/403 classified as auth', () => {
+  assertEqual(_geminiClassify(401, null).kind, 'auth');
+  assertEqual(_geminiClassify(403, {}).kind, 'auth');
+});
+
+runTest('400 with invalid key message is auth', () => {
+  assertEqual(_geminiClassify(400, { error: { message: 'API key not valid. Please pass a valid API key.' } }).kind, 'auth');
+});
+
+runTest('plain 400 is other, not auth', () => {
+  assertEqual(_geminiClassify(400, { error: { message: 'Bad request' } }).kind, 'other');
+});
+
+runTest('429 is rate; parses retryDelay to ms', () => {
+  const c = _geminiClassify(429, { error: { message: 'slow down', details: [{ retryDelay: '27.5s' }] } });
+  assertEqual(c.kind, 'rate');
+  assertEqual(c.retryMs, 27500, 0);
+});
+
+runTest('429 with PerDay quota is daily', () => {
+  const c = _geminiClassify(429, { error: { message: 'Quota exceeded', details: [{ violations: [{ quotaId: 'GenerateRequestsPerDayPerProjectPerModel' }] }] } });
+  assertEqual(c.kind, 'daily');
+});
+
+runTest('RESOURCE_EXHAUSTED status without 429 is rate', () => {
+  assertEqual(_geminiClassify(200, { error: { status: 'RESOURCE_EXHAUSTED' } }).kind, 'rate');
+});
+
+runTest('404 is notfound; 500/503 are server', () => {
+  assertEqual(_geminiClassify(404, null).kind, 'notfound');
+  assertEqual(_geminiClassify(500, null).kind, 'server');
+  assertEqual(_geminiClassify(503, {}).kind, 'server');
+});
+
+runTest('classify never throws on malformed data', () => {
+  assertNoThrow(() => _geminiClassify(500, { error: { details: [null, 5, { retryDelay: 3 }] } }));
+  assertNoThrow(() => _geminiClassify(0, undefined));
+});
+
+runTest('retryDelay without "s" format is ignored', () => {
+  assertEqual(_geminiClassify(429, { error: { details: [{ retryDelay: 'soon' }] } }).retryMs, 0, 0);
+});
+
+runTest('fail messages: every kind non-empty, default includes code', () => {
+  ['daily','rate','auth','server','network','timeout','other'].forEach(k =>
+    assertTruthy(_geminiFailMessage(k, 418).length > 0, k));
+  assertTruthy(_geminiFailMessage('other', 418).includes('418'));
+  assertTruthy(_geminiFailMessage('other', 0).includes('unknown'));
+});
+
+runTest('scrub removes key= URL fragments', () => {
+  assertEqual(_geminiScrub('GET /m:gen?key=ABC123&x=1 failed'), 'GET /m:gen?key=[key]&x=1 failed');
+});
+
+runTest('scrub removes stored API key anywhere in text', () => {
+  localStorage.setItem('geminiApiKey', 'SECRETKEY99');
+  try {
+    assertEqual(_geminiScrub('bad SECRETKEY99 here'), 'bad [key] here');
+  } finally { localStorage.removeItem('geminiApiKey'); }
+});
+
+runTest('scrub handles null/undefined', () => {
+  assertEqual(_geminiScrub(null), '');
+  assertEqual(_geminiScrub(undefined), '');
+});
+
+/* ══════════════════════════════════════════════════════════
    RENDER RESULTS
    ══════════════════════════════════════════════════════════ */
 window.addEventListener('load', () => {
