@@ -2672,6 +2672,7 @@
 
   function _warmupShowPostChoice() {
     document.getElementById('warmup-overlay').classList.remove('open');
+    _warmupAudioMix(false);   /* warm-up over: normal audio mode again */
     if (_warmupPostStart) { const f = _warmupPostStart; _warmupPostStart = null; f(); return; }
     if (_warmupPostPlanId !== null) {
       startWorkoutFromPlan(_warmupPostPlanId);
@@ -2867,83 +2868,25 @@
     return _duckVoice;
   }
 
+  // === WARM-UP SPEECH AUDIO MODE ===
+  /* Experiment for item 30: instead of changing the audio session for every cue (which stopped the
+     music), set the mixable "ambient" mode once when the warm-up starts and leave it until the
+     warm-up closes. No silent audio and no context closing per cue, so there is no session churn. */
+  function _warmupAudioMix(on) {
+    try { if (navigator.audioSession) navigator.audioSession.type = on ? 'ambient' : 'auto'; } catch (e) {}
+  }
+
   function _warmupSpeak(text) {
     if (!window.speechSynthesis) return;
-
-    /* Cancel any in-flight fade-up and close previous context */
-    clearTimeout(_duckFadeUpTid);
-    if (_duckCtx && _duckCtx.state !== 'closed') {
-      try { _duckCtx.close(); } catch(e) {}
-    }
-    _duckCtx  = null;
-    _duckGain = null;
-
-    const FADE_DOWN = 0.6;   /* seconds */
-    const FADE_UP   = 0.8;   /* seconds */
-    const PRE_DELAY = 300;   /* ms before fade starts */
-    const MUSIC_RETURN_MS = 2000;   /* ms after speech ends until music returns */
-
-    setTimeout(() => {
-      window.speechSynthesis.cancel();
-
-      /* --- duck setup --- */
-      try {
-        if (navigator.audioSession) navigator.audioSession.type = 'transient';   /* lowers other apps' music while we speak */
-
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (AC) {
-          const ctx  = new AC();
-          const gain = ctx.createGain();
-          gain.gain.setValueAtTime(1.0, ctx.currentTime);
-          gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + FADE_DOWN);
-          gain.connect(ctx.destination);
-
-          /* 1-frame silent loop — claims the session */
-          const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
-          const src = ctx.createBufferSource();
-          src.buffer = buf;
-          src.loop   = true;
-          src.connect(gain);
-          src.start(0);
-
-          _duckCtx  = ctx;
-          _duckGain = gain;
-        }
-      } catch(e) { /* non-fatal */ }
-
-      /* Wait for fade-down to complete, then speak */
-      setTimeout(() => {
-        const utt    = new SpeechSynthesisUtterance(text);
-        const voice  = _pickVoice();
-        if (voice) utt.voice = voice;
-        utt.rate   = 0.88;
-        utt.pitch  = 1.0;
-        utt.volume = 1.0;
-
-        utt.onend = () => {
-          /* Fade back up then release the audio session */
-          if (_duckGain && _duckCtx && _duckCtx.state !== 'closed') {
-            try {
-              const now = _duckCtx.currentTime;
-              _duckGain.gain.cancelScheduledValues(now);
-              _duckGain.gain.setValueAtTime(_duckGain.gain.value, now);
-              _duckGain.gain.linearRampToValueAtTime(1.0, now + FADE_UP);
-            } catch(e) {}
-          }
-          /* Give music back about 2 seconds after speaking ends */
-          _duckFadeUpTid = setTimeout(() => {
-            if (_duckCtx && _duckCtx.state !== 'closed') {
-              try { _duckCtx.close(); } catch(e) {}
-            }
-            _duckCtx  = null;
-            _duckGain = null;
-            try { if (navigator.audioSession) navigator.audioSession.type = 'auto'; } catch(e) {}
-          }, MUSIC_RETURN_MS);
-        };
-
-        window.speechSynthesis.speak(utt);
-      }, FADE_DOWN * 1000);
-    }, PRE_DELAY);
+    _warmupAudioMix(true);
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    const voice = _pickVoice();
+    if (voice) utt.voice = voice;
+    utt.rate   = 0.88;
+    utt.pitch  = 1.0;
+    utt.volume = 1.0;
+    window.speechSynthesis.speak(utt);
   }
 
   function wuStrToggleChanged(checked) {

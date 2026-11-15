@@ -3,7 +3,7 @@
 Rules for this file: Claude Code does not start items on its own. Items move between sections only when Joel confirms he tested them. One task per request, bug fixes and features never mixed.
 
 ## A. VERIFY FIRST (built or written, result not confirmed)
-30. Music ducking: the speech cue now uses the iOS 'transient' audio mode and returns music 2 seconds after speaking (workouts.js, _warmupSpeak). Built but not testable at the desk. Joel will confirm after a real training with music playing on the phone. Not pushed yet.
+30. Music while the app speaks: two audio-mode attempts (ambient, transient) stopped the music on iPhone and it did not come back. Third attempt (ambient set once for the whole warm-up, no per-cue audio changes) pushed 15 Nov 2026, Joel tests it in the next training. If it fails, fallback: a 'Spoken cues' on/off switch in Settings (workouts.js, _warmupSpeak).
 6. Mac copy on localhost:8000 is old. When syncing it, log in with the private account and choose "Cloud" for all categories (the phone chose "This device"). Tell Joel first before doing this.
 
 ## B. DECISIONS PENDING
