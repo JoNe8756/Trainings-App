@@ -1435,20 +1435,20 @@
     const volStr = totalVol > 0 ? `${totalVol} kg` : '—';
 
     /* stat rows */
-    const stat = (icon, label, val) =>
-      `<div style="background:#1C1C1E;border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:.625rem;">
-          <span style="font-size:1.125rem;line-height:1">${icon}</span>
-          <span style="font-size:.875rem;color:#8E8E93;text-transform:uppercase;letter-spacing:.5px;font-weight:500">${label}</span>
+    const stat = (icon, label, val, wide) =>
+      `<div style="background:#1C1C1E;border-radius:12px;padding:10px 14px;${wide ? 'grid-column:span 2;display:flex;align-items:center;justify-content:space-between;' : ''}">
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <span style="font-size:1rem;line-height:1">${icon}</span>
+          <span style="font-size:.75rem;color:#8E8E93;text-transform:uppercase;letter-spacing:.5px;font-weight:500">${label}</span>
         </div>
-        <div style="font-size:1.5rem;font-weight:700;color:#fff;letter-spacing:-.3px">${val}</div>
+        <div style="${wide ? '' : 'margin-top:4px;'}font-size:1.375rem;font-weight:700;color:#fff;letter-spacing:-.3px">${val}</div>
       </div>`;
     document.getElementById('pw-stats').innerHTML =
       stat('🕐', 'Duration',     durStr) +
       stat('⚡', 'Intensity',    intStr) +
       stat('🏋️', 'Exercises',   exCount) +
       stat('📋', 'Sets',         setCount) +
-      stat('⚖️', 'Total Volume', volStr);
+      stat('⚖️', 'Total Volume', volStr, true);
 
     // === POST-WORKOUT BADGES BLOCK ===
     const _pwBadges = _pwNewBadges; _pwNewBadges = [];
@@ -1489,6 +1489,17 @@
       .replace(/\{\{sets\}\}/g, setCount)
       .replace(/\{\{intensity\}\}/g, intStr);
     document.getElementById('pw-message').textContent = `"${msg}"`;
+
+    // === PLANT SNIPPET (POST-WORKOUT) ===
+    /* Animated plant and one short journal line at the top of the summary, replacing the trophy */
+    try {
+      const _slot = document.getElementById('pw-plant');
+      if (_slot && typeof plantLogTraining === 'function' && typeof plantPostWorkoutHTML === 'function') {
+        _slot.classList.remove('xp-go');
+        _slot.innerHTML = plantPostWorkoutHTML(plantLogTraining(w));
+        requestAnimationFrame(() => requestAnimationFrame(() => _slot.classList.add('xp-go')));
+      }
+    } catch (e) {}
 
     /* show screen */
     const tabBar = document.querySelector('.tab-bar');
@@ -2764,13 +2775,14 @@
     const FADE_DOWN = 0.6;   /* seconds */
     const FADE_UP   = 0.8;   /* seconds */
     const PRE_DELAY = 300;   /* ms before fade starts */
+    const MUSIC_RETURN_MS = 2000;   /* ms after speech ends until music returns */
 
     setTimeout(() => {
       window.speechSynthesis.cancel();
 
       /* --- duck setup --- */
       try {
-        if (navigator.audioSession) navigator.audioSession.type = 'ambient';
+        if (navigator.audioSession) navigator.audioSession.type = 'transient';   /* lowers other apps' music while we speak */
 
         const AC = window.AudioContext || window.webkitAudioContext;
         if (AC) {
@@ -2812,13 +2824,15 @@
               _duckGain.gain.linearRampToValueAtTime(1.0, now + FADE_UP);
             } catch(e) {}
           }
+          /* Give music back about 2 seconds after speaking ends */
           _duckFadeUpTid = setTimeout(() => {
             if (_duckCtx && _duckCtx.state !== 'closed') {
               try { _duckCtx.close(); } catch(e) {}
             }
             _duckCtx  = null;
             _duckGain = null;
-          }, FADE_UP * 1000);
+            try { if (navigator.audioSession) navigator.audioSession.type = 'auto'; } catch(e) {}
+          }, MUSIC_RETURN_MS);
         };
 
         window.speechSynthesis.speak(utt);

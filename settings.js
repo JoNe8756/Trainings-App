@@ -203,7 +203,7 @@
     { id: 'plans',    label: 'Training plans',      keys: ['plans'], prefixes: [] },
     { id: 'library',  label: 'Exercise library',    keys: ['exLib', 'customExMeta'], prefixes: [] },
     { id: 'journeys', label: 'Journeys & progress', keys: ['trainingJourneys'], prefixes: [] },
-    { id: 'xp',       label: 'XP & badges',         keys: ['xpData', 'badgeData'], prefixes: [] },
+    { id: 'xp',       label: 'XP & badges',         keys: ['xpData', 'badgeData', 'plantLog', 'plantName', 'plantType'], prefixes: [] },
     { id: 'settings', label: 'Settings & goals',    keys: ['freqGoal', 'volumeGoal', 'exerciseGoal', 'userBW', 'userHeight', 'warmupGeneralRoutine', 'warmupStrengthRoutine',
       'warmupGeneralEnabled', 'warmupStrengthEnabled', 'startWithWarmup', 'killerSetRoutine', 'restTimerEnabled', 'breakTimerMode', 'ghostMode',
       'exLibExpand1', 'histFolderState', 'progCatCollapsed', 'progressRange', 'chartTapHintDone'], prefixes: [] },

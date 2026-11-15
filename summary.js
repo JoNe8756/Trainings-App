@@ -533,7 +533,7 @@
     }
 
     const info = getLevelInfo();
-    const EMOJI = { Beginner: '🌱', Intermediate: '⚡', Advanced: '🔥', Elite: '💎', Legend: '👑' };
+    const EMOJI = { Beginner: '🌱', Novice: '🌿', Intermediate: '⚡', Skilled: '💪', Advanced: '🔥', Expert: '🎯', Elite: '💎', Master: '🏆', Legend: '👑' };
     const R = 34, C = 2 * Math.PI * R;
     const frac = info.isMaxLevel ? 1 : (info.xpForNextLevel > 0 ? Math.min(1, info.currentLevelXP / info.xpForNextLevel) : 0);
     const toNext = info.isMaxLevel

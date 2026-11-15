@@ -482,6 +482,10 @@
       xpLog:              (d && Array.isArray(d.xpLog)) ? d.xpLog : [],
       lastWeeklyGoalWeek: (d && d.lastWeeklyGoalWeek)       ?? null,
       xpBySource:         _xpSourcesFrom(d),
+      xpPenalty:          Math.max(0, Number(d && d.xpPenalty) || 0),      /* XP deducted for inactivity; totalXP itself is never reduced */
+      decayFor:           (d && d.decayFor)                 ?? null,        /* timestamp of the last training the current idle period belongs to */
+      decayWeeks:         Number(d && d.decayWeeks) || 0,                   /* idle weeks already charged for that period */
+      decayLost:          Number(d && d.decayLost)  || 0,                   /* XP lost in the current idle period */
     };
   }
 
@@ -500,11 +504,74 @@
     return level;
   }
 
+  // === XP DECAY ===
+  /* Inactivity costs XP. Every full 7 days without a training takes 10% of the XP span of
+     the level you are in, but never below the first level of your current rank.
+     totalXP (lifetime, badges, XP breakdown) is NOT reduced; the loss is kept in xpData.xpPenalty
+     and the level uses totalXP - xpPenalty. New trainings raise the level again from there. */
+  const _XP_RANK_STARTS = [1, 5, 10, 16, 22, 31, 38, 43, 50];   /* first level of each rank, same order as _XP_RANKS in xp.js */
+  const XP_DECAY_RATE = 0.10;
+
+  function _xpEffective(d) { return Math.max(0, (d.totalXP || 0) - (d.xpPenalty || 0)); }
+
+  function _xpRankStartLevel(level) {
+    let start = 1;
+    _XP_RANK_STARTS.forEach(l => { if (level >= l) start = l; });
+    return start;
+  }
+
+  /* Pure: XP lost when `weeks` idle weeks are charged against `eff` effective XP. */
+  function _xpDecayLoss(eff, weeks) {
+    if (!(weeks > 0) || !(eff > 0)) return 0;
+    const floorXP = _XP_THRESHOLDS[_xpRankStartLevel(_levelForXP(eff))];
+    let cur = eff;
+    for (let i = 0; i < weeks && cur > floorXP; i++) {
+      const lvl = _levelForXP(cur);
+      const span = lvl >= XP_LEVEL_CAP
+        ? _XP_THRESHOLDS[XP_LEVEL_CAP] - _XP_THRESHOLDS[XP_LEVEL_CAP - 1]
+        : _XP_THRESHOLDS[lvl + 1] - _XP_THRESHOLDS[lvl];
+      cur = Math.max(floorXP, cur - Math.round(span * XP_DECAY_RATE));
+    }
+    return eff - cur;
+  }
+
+  let _xpDecayStamp = '';
+  /* Charges missing idle weeks once; safe to call often. Returns true when XP was lost. */
+  function applyXPDecay() {
+    const list = (typeof workouts !== 'undefined' && Array.isArray(workouts)) ? workouts : [];
+    const stamp = new Date().toDateString() + ':' + list.length;
+    if (stamp === _xpDecayStamp) return false;
+    _xpDecayStamp = stamp;
+    let last = 0;
+    list.forEach(w => { const t = (w && w.date) ? new Date(w.date).getTime() : NaN; if (isFinite(t) && t > last) last = t; });
+    if (!last) return false;
+    const d = _xpNormalize(xpData);
+    const idleWeeks = Math.floor((Date.now() - last) / (7 * 86400000));
+    if (d.decayFor === null) {            /* first run of this feature: no retroactive loss */
+      d.decayFor = last; d.decayWeeks = idleWeeks; d.decayLost = 0;
+      _saveXPData(d);
+      return false;
+    }
+    let changed = false, lost = 0;
+    if (d.decayFor !== last) { d.decayFor = last; d.decayWeeks = 0; d.decayLost = 0; changed = true; }   /* trained again: new idle period */
+    const todo = idleWeeks - d.decayWeeks;
+    if (todo > 0) {
+      lost = _xpDecayLoss(_xpEffective(d), todo);
+      d.xpPenalty += lost; d.decayLost += lost; d.decayWeeks = idleWeeks; changed = true;
+    }
+    if (changed) _saveXPData(d);
+    return lost > 0;
+  }
+
   function _xpLevelLabel(level) {
     if (level >= 50) return 'Legend';
-    if (level >= 31) return 'Elite';
-    if (level >= 16) return 'Advanced';
-    if (level >= 6)  return 'Intermediate';
+    if (level >= 43) return 'Master';
+    if (level >= 38) return 'Elite';
+    if (level >= 31) return 'Expert';
+    if (level >= 22) return 'Advanced';
+    if (level >= 16) return 'Skilled';
+    if (level >= 10) return 'Intermediate';
+    if (level >= 5)  return 'Novice';
     return 'Beginner';
   }
 
@@ -513,17 +580,18 @@
     amount = Math.round(Number(amount) || 0);
     if (amount <= 0) return false;
     const d = _xpNormalize(xpData);
-    const before = _levelForXP(d.totalXP);
+    const before = _levelForXP(_xpEffective(d));
     d.totalXP += amount;
     if (d.xpBySource && (reason in d.xpBySource)) d.xpBySource[reason] += amount;
     d.xpLog.push({ date: new Date().toISOString(), amount, reason: reason || 'misc', ...(label && { label }) });
     if (d.xpLog.length > 200) d.xpLog = d.xpLog.slice(d.xpLog.length - 200);  /* keep newest 200 */
     _saveXPData(d);
-    return _levelForXP(d.totalXP) > before;
+    return _levelForXP(_xpEffective(d)) > before;
   }
 
   function getLevelInfo() {
-    const xp    = _xpNormalize(xpData).totalXP;
+    applyXPDecay();
+    const xp    = _xpEffective(_xpNormalize(xpData));
     const level = _levelForXP(xp);
     const label = _xpLevelLabel(level);
     if (level >= XP_LEVEL_CAP) {
@@ -670,11 +738,12 @@
      _doFinishWorkout begins (before any XP is awarded) and consumed when the
      post-workout summary is about to show. */
   let _xpLevelBeforeFinish = null;
+  let _xpInfoBeforeFinish = null;   /* full level info at that moment, so the plant can grow from its exact previous size */
   /* Last xpLog entry before this workout's awards — used to slice out exactly
      this workout's awards for the summary breakdown (robust to the 200-cap). */
   let _xpLastEntryBeforeFinish = null;
 
-  function _showLevelUpCelebration(info, onContinue) {
+  function _showLevelUpCelebration(info, onContinue, fromInfo) {
     const done = () => { if (typeof onContinue === 'function') onContinue(); };
     const existing = document.getElementById('levelup-overlay');
     if (existing) existing.remove();
@@ -688,7 +757,9 @@
       'position:fixed;inset:0;z-index:100050;background:#000;display:flex;flex-direction:column;' +
       'align-items:center;justify-content:center;text-align:center;padding:2rem;opacity:0;transition:opacity .25s ease;';
     ov.innerHTML =
-      `<div style="font-size:5rem;line-height:1;margin-bottom:1.25rem">🎉</div>
+      `<div id="levelup-plant" style="display:flex;align-items:flex-end;justify-content:center;margin-bottom:.5rem"></div>
+       <div id="levelup-size" style="font-size:.9375rem;color:#64D2FF;margin-bottom:.5rem;min-height:1.2em"></div>
+       <div id="levelup-beat" style="font-size:1rem;font-style:italic;color:#fff;line-height:1.4;max-width:min(300px,85%);margin-bottom:1.25rem"></div>
        <div style="font-size:2rem;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:.5rem">Level Up!</div>
        <div style="font-size:1.0625rem;color:#8E8E93;margin-bottom:2rem">You're now Level ${info.level} — ${info.label}</div>
        <div style="width:min(300px,80%);height:8px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden;margin-bottom:2.5rem">
@@ -696,6 +767,13 @@
        </div>
        <button id="levelup-continue" style="background:#BF5AF2;color:#fff;border:none;border-radius:14px;padding:14px 48px;font-size:1.0625rem;font-weight:700;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent">Continue</button>`;
     document.body.appendChild(ov);
+
+    /* the plant grows from the previous level to the new one; plain emoji if the plant code is missing */
+    const plantEl = document.getElementById('levelup-plant');
+    const beatEl = document.getElementById('levelup-beat');
+    if (beatEl && typeof plantLevelBeat === 'function') beatEl.innerHTML = plantLevelBeat(info.level);
+    if (typeof plantGrowAnimate === 'function' && fromInfo) plantGrowAnimate(plantEl, fromInfo, info, document.getElementById('levelup-size'));
+    else if (plantEl) { plantEl.style.cssText += ';font-size:5rem;line-height:1'; plantEl.textContent = '🎉'; }
 
     requestAnimationFrame(() => {
       ov.style.opacity = '1';
@@ -716,7 +794,8 @@
       if (typeof _doFinishWorkout === 'function' && !_doFinishWorkout._xpWrapped) {
         const _origFinish = _doFinishWorkout;
         _doFinishWorkout = function () {
-          _xpLevelBeforeFinish = getLevelInfo().level;   /* before any XP is awarded */
+          _xpInfoBeforeFinish = getLevelInfo();
+          _xpLevelBeforeFinish = _xpInfoBeforeFinish.level;   /* before any XP is awarded */
           const lg = getXPData().xpLog;
           _xpLastEntryBeforeFinish = lg.length ? lg[lg.length - 1] : null;
           return _origFinish.apply(this, arguments);
@@ -728,7 +807,9 @@
         _showPostWorkout = function (w) {
           const after  = getLevelInfo();
           const before = _xpLevelBeforeFinish;
+          const beforeInfo = _xpInfoBeforeFinish;
           _xpLevelBeforeFinish = null;
+          _xpInfoBeforeFinish = null;
           /* slice out exactly this workout's awards */
           const log = getXPData().xpLog;
           const idx = _xpLastEntryBeforeFinish ? log.indexOf(_xpLastEntryBeforeFinish) : -1;
@@ -737,7 +818,7 @@
           const self = this;
           const proceed = () => { _origSPW.call(self, w); try { _renderXPBreakdown(awards); } catch (e) {} };
           if (before != null && after.level > before) {
-            _showLevelUpCelebration(after, proceed);  /* breakdown shows after dismissing the overlay */
+            _showLevelUpCelebration(after, proceed, beforeInfo || before);  /* breakdown shows after dismissing the overlay */
             return;
           }
           proceed();

@@ -3,12 +3,17 @@
 Rules for this file: Claude Code does not start items on its own. Items move between sections only when Joel confirms he tested them. One task per request, bug fixes and features never mixed.
 
 ## A. VERIFY FIRST (built or written, result not confirmed)
+30. Music ducking: the speech cue now uses the iOS 'transient' audio mode and returns music 2 seconds after speaking (workouts.js, _warmupSpeak). Built but not testable at the desk. Joel will confirm after a real training with music playing on the phone. Not pushed yet.
 6. Mac copy on localhost:8000 is old. When syncing it, log in with the private account and choose "Cloud" for all categories (the phone chose "This device"). Tell Joel first before doing this.
 
 ## B. DECISIONS PENDING
 (none)
 
 ## C. NEXT FEATURES (in this order)
+31. Bug: the tap area for the tick (completing a set) in trainings is too small, hard to click. Make it wider.
+32. Bug: the "Workout in progress - tap to resume" banner overlaps the journey card and the bottom nav in Library (from a screenshot). Assumption, confirm with Joel.
+33. Bug/UX: if a journey training is not counted/reached as completed, the post-workout summary should say why. (Wording unclear in note, confirm with Joel.)
+34. Bug: exercise progress charts over time: the left axis should stay fixed and not move when more data arrives; the chart should fit the screen width.
 9. Weekly challenge (bonus session for extra XP)
 10. Journey completion certificate (special screen when all sessions are done)
 11. Week preview (what is coming this week)
@@ -19,6 +24,13 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 16. Progress milestone messages (motivational text at key completion points)
 17. Training plan archive (deleted plans move to an archive, restorable or permanently deletable)
 18. Post-workout feedback prompt
+44. For each training of a journey, show its goal/focus.
+41. Tell me when a badge was earned (notification or visible hint).
+40. Indicator when the set break (rest) is almost over.
+42. Show how long since the last training. (Note said "last tick in training", confirm meaning with Joel.)
+35. Journey exercises do not have to be only exercises I already did before.
+38. Alternate (swap) exercises during journey trainings.
+36. Journey option for location/equipment: gym vs park or less equipment.
 
 ## D. MAINTENANCE AND IDEAS
 19. Cache busting: add a version number to the script and style links in index.html so phones fetch fresh files after each push (the home screen app kept old files for a long time after the sync release).
@@ -28,6 +40,8 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 23. Different AI provider (Claude API) or a rule-based fallback journey if Gemini fails repeatedly.
 24. Cleanup: restPerf:<exercise> keys are never deleted when an exercise is renamed or removed. Check whether clearAllData() also wipes the backup-status keys. Legacy v1 backups restore only 9 keys.
 25. Colleague onboarding: sign-ups are switched off in Supabase. To add a user, open sign-ups briefly, he creates his own account in the app, then close sign-ups again. He needs his own Gemini key.
+39. Week plan together with journey trainings.
+43. Create a training plan from a template made in another AI, and upload it.
 
 ## E. DEPRIORITIZED
 26. Native iOS app (React Native conversion roughly 4-6 weeks; lock screen widgets and push need native)
@@ -45,27 +59,8 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 - Faster journey session start: preview sheet from Summary Continue and from the + button, back returns to the chooser (tested by Joel 15 Nov 2026)
 - Supabase keep-alive GitHub Action (pings every 3 days, tested by Joel 15 Nov 2026); also verified: Gemini tests, secret-scan hook, reviewer agent
 - Rest timer is now a floating card that stays visible across exercises and tabs, and is removed when the training ends (item 29, tested by Joel 15 Nov 2026)
+- Plant gamification (item 37, tested by Joel 15 Nov 2026): plant on the XP screen that grows with every level, 9 ranks with aging forms, 5 tree types chosen once, nameable, thirsty and XP loss after idle weeks (10% of the level's XP per week, never below the rank), level-up grow animation, 7-chapter story with a story beat per level and a training journal (keys plantLog, plantName, plantType, in the XP & badges export category; penalty fields inside xpData)
 - Verified by Joel (15 Nov 2026): weekly goal XP check, bottom nav 6px shift, hold exercises showing seconds instead of reps, sync decision sheet inside the app container, Gemini 5xx retry and model fallback
-
-## G. INBOX (unsorted notes from phone, 15 Nov 2026; to be triaged by Joel)
-Bugs / UX problems:
-30. Music: when the app speaks, music should duck (lower volume) and come back about 2 seconds after speaking ends. Today music stays off until I bring it back manually.
-31. The tap area for the tick (completing a set) in trainings is too small, hard to click. Make it wider.
-32. "UX problem" (screenshot): the "Workout in progress - tap to resume" banner overlaps the journey card and the bottom nav in Library. Assumption, confirm with Joel.
-33. If a journey training is not counted/reached as completed, the post-workout summary should say why. (Wording unclear in note, confirm.)
-34. Exercise progress charts over time: the left axis should stay fixed and not move when more data arrives; the chart should fit the screen width.
-
-Features / ideas:
-35. Journey exercises do not have to be only exercises I already did before.
-36. Journey option for location/equipment: gym vs park or less equipment.
-37. Gamification: a plant that grows with training progress.
-38. Alternate (swap) exercises during journey trainings.
-39. Week plan together with journey trainings.
-40. Indicator when the set break (rest) is almost over.
-41. Tell me when a badge was earned (notification or visible hint).
-42. Show how long since the last training. (Note said "last tick in training", confirm meaning.)
-43. Create a training plan from a template made in another AI, and upload it.
-44. For each training of a journey, show its goal/focus.
 
 ## Reference
 - Models: gemini-3.8-flash (primary), gemini-3.5-flash-lite (fallback). Free tier limits are small, so keep test journeys short and avoid repeated retries.

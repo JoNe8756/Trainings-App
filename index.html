@@ -876,14 +876,14 @@
 <div id="post-workout-screen" style="display:none;position:fixed;inset:0;z-index:500;background:#000;overflow-y:auto;-webkit-overflow-scrolling:touch;">
   <div style="display:flex;flex-direction:column;min-height:100%;max-width:430px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 2.5rem) 1.25rem 0;box-sizing:border-box;">
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
-      <div style="font-size:4rem;line-height:1;text-align:center;">🏆</div>
-      <div style="margin-top:1rem;font-size:2rem;font-weight:700;color:#fff;text-align:center;letter-spacing:-.5px;line-height:1.15">Workout Complete</div>
+      <div style="margin-top:.25rem;font-size:2rem;font-weight:700;color:#fff;text-align:center;letter-spacing:-.5px;line-height:1.15">Workout Complete</div>
       <div style="margin-top:.375rem;font-size:.875rem;color:#8E8E93;text-align:center;">Great work today</div>
-      <div id="pw-stats" style="width:100%;margin-top:1.75rem;display:flex;flex-direction:column;gap:10px;"></div>
+      <div id="pw-plant" style="width:100%;margin-top:1.5rem;display:flex;flex-direction:column;align-items:center;"></div>
+      <div id="pw-stats" style="width:100%;margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
       <div id="pw-highlights" style="width:100%;margin-top:10px;"></div>
       <div id="pw-message" style="margin-top:1.5rem;font-size:.9375rem;font-style:italic;color:#8E8E93;text-align:center;line-height:1.55;padding:0 .5rem;"></div>
     </div>
-    <div style="display:flex;justify-content:center;padding:1.75rem 0 calc(1.75rem + env(safe-area-inset-bottom,0px));flex-shrink:0;">
+    <div style="display:flex;justify-content:center;padding:.875rem 0 calc(.875rem + env(safe-area-inset-bottom,0px));flex-shrink:0;position:sticky;bottom:0;background:#000;">
       <button onclick="_closePostWorkout()" style="width:80%;height:52px;background:#007AFF;color:#fff;border:none;border-radius:999px;font-size:1.0625rem;font-weight:600;font-family:inherit;cursor:pointer;letter-spacing:-.2px;padding-bottom:env(safe-area-inset-bottom,0px);">Done</button>
     </div>
   </div>
