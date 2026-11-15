@@ -1,0 +1,75 @@
+# Trainings App backlog (status as of 15 Nov 2026)
+
+Rules for this file: Claude Code does not start items on its own. Items move between sections only when Joel confirms he tested them. One task per request, bug fixes and features never mixed.
+
+## A. VERIFY FIRST (built or written, result not confirmed)
+6. Mac copy on localhost:8000 is old. When syncing it, log in with the private account and choose "Cloud" for all categories (the phone chose "This device"). Tell Joel first before doing this.
+
+## B. DECISIONS PENDING
+7. Supabase free projects pause after 1 week of inactivity. Decide on a small scheduled GitHub Action keep-alive (a request every few days), at the latest before colleagues use the app.
+
+## C. NEXT FEATURES (in this order)
+8. Faster journey session start (decisions made):
+   - Continue on a Summary journey card opens a preview bottom sheet instead of the journey detail.
+   - Sheet content: journey name with accent color, "Week 3 - Session 2", session title, "Test session" label if isTest, estimated duration, full exercise list (sets x reps, or seconds for holds), primary "Start session" button (or "Resume session" if one is in progress), small "View journey" link.
+   - The + button flow gets a "Journey session" section at the top, one row per active journey with its next session; tapping opens the same sheet.
+   - New file journey-quickstart.js. Reuse the existing helpers for next session, start journey session and duration estimate. Reuse journeyReturnTo for back navigation. Do not duplicate start logic.
+9. Weekly challenge (bonus session for extra XP)
+10. Journey completion certificate (special screen when all sessions are done)
+11. Week preview (what is coming this week)
+12. Rest day tips (recovery and mobility)
+13. Mid-journey check-in (Gemini reassesses at the halfway point)
+14. Weekly adaptive reassessment (after each completed week, Gemini updates the remaining weeks from actual vs planned performance)
+15. Adaptive difficulty (goes with 13 and 14)
+16. Progress milestone messages (motivational text at key completion points)
+17. Training plan archive (deleted plans move to an archive, restorable or permanently deletable)
+18. Post-workout feedback prompt
+
+## D. MAINTENANCE AND IDEAS
+19. Cache busting: add a version number to the script and style links in index.html so phones fetch fresh files after each push (the home screen app kept old files for a long time after the sync release).
+20. Forgot password and change password in Account & Sync (there is no password reset today).
+21. Gemini key proxy (for example a Supabase Edge Function) so colleagues do not need their own key. The key is currently stored per browser and never synced.
+22. Soft notice instead of the hard 5-training gate when sharing ("less history means a more general journey").
+23. Different AI provider (Claude API) or a rule-based fallback journey if Gemini fails repeatedly.
+24. Cleanup: restPerf:<exercise> keys are never deleted when an exercise is renamed or removed. Check whether clearAllData() also wipes the backup-status keys. Legacy v1 backups restore only 9 keys.
+25. Colleague onboarding: sign-ups are switched off in Supabase. To add a user, open sign-ups briefly, he creates his own account in the app, then close sign-ups again. He needs his own Gemini key.
+
+## E. DEPRIORITIZED
+26. Native iOS app (React Native conversion roughly 4-6 weeks; lock screen widgets and push need native)
+27. Weekly strength assessment, weekly progress photos, supersets and circuits, running/biking/cardio tracking, push notifications, training location tracking
+28. Older ideas, unscheduled: general goal setting beyond frequency, intensity streaks, level-up skill progression prompts, weekly hardest set spotlight, monthly collapsible history folders, warm-up vs working set distinction for PR calculations
+
+## F. DONE (do not re-suggest)
+- Smart rest timer, rest stats, post-workout summary, seconds-based intensity, file split
+- XP and levels, journey completion rules, manual completion, peek at future sessions, duration display, goal exercise guarantee, journey test sessions and looser variety, 5-training gate
+- Summary redesign (XP hero card, journeys, goals, compact highlights and last training), per-journey accent colors, reusable stacked cards for journeys and goals (stack.js), journey cards with full text and no AI badge, "Session logged" pill removed, journey back navigation returns to Summary
+- Badges and achievements: series with tiers, hub and category screens, XP rewards (bronze 5, silver 15, gold 40), post-workout celebration
+- Backups: share-sheet export, last-backup tracking and reminder banner, storage persistence request, category-based export and import (v3), true replace import, optional Gemini key checkbox, complete key coverage
+- Supabase account and sync: email and password login, upload, download, first-login and conflict choices, safety copies with restore, tested end to end, rolled out to the phone, sign-ups switched off
+- Gemini error handling: clear failure messages, rate-limit waits, model fallback
+- Verified by Joel (15 Nov 2026): weekly goal XP check, bottom nav 6px shift, hold exercises showing seconds instead of reps, sync decision sheet inside the app container, Gemini 5xx retry and model fallback
+
+## G. INBOX (unsorted notes from phone, 15 Nov 2026; to be triaged by Joel)
+Bugs / UX problems:
+29. Rest timer disappears when I navigate away from the set.
+30. Music: when the app speaks, music should duck (lower volume) and come back about 2 seconds after speaking ends. Today music stays off until I bring it back manually.
+31. The tap area for the tick (completing a set) in trainings is too small, hard to click. Make it wider.
+32. "UX problem" (screenshot): the "Workout in progress - tap to resume" banner overlaps the journey card and the bottom nav in Library. Assumption, confirm with Joel.
+33. If a journey training is not counted/reached as completed, the post-workout summary should say why. (Wording unclear in note, confirm.)
+34. Exercise progress charts over time: the left axis should stay fixed and not move when more data arrives; the chart should fit the screen width.
+
+Features / ideas:
+35. Journey exercises do not have to be only exercises I already did before.
+36. Journey option for location/equipment: gym vs park or less equipment.
+37. Gamification: a plant that grows with training progress.
+38. Alternate (swap) exercises during journey trainings.
+39. Week plan together with journey trainings.
+40. Indicator when the set break (rest) is almost over.
+41. Tell me when a badge was earned (notification or visible hint).
+42. Show how long since the last training. (Note said "last tick in training", confirm meaning.)
+43. Create a training plan from a template made in another AI, and upload it.
+44. For each training of a journey, show its goal/focus.
+
+## Reference
+- Models: gemini-3.8-flash (primary), gemini-3.5-flash-lite (fallback). Free tier limits are small, so keep test journeys short and avoid repeated retries.
+- Real account uses the private email, the Accenture account is a test account used only on localhost:8001. Never log in with the private account on a test environment.
