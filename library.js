@@ -822,8 +822,10 @@
       <div style="margin-top:24px">
         <button id="jc-generate" class="journey-btn-primary" onclick="_generateJourney()">✨ Generate Journey</button>
         <div id="jc-apikey-error" style="margin-top:12px"></div>
-      </div>`;
+      </div>
+      <div id="jc-ai-exchange"></div>`;
     _updateJourneyGenBtn();
+    if (typeof jxRenderCreatorButtons === 'function') jxRenderCreatorButtons();   /* journey-exchange.js: export guide / import */
     requestAnimationFrame(() => {
       const seg = document.getElementById('jc-level');
       if (seg) {
@@ -874,6 +876,7 @@
     btn.style.background = ok ? '#007AFF' : '#3A3A3C';
     btn.style.color = ok ? '#fff' : '#8E8E93';
     btn.style.cursor = ok ? 'pointer' : 'default';
+    if (typeof jxUpdateExportBtn === 'function') jxUpdateExportBtn();
   }
 
   function _showJourneyApiKeyError() {

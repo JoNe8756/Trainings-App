@@ -234,6 +234,11 @@
 
   function _setWarmupPref(val)   { localStorage.setItem('startWithWarmup', val ? 'true' : 'false'); }
 
+  // === JOURNEY WARM-UP ===
+  /* Set when a journey session is picked in the + start sheet with the warm-up switched on;
+     read once by _beginJourneyWorkout, which then runs the warm-up before starting the session. */
+  let _journeyWarmupNext = false;
+
   function _startWorkoutMaybeWarmup(planId /* null = blank */) {
     const warmup = document.getElementById('sc-warmup-toggle')?.checked ?? _getWarmupPref();
     if (warmup) {
@@ -326,6 +331,7 @@
       </div>`;
 
     el.querySelectorAll('[data-jqs-id]').forEach(btn => btn.addEventListener('click', () => {
+      _journeyWarmupNext = !!document.getElementById('sc-warmup-toggle')?.checked;   /* remember the warm-up choice for the journey start */
       closeStartChoice();
       openJourneySheet(Number(btn.dataset.jqsId), 'library');
     }));
@@ -2401,10 +2407,20 @@
   }
 
   function _beginJourneyWorkout(journeyId, wi, si, planName, normEx) {
-    _activeJourneyRef = { id: journeyId, w: wi, s: si };
-    _closeJourneySession();
-    _closeJourneyDetail();
-    _startWorkoutFromExercises(planName, normEx);
+    const go = () => {
+      _activeJourneyRef = { id: journeyId, w: wi, s: si };
+      _closeJourneySession();
+      _closeJourneyDetail();
+      _startWorkoutFromExercises(planName, normEx);
+    };
+    if (_journeyWarmupNext) {   /* warm-up was on in the + sheet: do it first, then start the session */
+      _journeyWarmupNext = false;
+      _closeJourneySession();
+      _closeJourneyDetail();
+      startWithWarmup(null, go);
+      return;
+    }
+    go();
   }
 
   function _startWorkoutFromExercises(planName, normEx) {
@@ -2608,9 +2624,12 @@
   }
 
   // === WARMUP ===
-  function startWithWarmup(planId) {
+  /* afterWarmup (optional): runs instead of starting a plan/blank workout once the warm-up is done or skipped */
+  let _warmupPostStart = null;
+  function startWithWarmup(planId, afterWarmup) {
     closeStartChoice();
     _warmupPostPlanId = planId;
+    _warmupPostStart = typeof afterWarmup === 'function' ? afterWarmup : null;
     _warmupStrStart = null;
 
     const genOn = _getWarmupGeneralEnabled() && WARMUP_GENERAL_LIVE.length > 0;
@@ -2618,6 +2637,7 @@
 
     /* Both phases disabled — skip warmup entirely */
     if (!genOn && !strOn) {
+      if (_warmupPostStart) { const f = _warmupPostStart; _warmupPostStart = null; f(); return; }
       if (planId !== null) startWorkoutFromPlan(planId);
       else startBlankWorkout();
       return;
@@ -2652,6 +2672,7 @@
 
   function _warmupShowPostChoice() {
     document.getElementById('warmup-overlay').classList.remove('open');
+    if (_warmupPostStart) { const f = _warmupPostStart; _warmupPostStart = null; f(); return; }
     if (_warmupPostPlanId !== null) {
       startWorkoutFromPlan(_warmupPostPlanId);
     } else {

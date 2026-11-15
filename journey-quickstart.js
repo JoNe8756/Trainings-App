@@ -15,6 +15,7 @@ function _jqsEnsure() {
   /* dismissing (tap outside) from the + flow returns to the start chooser */
   el.addEventListener('click', e => {
     if (e.target !== el) return;
+    _journeyWarmupNext = false;
     closeJourneySheet();
     if (_jqsSource === 'library') startWorkout();
   });
@@ -33,6 +34,7 @@ let _jqsSource = 'summary';
 
 /* one shared render for both entry points; source = 'summary' | 'library' */
 function openJourneySheet(journeyId, source) {
+  if (source !== 'library') _journeyWarmupNext = false;   /* warm-up choice only comes from the + start sheet */
   const j = _journeys.find(x => x.id === journeyId);
   if (!j) return;
   const next = _journeyNextSession(j);
@@ -75,6 +77,7 @@ function openJourneySheet(journeyId, source) {
   const resumeOther = document.getElementById('jqs-resume-other');
   if (resumeOther) resumeOther.addEventListener('click', () => { closeJourneySheet(); resumeWorkout(); });
   document.getElementById('jqs-view').addEventListener('click', () => {
+    _journeyWarmupNext = false;
     closeJourneySheet();
     journeyReturnTo = source === 'summary' ? 'summary' : 'library';
     _startNextJourneySession(journeyId);

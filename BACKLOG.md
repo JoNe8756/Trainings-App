@@ -63,6 +63,8 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 - Summary training calendar: month grid with training days in blue, month arrows, tap a day to open the training detail (several trainings per day are listed first) (15 Nov 2026)
 - Journey sessions started from a journey now count only when the completion rule is met (every planned set, at least 80% of planned reps); the post-workout summary shows a counted / not counted card with the exact reasons (item 33, tested by Joel 15 Nov 2026)
 - Plant story step 1: 100 levels on a 5% curve, 20 ranks of 5 levels named after the 20 story chapters, future ranks hidden until reached
+- Journey creation without Gemini: export a guide for another AI from the Journey creator, import the AI's JSON and save it as a normal journey (journey-exchange.js, tested by Joel 15 Nov 2026)
+- Warm-up now runs when a journey session is started from the + button with the warm-up switched on (tested by Joel 15 Nov 2026)
 - Verified by Joel (15 Nov 2026): weekly goal XP check, bottom nav 6px shift, hold exercises showing seconds instead of reps, sync decision sheet inside the app container, Gemini 5xx retry and model fallback
 
 ## Reference
