@@ -6,14 +6,9 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 6. Mac copy on localhost:8000 is old. When syncing it, log in with the private account and choose "Cloud" for all categories (the phone chose "This device"). Tell Joel first before doing this.
 
 ## B. DECISIONS PENDING
-7. Supabase free projects pause after 1 week of inactivity. Decide on a small scheduled GitHub Action keep-alive (a request every few days), at the latest before colleagues use the app.
+(none)
 
 ## C. NEXT FEATURES (in this order)
-8. Faster journey session start (decisions made):
-   - Continue on a Summary journey card opens a preview bottom sheet instead of the journey detail.
-   - Sheet content: journey name with accent color, "Week 3 - Session 2", session title, "Test session" label if isTest, estimated duration, full exercise list (sets x reps, or seconds for holds), primary "Start session" button (or "Resume session" if one is in progress), small "View journey" link.
-   - The + button flow gets a "Journey session" section at the top, one row per active journey with its next session; tapping opens the same sheet.
-   - New file journey-quickstart.js. Reuse the existing helpers for next session, start journey session and duration estimate. Reuse journeyReturnTo for back navigation. Do not duplicate start logic.
 9. Weekly challenge (bonus session for extra XP)
 10. Journey completion certificate (special screen when all sessions are done)
 11. Week preview (what is coming this week)
@@ -47,6 +42,8 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 - Backups: share-sheet export, last-backup tracking and reminder banner, storage persistence request, category-based export and import (v3), true replace import, optional Gemini key checkbox, complete key coverage
 - Supabase account and sync: email and password login, upload, download, first-login and conflict choices, safety copies with restore, tested end to end, rolled out to the phone, sign-ups switched off
 - Gemini error handling: clear failure messages, rate-limit waits, model fallback
+- Faster journey session start: preview sheet from Summary Continue and from the + button, back returns to the chooser (tested by Joel 15 Nov 2026)
+- Supabase keep-alive GitHub Action (pings every 3 days, tested by Joel 15 Nov 2026); also verified: Gemini tests, secret-scan hook, reviewer agent
 - Verified by Joel (15 Nov 2026): weekly goal XP check, bottom nav 6px shift, hold exercises showing seconds instead of reps, sync decision sheet inside the app container, Gemini 5xx retry and model fallback
 
 ## G. INBOX (unsorted notes from phone, 15 Nov 2026; to be triaged by Joel)

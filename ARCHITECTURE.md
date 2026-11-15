@@ -63,6 +63,9 @@ Contains: Personal Info, Training Goals, Workout Setup, Preferences,
 Data Management, About, Gemini API key storage and guide modal.
 Edit this file for: any settings screen issues.
 
+### journey-quickstart.js
+Preview bottom sheet for a journey's next session (name, Week/Session, exercises, Start/Resume, View journey). Opened from the Summary journey card (Continue) and the Journey session rows in the + start chooser. Reuses start logic from library.js/workouts.js. Loaded after library.js. No localStorage keys.
+
 ### sync.js
 Holds the Supabase client, auth helpers, and two-way sync: it tracks dirty categories, pushes them to Supabase `user_data` using the EXPORT_CATEGORIES ids, downloads cloud changes, asks which data to keep on first login and on conflicts, and keeps safety copies in `syncSafety` (transient); SYNC_EXCLUDED_KEYS stay local; `syncMeta` is a transient key. Keys starting with `sb-` are auth session keys and are excluded from backups. The secret / service_role key must never be added to this repo.
 

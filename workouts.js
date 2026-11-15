@@ -269,8 +269,20 @@
         </label>
       </div>`;
 
+    // === JOURNEY SESSION ROWS (start choice) ===
+    const _jRows = _journeys.map(j => ({ j, next: _journeyNextSession(j) })).filter(r => r.next);
+    const journeyRowsHTML = _jRows.length ? `
+      ${sectionLabel('Journey session')}
+      <div class="wizard-choices" style="margin-bottom:.25rem">
+        ${_jRows.map(r => `<button class="wizard-choice" data-jqs-id="${r.j.id}">
+          🧭 ${_esc(r.j.name)}<small>Week ${r.next.week} - Session ${r.next.si + 1}: ${_esc(r.next.s.planName || r.next.s.day || '')}</small>
+        </button>`).join('')}
+      </div>` : '';
+
     el.innerHTML = `
       <div class="wizard-step-q" style="margin-bottom:.875rem">Start Workout</div>
+
+      ${journeyRowsHTML}
 
       ${warmupRowHTML}
 
@@ -296,6 +308,11 @@
       <div class="wizard-footer" style="margin-top:.875rem">
         <button class="wizard-btn-back" onclick="closeStartChoice()">Cancel</button>
       </div>`;
+
+    el.querySelectorAll('[data-jqs-id]').forEach(btn => btn.addEventListener('click', () => {
+      closeStartChoice();
+      openJourneySheet(Number(btn.dataset.jqsId), 'library');
+    }));
   }
 
   function closeStartChoice() {
