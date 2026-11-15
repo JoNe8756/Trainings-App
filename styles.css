@@ -5242,3 +5242,21 @@
 .sds-apply { width:100%; border:none; border-radius:12px; padding:.8rem; font-size:1rem; font-weight:600; cursor:pointer; background:#007AFF; color:#fff; font-family:inherit; }
 .sds-apply:disabled { opacity:.4; cursor:default; }
 .sds-later { display:block; width:100%; background:none; border:none; color:#8E8E93; font-size:.9375rem; padding:.75rem 0 0; cursor:pointer; font-family:inherit; }
+
+
+    /* === GLOBAL REST CARD === */
+    /* Floating, phone-width, above the workout bottom bar (or above the resume banner on other screens) */
+    #rest-card {
+      position: fixed;
+      left: var(--gutter);
+      right: var(--gutter);
+      max-width: calc(min(430px, 100%) - 2 * var(--gutter));
+      margin: 0 auto;
+      bottom: calc(max(4.25rem + env(safe-area-inset-bottom, 0px), 5rem) + 4rem);
+      z-index: 160;
+      box-shadow: 0 4px 20px rgba(0,0,0,.5);
+      border: 0.5px solid rgba(255,255,255,.12);
+    }
+    body.nav-hidden #rest-card {
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem);
+    }

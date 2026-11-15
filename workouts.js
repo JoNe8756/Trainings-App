@@ -546,7 +546,6 @@
     const cards = _exGetCards();
     if (_exCurrentIdx >= cards.length - 1) return;
     if (!fromSwipe) _exArrowPulse('btn-ex-right');
-    if (_sw) _swStop();
     _exCurrentIdx++;
     _exNavUpdate();
     _exScrollReset();
@@ -555,7 +554,6 @@
   function _exNavPrev(fromSwipe) {
     if (_exCurrentIdx <= 0) return;
     if (!fromSwipe) _exArrowPulse('btn-ex-prev');
-    if (_sw) _swStop();
     _exCurrentIdx--;
     _exNavUpdate();
     _exScrollReset();
@@ -1008,6 +1006,19 @@
 
   function _fmtSecs(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
 
+  // === GLOBAL REST CARD ===
+  /* The rest card is a floating element on the body, so it stays visible on every
+     exercise and every tab while a break timer runs */
+  function _restMount(rc) { document.body.appendChild(rc); }
+
+  /* Stop whichever break timer runs and take the card off the screen.
+     Used when a workout ends, so no card is left behind */
+  function _restStopAll() {
+    if (_sw) _swStop();          /* records elapsed time on the set row first */
+    _restClear();
+    document.getElementById('rest-card')?.remove();
+  }
+
   function _restRemainingSecs() {
     if (!_rest) return 0;
     return Math.max(0, Math.round((_rest.endsAt - Date.now()) / 1000));
@@ -1034,7 +1045,7 @@
     const card = document.getElementById('rest-card');
     if (card) {
       card.classList.remove('active');
-      setTimeout(() => { const c = document.getElementById('rest-card'); if (c) c.remove(); }, 300);
+      setTimeout(() => card.remove(), 300);
     }
   }
 
@@ -1072,12 +1083,7 @@
       <button class="rest-adj-pill" onclick="_restAdjust(15)">+15s</button>
     </div>`;
     /* insert after the exercise card, or at the top of the scroll area */
-    const exCard = document.getElementById(exId);
-    if (exCard) exCard.after(rc);
-    else {
-      const scroll = document.getElementById('workout-scroll');
-      if (scroll) scroll.prepend(rc);
-    }
+    _restMount(rc);
     _rest = { interval: null, endsAt, totalSecs, exId: exId || '', exName: exName || '', btn: null };
     _restUpdateLabel();
     requestAnimationFrame(() => requestAnimationFrame(() => rc.classList.add('active')));
@@ -1099,7 +1105,7 @@
     const card = document.getElementById('rest-card');
     if (card) {
       card.classList.remove('active');
-      setTimeout(() => { const c = document.getElementById('rest-card'); if (c) c.remove(); }, 300);
+      setTimeout(() => card.remove(), 300);
     }
   }
 
@@ -1125,7 +1131,7 @@
     const card = document.getElementById('rest-card');
     if (card) {
       card.classList.remove('active');
-      setTimeout(() => { const c = document.getElementById('rest-card'); if (c) c.remove(); }, 300);
+      setTimeout(() => card.remove(), 300);
     }
   }
 
@@ -1146,12 +1152,7 @@
       <button class="rest-card-skip" onclick="_swStop()">Stop</button>
     </div>`;
 
-    if (setRow) setRow.after(rc);
-    else {
-      const exCard = document.getElementById(exId);
-      if (exCard) exCard.querySelector('.sets-list')?.append(rc);
-      else document.getElementById('workout-scroll')?.prepend(rc);
-    }
+    _restMount(rc);
 
     _sw = { interval: null, startedAt, exId: exId || '', exName: exName || '', setRow: setRow || null, btn: btn || null };
     _swUpdateLabel();
@@ -1175,9 +1176,7 @@
       <span id="rest-card-countdown">0:00</span>
       <button class="rest-card-skip" onclick="_swStop()">Stop</button>
     </div>`;
-    const exCard = document.getElementById(exId);
-    if (exCard) exCard.after(rc);
-    else document.getElementById('workout-scroll')?.prepend(rc);
+    _restMount(rc);
 
     _sw = { interval: null, startedAt, exId: exId || '', exName: exName || '', setRow: null, btn: null };
     _swUpdateLabel();
@@ -1273,8 +1272,7 @@
     </div>
     ${hasSuggestion ? `<div class="rest-card-hint">Suggested: ${_fmtSecs(optimal)} — based on your performance</div>` : ''}`;
 
-    if (setRow) setRow.after(rc);
-    else exCard?.querySelector('.sets-list')?.append(rc);
+    _restMount(rc);
 
     const endsAt = Date.now() + dur * 1000;
     localStorage.setItem('activeRest', JSON.stringify({ endsAt, totalSecs: dur, exId, exName }));
@@ -1325,8 +1323,8 @@
     _workoutPaused   = false;
     document.getElementById('pause-overlay')?.classList.remove('open');
     clearInterval(timerInterval);
-    /* stop any running stopwatch and record elapsed time on its set row */
-    if (_sw) _swStop();
+    /* stop any break timer and record elapsed stopwatch time on its set row */
+    _restStopAll();
     const exercises = [];
 
     // Regular exercises (killer set is no longer in #exercise-list)
@@ -1518,7 +1516,7 @@
     document.getElementById('pause-overlay')?.classList.remove('open');
     clearInterval(timerInterval);
     _workoutActive = false;
-    _restClear();
+    _restStopAll();
     activePlanData = null;
     exerciseCount  = 0;
     _completedWarmup = null;

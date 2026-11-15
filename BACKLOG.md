@@ -44,11 +44,11 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 - Gemini error handling: clear failure messages, rate-limit waits, model fallback
 - Faster journey session start: preview sheet from Summary Continue and from the + button, back returns to the chooser (tested by Joel 15 Nov 2026)
 - Supabase keep-alive GitHub Action (pings every 3 days, tested by Joel 15 Nov 2026); also verified: Gemini tests, secret-scan hook, reviewer agent
+- Rest timer is now a floating card that stays visible across exercises and tabs, and is removed when the training ends (item 29, tested by Joel 15 Nov 2026)
 - Verified by Joel (15 Nov 2026): weekly goal XP check, bottom nav 6px shift, hold exercises showing seconds instead of reps, sync decision sheet inside the app container, Gemini 5xx retry and model fallback
 
 ## G. INBOX (unsorted notes from phone, 15 Nov 2026; to be triaged by Joel)
 Bugs / UX problems:
-29. Rest timer disappears when I navigate away from the set.
 30. Music: when the app speaks, music should duck (lower volume) and come back about 2 seconds after speaking ends. Today music stays off until I bring it back manually.
 31. The tap area for the tick (completing a set) in trainings is too small, hard to click. Make it wider.
 32. "UX problem" (screenshot): the "Workout in progress - tap to resume" banner overlaps the journey card and the bottom nav in Library. Assumption, confirm with Joel.
