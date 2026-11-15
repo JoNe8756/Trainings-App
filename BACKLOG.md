@@ -61,6 +61,7 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 - Wider, visible tick button for completing a set, with more distance to the delete button (item 31, tested by Joel 15 Nov 2026)
 - Resume banner floats clear above the bottom nav and scroll areas leave room so it never covers the last card (item 32, tested by Joel 15 Nov 2026)
 - During a workout the + button is hidden and the bottom nav widens into its place; the resume banner is the single way back (tested by Joel 15 Nov 2026)
+- Summary training calendar: month grid with training days in blue, month arrows, tap a day to open the training detail (several trainings per day are listed first) (15 Nov 2026)
 - Verified by Joel (15 Nov 2026): weekly goal XP check, bottom nav 6px shift, hold exercises showing seconds instead of reps, sync decision sheet inside the app container, Gemini 5xx retry and model fallback
 
 ## Reference

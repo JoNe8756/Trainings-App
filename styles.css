@@ -5440,3 +5440,31 @@
       max-width: calc(430px - 32px);
       transform: translateX(-50%);
     }
+
+
+    /* === TRAINING CALENDAR (Summary) === */
+    .sum-cal-wrap { margin: 0.75rem var(--gutter) 0; }
+    .sum-cal { background: #1C1C1E; border-radius: 16px; padding: 12px 14px 12px; }
+    .sum-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .sum-cal-month { font-size: 15px; font-weight: 600; color: #fff; }
+    .sum-cal-nav { background: none; border: none; color: #0A84FF; font-size: 24px; line-height: 1; width: 36px; height: 30px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .sum-cal-nav:disabled { color: #3A3A3C; cursor: default; }
+    .sum-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 3px; }
+    .sum-cal-wd { text-align: center; font-size: 11px; font-weight: 600; color: #8E8E93; letter-spacing: .04em; padding-bottom: 4px; }
+    .sum-cal-day { display: flex; align-items: center; justify-content: center; height: 30px; font-variant-numeric: tabular-nums; }
+    .sum-cal-day span { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #EBEBF5; box-sizing: border-box; }
+    .sum-cal-day.on span { background: #007AFF; color: #fff; font-weight: 600; }
+    .sum-cal-day.today span { border: 1.5px solid #0A84FF; }
+    .sum-cal-day.on.today span { border-color: #fff; }
+    .sum-cal-day.future span { color: #48484A; }
+    .sum-cal-foot { margin-top: 8px; padding-top: 8px; border-top: .5px solid #2C2C2E; font-size: 13px; color: #8E8E93; }
+
+    /* calendar: tappable training days */
+    button.sum-cal-day { position: relative; background: none; border: none; padding: 0; font: inherit; width: 100%; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    button.sum-cal-day:active span { transform: scale(.9); }
+    .sum-cal-day.picked span { box-shadow: 0 0 0 2px #1C1C1E, 0 0 0 3.5px #64D2FF; }
+    .sum-cal-multi { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #64D2FF; }
+    .sum-cal-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .sum-cal-item { display: flex; align-items: center; gap: 8px; width: 100%; background: #2C2C2E; border: none; border-radius: 10px; padding: 10px 12px; color: #fff; font: inherit; text-align: left; cursor: pointer; }
+    .sum-cal-item-name { flex: 1; font-size: 15px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sum-cal-item-meta { font-size: 13px; color: #8E8E93; }

@@ -8,6 +8,7 @@
     if (!ph) return;
     ph.insertAdjacentHTML('beforebegin', `
     <div id="xp-card" class="sum-xp-wrap"></div>
+    <div id="sum-cal-card" class="sum-cal-wrap"></div>
     <div id="active-journeys-section"></div>
     <div id="goals-section-label" class="sum-title" style="display:none">Goals</div>
     <div id="goals-section" class="sum-goals" style="display:none"></div>
@@ -618,12 +619,92 @@
           const r = _orig.apply(this, arguments);
           try { renderBackupBanner(); } catch (e) {}
           try { renderXPCard(); } catch (e) {}
+          try { renderTrainingCalendar(); } catch (e) {}
           return r;
         };
         renderGoalsSection._xpWrapped = true;
       }
       try { renderXPCard(); } catch (e) {}
+      try { renderTrainingCalendar(); } catch (e) {}
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
     else wire();
   })();
+
+
+  // === TRAINING CALENDAR ===
+  /* Month grid on Summary (Mon-Sun). Days with at least one training are filled blue, today is
+     outlined. Arrows page back through earlier months. Drawn from the workouts dates only.
+     Tapping a blue day opens that training's detail; a day with several trainings lists them
+     under the grid first. */
+  let _calMonthOffset = 0;   /* 0 = current month, -1 = last month, ... */
+  let _calPickedKey = null;  /* day whose trainings are listed under the grid */
+
+  function renderTrainingCalendar() {
+    const host = document.getElementById('sum-cal-card');
+    if (!host) return;
+    const key = d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    const byDay = {};   /* day key -> workouts of that day, newest first */
+    (typeof workouts !== 'undefined' && Array.isArray(workouts) ? workouts : []).forEach(w => {
+      const d = w && w.date ? new Date(w.date) : null;
+      if (d && !isNaN(d.getTime())) (byDay[key(d)] = byDay[key(d)] || []).push(w);
+    });
+    Object.values(byDay).forEach(list => list.sort((a, b) => new Date(b.date) - new Date(a.date)));
+
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth() + _calMonthOffset, 1);
+    const y = first.getFullYear(), m = first.getMonth();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const lead = (first.getDay() + 6) % 7;   /* Monday-first */
+    const todayKey = key(now);
+
+    let cells = ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(l => `<div class="sum-cal-wd">${l}</div>`).join('');
+    for (let i = 0; i < lead; i++) cells += '<div></div>';
+    let count = 0;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(y, m, day), k = key(d);
+      const n = (byDay[k] || []).length, on = n > 0;
+      if (on) count++;
+      const cls = ['sum-cal-day', on ? 'on' : '', k === todayKey ? 'today' : '', d > now ? 'future' : '', k === _calPickedKey ? 'picked' : ''].filter(Boolean).join(' ');
+      cells += on
+        ? `<button class="${cls}" data-k="${k}" aria-label="${n} training${n === 1 ? '' : 's'} on ${d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}"><span>${day}</span>${n > 1 ? '<i class="sum-cal-multi"></i>' : ''}</button>`
+        : `<div class="${cls}"><span>${day}</span></div>`;
+    }
+
+    const monthName = first.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const isCurrent = _calMonthOffset === 0;
+    const foot = count === 0
+      ? (isCurrent ? 'No training yet this month' : 'No training this month')
+      : `${count} training day${count === 1 ? '' : 's'} ${isCurrent ? 'this month' : 'in ' + first.toLocaleDateString('en-US', { month: 'long' })}`;
+
+    host.innerHTML = `<div class="sum-cal">
+      <div class="sum-cal-head">
+        <button class="sum-cal-nav" data-dir="-1" aria-label="Previous month">‹</button>
+        <span class="sum-cal-month">${monthName}</span>
+        <button class="sum-cal-nav" data-dir="1" aria-label="Next month"${isCurrent ? ' disabled' : ''}>›</button>
+      </div>
+      <div class="sum-cal-grid">${cells}</div>
+      ${_calPickedKey && byDay[_calPickedKey] ? `<div class="sum-cal-list">${byDay[_calPickedKey].map(w => {
+          const t = new Date(w.date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          const mins = Math.floor((w.duration || 0) / 60);
+          return `<button class="sum-cal-item" data-wid="${w.id}"><span class="sum-cal-item-name"></span><span class="sum-cal-item-meta">${t} · ${mins} min</span><span class="sum-chev">›</span></button>`;
+        }).join('')}</div>` : ''}
+      <div class="sum-cal-foot">${foot}</div>
+    </div>`;
+    /* plan names via textContent (user text) */
+    if (_calPickedKey && byDay[_calPickedKey]) host.querySelectorAll('.sum-cal-item-name').forEach((el, i) => { el.textContent = byDay[_calPickedKey][i].planName || 'Workout'; });
+    host.querySelectorAll('.sum-cal-day.on').forEach(b => b.addEventListener('click', () => {
+      const list = byDay[b.dataset.k] || [];
+      if (list.length === 1) { _calPickedKey = null; openWorkoutDetail(Number(list[0].id)); return; }
+      _calPickedKey = _calPickedKey === b.dataset.k ? null : b.dataset.k;   /* several trainings: list them */
+      renderTrainingCalendar();
+    }));
+    host.querySelectorAll('.sum-cal-item').forEach(b => b.addEventListener('click', () => openWorkoutDetail(Number(b.dataset.wid))));
+    host.querySelectorAll('.sum-cal-nav').forEach(b => b.addEventListener('click', () => {
+      const dir = Number(b.dataset.dir);
+      if (dir > 0 && _calMonthOffset >= 0) return;
+      _calMonthOffset += dir;
+      _calPickedKey = null;
+      renderTrainingCalendar();
+    }));
+  }
