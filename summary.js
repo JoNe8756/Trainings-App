@@ -553,6 +553,36 @@
       streakRow = '<span>No active streak yet</span>';
     }
 
+    // === SUMMARY PLANT ===
+    /* The plant is the focus of the card: its state (watered or thirsty) comes first, the level is a small line. */
+    let plantCard = '';
+    try {
+      if (typeof _xpPlantSVG === 'function' && typeof _xpPlantGrowth === 'function' && typeof _xpPlantThirst === 'function') {
+        const th = _xpPlantThirst();
+        const tone = th.d < 0.33 ? 'ok' : (th.d < 0.66 ? 'warn' : 'dry');
+        const levelPct = Math.round(frac * 100);
+        plantCard =
+          `<div class="sum-xp sum-pl">
+            <span class="sum-xp-chev sum-chev">›</span>
+            <div class="sum-pl-top">
+              <div class="sum-pl-tile xp-go" aria-hidden="true">${_xpPlantSVG(_xpPlantGrowth(info), { d: th.d, today: false }, 0.75)}</div>
+              <div class="sum-pl-info">
+                <div class="sum-pl-name">${_xpEsc(plantNameGet())}</div>
+                <div class="sum-pl-status ${tone}">${th.label}</div>
+                <div class="sum-pl-bar"><div class="sum-pl-bar-fill ${tone}" style="width:${th.pct}%"></div></div>
+                <div class="sum-pl-hint">${th.hint}</div>
+              </div>
+            </div>
+            <div class="sum-pl-foot">
+              <span class="sum-pl-level">Level <b>${info.level}</b> · ${info.label} ${EMOJI[info.label] || ''}</span>
+              <span class="sum-pl-streak">${st.active ? `🔥 <b>${st.weeks}</b> wk${st.trainedThisWeek ? ' ✓' : ''}` : 'No streak yet'}</span>
+            </div>
+            <div class="sum-pl-xpbar" title="${info.isMaxLevel ? 'Max level' : Math.max(0, info.xpForNextLevel - info.currentLevelXP) + ' XP to Level ' + (info.level + 1)}"><div style="width:${levelPct}%"></div></div>
+          </div>`;
+      }
+    } catch (e) { plantCard = ''; }
+    if (plantCard) { card.innerHTML = plantCard; return; }
+
     card.innerHTML =
       `<div class="sum-xp">
         <span class="sum-xp-chev sum-chev">›</span>
@@ -565,11 +595,11 @@
                 <circle cx="38" cy="38" r="${R}" fill="none" stroke="url(#sum-xp-grad)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - frac)}"/>
               </g>
             </svg>
-            <div class="sum-xp-level">${info.level}</div>
+            <div class="sum-xp-level"><span class="sum-xp-level-cap">LEVEL</span>${info.level}</div>
           </div>
           <div class="sum-xp-text">
             <div class="sum-xp-rank">${info.label} ${EMOJI[info.label] || ''}</div>
-            <div class="sum-xp-total">${info.totalXP} XP</div>
+            <div class="sum-xp-total">${Number(info.totalXP).toLocaleString()} XP</div>
             ${toNext}
           </div>
         </div>
