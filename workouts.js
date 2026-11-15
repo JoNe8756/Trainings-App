@@ -142,6 +142,20 @@
     } else {
       banner.classList.remove('visible');
     }
+    /* lets scroll areas leave room so the banner never covers the last cards */
+    document.body.classList.toggle('has-resume-banner', banner.classList.contains('visible'));
+    _updateHomeFab();
+  }
+
+  // === HOME FAB STATE ===
+  /* While a workout runs, the resume banner is the one way back: the + button is hidden and
+     the bottom nav widens to fill its place (body.workout-running, see styles.css). */
+  function _updateHomeFab() {
+    const active = !!_workoutActive;
+    document.body.classList.toggle('workout-running', active);
+    const wrap = document.getElementById('home-fab-wrap');
+    const onWorkoutScreen = document.getElementById('workout-screen')?.classList.contains('active');
+    if (wrap && !onWorkoutScreen && document.querySelector('.tab-bar')?.style.display !== 'none') wrap.style.display = active ? 'none' : 'flex';
   }
 
   function _calcElapsedSeconds() {
@@ -210,6 +224,8 @@
   }
 
   function startWorkout() {
+    /* a workout is already running: the button resumes it instead of starting a second one */
+    if (_workoutActive) { resumeWorkout(); return; }
     _renderStartChoice();
     document.getElementById('start-choice').classList.add('open');
   }
@@ -1596,6 +1612,8 @@
     localStorage.removeItem('activeWorkout');
     localStorage.removeItem('activeWorkoutExerciseIndex');
     document.getElementById('resume-banner').classList.remove('visible');
+    document.body.classList.remove('has-resume-banner');
+    _updateHomeFab();
   }
 
   function restoreActiveWorkout() {

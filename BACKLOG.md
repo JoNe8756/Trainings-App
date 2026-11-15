@@ -10,8 +10,6 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 (none)
 
 ## C. NEXT FEATURES (in this order)
-31. Bug: the tap area for the tick (completing a set) in trainings is too small, hard to click. Make it wider.
-32. Bug: the "Workout in progress - tap to resume" banner overlaps the journey card and the bottom nav in Library (from a screenshot). Assumption, confirm with Joel.
 33. Bug/UX: if a journey training is not counted/reached as completed, the post-workout summary should say why. (Wording unclear in note, confirm with Joel.)
 34. Bug: exercise progress charts over time: the left axis should stay fixed and not move when more data arrives; the chart should fit the screen width.
 9. Weekly challenge (bonus session for extra XP)
@@ -60,6 +58,9 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 - Supabase keep-alive GitHub Action (pings every 3 days, tested by Joel 15 Nov 2026); also verified: Gemini tests, secret-scan hook, reviewer agent
 - Rest timer is now a floating card that stays visible across exercises and tabs, and is removed when the training ends (item 29, tested by Joel 15 Nov 2026)
 - Plant gamification (item 37, tested by Joel 15 Nov 2026): plant on the XP screen that grows with every level, 9 ranks with aging forms, 5 tree types chosen once, nameable, thirsty and XP loss after idle weeks (10% of the level's XP per week, never below the rank), level-up grow animation, 7-chapter story with a story beat per level and a training journal (keys plantLog, plantName, plantType, in the XP & badges export category; penalty fields inside xpData)
+- Wider, visible tick button for completing a set, with more distance to the delete button (item 31, tested by Joel 15 Nov 2026)
+- Resume banner floats clear above the bottom nav and scroll areas leave room so it never covers the last card (item 32, tested by Joel 15 Nov 2026)
+- During a workout the + button is hidden and the bottom nav widens into its place; the resume banner is the single way back (tested by Joel 15 Nov 2026)
 - Verified by Joel (15 Nov 2026): weekly goal XP check, bottom nav 6px shift, hold exercises showing seconds instead of reps, sync decision sheet inside the app container, Gemini 5xx retry and model fallback
 
 ## Reference

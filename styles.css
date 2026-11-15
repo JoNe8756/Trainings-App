@@ -5410,3 +5410,33 @@
     .sum-pl-foot b { color: #fff; }
     .sum-pl-xpbar { height: 3px; margin: 0 -18px; background: rgba(255,255,255,.08); }
     .sum-pl-xpbar > div { height: 100%; background: linear-gradient(90deg, #BF5AF2, #5E5CE6); }
+
+    /* === SET TICK TAP AREA === */
+    /* Wider tick button: it grows 16px wider than its cell (reaching left over the non-interactive
+       intensity number) and keeps a 6px extra gap to the delete button on the right. Height is
+       unchanged-ish; the invisible tap zone also covers the row padding above and below. */
+    .btn-log-set {
+      position: relative;
+      width: calc(100% + 16px); min-width: 0; height: 42px;
+      margin: 0 6px 0 -22px;
+      background: rgba(48,209,88,.10);
+      border-radius: 12px;
+    }
+    .btn-log-set::before { content: ''; position: absolute; top: -4px; bottom: -4px; left: -4px; right: 0; }
+
+
+    /* === RESUME BANNER POSITION === */
+    /* The tab bar's top edge sits 100px (+ safe area) above the screen bottom, so the banner now
+       floats clear above it (8px gap) instead of overlapping it; scroll areas get extra room
+       while the banner is visible so it never hides the last card (journey cards in Library). */
+    #resume-banner { bottom: calc(env(safe-area-inset-bottom, 0px) + 108px); }
+    body.has-resume-banner .scroll-area { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 168px); }
+
+
+    /* === NAV DURING WORKOUT === */
+    /* The + button is hidden while a workout runs; the nav takes the full width (16px gutters) */
+    body.workout-running .tab-bar {
+      width: calc(min(100%, 430px) - 32px);
+      max-width: calc(430px - 32px);
+      transform: translateX(-50%);
+    }
