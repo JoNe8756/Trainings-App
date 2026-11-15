@@ -4,17 +4,9 @@
      "XP DETAIL STYLES" (xp- classes). Reads from app.js: getLevelInfo,
      getXPData, getXPForLevel, getStreakStatus, XP_RULES, _xpWeekKey. */
 
-  const _XP_RANKS = [
-    { label: 'Beginner',     from: 1,  to: 4,  emoji: '🌱' },
-    { label: 'Novice',       from: 5,  to: 9,  emoji: '🌿' },
-    { label: 'Intermediate', from: 10, to: 15, emoji: '⚡' },
-    { label: 'Skilled',      from: 16, to: 21, emoji: '💪' },
-    { label: 'Advanced',     from: 22, to: 30, emoji: '🔥' },
-    { label: 'Expert',       from: 31, to: 37, emoji: '🎯' },
-    { label: 'Elite',        from: 38, to: 42, emoji: '💎' },
-    { label: 'Master',       from: 43, to: 49, emoji: '🏆' },
-    { label: 'Legend',       from: 50, to: 50, emoji: '👑' },
-  ];
+  /* 20 ranks of 5 levels each; names must match _XP_RANK_NAMES in app.js */
+  const _XP_RANK_EMOJI = ['🌰', '🌱', '🌿', '🪴', '🌾', '🌷', '🌸', '🌺', '🫘', '🧑‍🌾', '🌳', '🌲', '🐝', '🐸', '🦌', '🦉', '✨', '🍃', '🦊', '👑'];
+  const _XP_RANKS = _XP_RANK_NAMES.map((label, i) => ({ label, from: 1 + i * 5, to: 5 + i * 5, emoji: _XP_RANK_EMOJI[i] }));
 
   const _XP_SOURCES_UI = [
     ['workout', 'Workouts', '#0A84FF'], ['journey_session', 'Journey sessions', '#BF5AF2'], ['pr', 'Personal records', '#FFD60A'],
@@ -70,8 +62,9 @@
       nextRow = `<div class="xp-row"><div class="xp-icon" style="background:rgba(191,90,242,.18)">👑</div><div class="xp-row-main"><div class="xp-row-title">Next rank</div><div class="xp-row-sub">Max level reached</div></div></div>`;
     } else {
       const r = _XP_RANKS.find(x => x.from > info.level);
-      nextRow = `<div class="xp-row"><div class="xp-icon" style="background:rgba(191,90,242,.18)">${r.emoji}</div>
-        <div class="xp-row-main"><div class="xp-row-title">Next rank · ${r.label}</div>
+      /* future ranks stay a secret until reached */
+      nextRow = `<div class="xp-row"><div class="xp-icon" style="background:rgba(191,90,242,.18)">❔</div>
+        <div class="xp-row-main"><div class="xp-row-title">Next rank · ???</div>
         <div class="xp-row-sub">Level ${r.from} · ${_xpFmt(getXPForLevel(r.from) - info.totalXP)} XP to go</div></div></div>`;
     }
     return `<div class="xp-card"><div class="xp-track">${steps}</div><div class="xp-divider"></div>${nextRow}</div>`;
@@ -85,7 +78,7 @@
       const badge = state === 'locked' ? lock : (state === 'reached' ? '<span class="xp-check">✓</span>' : '');
       const range = r.from === r.to ? `Level ${r.from}` : `Level ${r.from}-${r.to}`;
       return `<div class="xp-rank-card ${state}"><div class="xp-rank-badge">${badge}</div>
-        <div class="xp-rank-emoji">${r.emoji}</div><div class="xp-rank-name">${r.label}</div>
+        <div class="xp-rank-emoji">${state === 'locked' ? '❔' : r.emoji}</div><div class="xp-rank-name">${state === 'locked' ? '???' : r.label}</div>
         <div class="xp-rank-cap">${range}</div><div class="xp-rank-cap">${_xpFmt(getXPForLevel(r.from))} XP</div></div>`;
     }).join('') + '</div>';
   }
@@ -137,10 +130,22 @@
      needs no stored data. g runs from 0 (new seed) to 1 (max level, full bloom). */
   const _XP_PLANT_STAGES = [[0, 'Seed'], [0.05, 'Sprout'], [0.2, 'Young plant'], [0.4, 'Growing strong'], [0.6, 'Almost in bloom'], [0.85, 'In bloom'], [1, 'Full bloom']];
 
+  /* The plant grows up over levels 1-40 (fully grown at 40); later levels belong to the
+     baby plants and the forest (next steps). */
+  const _XP_PLANT_MATURE_LEVEL = 40;
+
   function _xpPlantGrowth(info) {
-    if (info.isMaxLevel) return 1;
+    if (info.isMaxLevel || info.level >= _XP_PLANT_MATURE_LEVEL) return 1;
     const frac = info.xpForNextLevel > 0 ? Math.min(1, info.currentLevelXP / info.xpForNextLevel) : 0;
-    return Math.min(1, ((info.level - 1) + frac) / (XP_LEVEL_CAP - 1));
+    return Math.min(1, ((info.level - 1) + frac) / (_XP_PLANT_MATURE_LEVEL - 1));
+  }
+
+  /* Plant form 0..8 from growth g (the 9 forms of the plant drawing, spread over levels 1-40) */
+  const _XP_PLANT_FORM_G = [0, 0.082, 0.184, 0.306, 0.429, 0.612, 0.755, 0.857, 1];
+  function _xpPlantForm(g) {
+    let f = 0;
+    _XP_PLANT_FORM_G.forEach((thr, i) => { if (g >= thr - 1e-9) f = i; });
+    return f;
   }
 
   function _xpPlantStageIdx(g) {
@@ -208,8 +213,7 @@
   function _xpPlantSVG(g, thirst, px, typeKey) {
     const T = _XP_TREES[typeKey] || _XP_TREES[plantTypeGet()];
     const d = thirst.d;
-    const lvl = Math.min(XP_LEVEL_CAP, Math.floor(g * (XP_LEVEL_CAP - 1) + 1e-9) + 1);
-    const rank = _XP_RANKS.indexOf(_xpRankFor(lvl));   /* 0..8 */
+    const rank = _xpPlantForm(g);   /* plant form 0..8 */
     const uid = 'xpg' + (++_xpPlantUid);
     const bx = 100, by = 150, H = 14 + g * 100, lean = T.straight ? 1 + g * 2 : 8 + g * 6;
     const tx = bx + lean + H * 0.45 * d, ty = by - H * (1 - 0.35 * d), cx = bx - (T.straight ? 2 : 10), cy = by - H / 2;   /* stem: quadratic curve; droops when thirsty */
@@ -338,7 +342,7 @@
     if (!host) return;
     const toG = _xpPlantGrowth(toInfo);
     const fromG = Math.min(toG, typeof fromInfo === 'number'
-      ? Math.max(0, (fromInfo - 1 + 0.5) / (XP_LEVEL_CAP - 1))
+      ? Math.min(1, Math.max(0, (fromInfo - 1 + 0.5) / (_XP_PLANT_MATURE_LEVEL - 1)))
       : _xpPlantGrowth(fromInfo));
     const svg = g => _xpPlantSVG(g, { d: 0, today: false }, 1.1);
     const hm = svg(toG).match(/height="(\d+)"/);
@@ -724,7 +728,8 @@
   }
 
   function plantSnippetText(e) {
-    const main = (_XP_PLANT_SNIPPETS[e && e.ch] || [])[e && e.sn] || '';
+    const pool = e && e.p !== undefined ? e.p : (e && e.ch);   /* old entries: ch was the pool */
+    const main = (_XP_PLANT_SNIPPETS[pool] || [])[e && e.sn] || '';
     const tail = e && e.tl && _XP_TAILS[e.tl] ? ' ' + _XP_TAILS[e.tl](e) : '';
     return _xpFig(main + tail);
   }
@@ -734,16 +739,18 @@
     const log = _xpPlantLogRead();
     const wid = w && w.id !== undefined ? w.id : null;
     if (wid !== null) { const have = log.find(e => e.w === wid); if (have) return have; }
-    const ch = _xpPlantStageIdx(_xpPlantGrowth(getLevelInfo()));
-    /* pick a line used least often in this chapter, never the same as the previous entry */
-    const pool = _XP_PLANT_SNIPPETS[ch], used = log.filter(e => e.ch === ch);
+    const info = getLevelInfo();
+    const p = _xpPlantStageIdx(_xpPlantGrowth(info));   /* line pool follows the plant's growth stage */
+    const ch = _xpChapterIdx(info.level);               /* chapter follows the rank */
+    /* pick a line used least often in this pool, never the same as the previous entry */
+    const pool = _XP_PLANT_SNIPPETS[p], used = log.filter(e => (e.p !== undefined ? e.p : e.ch) === p);
     const counts = pool.map((_, i) => used.filter(e => e.sn === i).length);
     const min = Math.min(...counts);
     let cands = pool.map((_, i) => i).filter(i => counts[i] === min);
     const lastSn = used.length ? used[used.length - 1].sn : -1;
     if (cands.length > 1) cands = cands.filter(i => i !== lastSn);
     const lastTl = log.length ? log[log.length - 1].tl || '' : '';
-    const entry = { w: wid, ts: Date.now(), ch, lv: getLevelInfo().level, sn: cands[Math.floor(Math.random() * cands.length)], ..._xpPickTail(w, lastTl) };
+    const entry = { w: wid, ts: Date.now(), ch, p, lv: info.level, sn: cands[Math.floor(Math.random() * cands.length)], ..._xpPickTail(w, lastTl) };
     log.push(entry);
     try { localStorage.setItem('plantLog', JSON.stringify(log)); } catch (e) {}
     return entry;
@@ -817,21 +824,39 @@
   ];
 
   function plantLevelBeat(level) {
-    return _xpFig(_XP_PLANT_BEATS[Math.max(1, Math.min(XP_LEVEL_CAP, level)) - 1] || '');
+    /* the 50 beats describe the plant growing up; spread them over levels 1-40 */
+    if (level > _XP_PLANT_MATURE_LEVEL) return _xpFig(`Level ${level}. Fig stands fully grown and strong, and keeps getting sturdier.`);
+    const idx = Math.round((Math.max(1, level) - 1) / (_XP_PLANT_MATURE_LEVEL - 1) * (_XP_PLANT_BEATS.length - 1));
+    return _xpFig(_XP_PLANT_BEATS[idx] || '');
   }
 
   // === PLANT STORY ===
-  /* One chapter per growth stage; unlocks automatically when the plant reaches the stage. */
+  /* 20 chapters, one per rank (5 levels each). Chapters 1-8 follow the plant growing up
+     (levels 1-40); chapters 9-20 tell the story of the baby plants and the forest. */
   const _XP_PLANT_STORY = [
     ['The Gym Bag Seed', 'At the bottom of your old gym bag you find a single seed, a gift from a stranger who said: "It only grows for people who show up." You plant it in a small clay pot and give it a first drink.'],
     ['First Green', 'Two tiny leaves push through the soil. Every time you train, the pot gets watered. You start calling the plant Fig, and Fig seems to wait by the window for you.'],
     ['Standing Tall', 'Fig has a real stem now and leans toward the light, and toward you. On days you skip training the leaves droop a little. It never complains, but you notice.'],
     ['Roots Run Deep', 'Under the pot, roots have wound around the clay. Strong roots come from steady weeks, not perfect ones. Fig has learned your rhythm, and so have you.'],
-    ['A Hidden Bud', 'A small bud appears at the tip, closed tight like a fist before the last rep. Keep watering and you will see what it has been saving.'],
-    ['The First Flower', 'The bud opens: pink petals around a golden heart. The stranger was right. It grew because you kept showing up. Visitors ask what your secret is.'],
-    ['Evergreen Habit', 'Fig is in full bloom and will stay that way as long as you keep watering it. The seed was never really about the plant. The habit grew with it, and it is yours now.'],
+    ['Branching Out', 'Fig sends out its first branches, one to each side, like arms reaching for more. Small green buds form at the tips. Growth is no longer only upward.'],
+    ['A Hidden Bud', 'The stem turns woody and a leafy crown fans out. At the very top a bud appears, closed tight like a fist before the last rep. Keep watering and you will see what it has been saving.'],
+    ['The First Flower', 'The bud opens into a flower around a golden heart. The stranger was right. It grew because you kept showing up. Visitors ask what your secret is.'],
+    ['Full Bloom', 'Fig is fully grown, covered in blossoms, with {fruits} hanging from its branches. The seed was never really about the plant. The habit grew with it. And the story is not over.'],
+    ['Little Ones', 'One morning you find tiny green shoots in the soil around the pot. Fig has dropped seeds of its own. You are not looking after one plant anymore.'],
+    ['A Family of Pots', 'The little ones get their own pots, lined up along the windowsill. Each one leans toward the light the way Fig once did.'],
+    ['Moving Outside', 'The young plants outgrow the windowsill. You carry them outside and plant them in the ground, with Fig watching from its pot.'],
+    ['The First Grove', 'A small grove stands where there was only grass. The first birds stop on the branches, then decide to stay.'],
+    ['Wildflowers', 'Flowers you never planted appear between the trees. Bees and butterflies arrive to look after them.'],
+    ['Running Water', 'A small stream finds its way through the grove. Frogs move in, and the evenings get louder.'],
+    ['Visitors at Dusk', 'At dusk a deer steps out between the trees, and a fox crosses the path. The grove has become a home.'],
+    ['Old Giants', 'The first trees have grown tall and wide. An owl watches from the oldest one, which has a little of Fig in every branch.'],
+    ['Fireflies', 'On warm nights the forest floor lights up with fireflies. It feels a bit like magic, but it is just years of showing up.'],
+    ['The Forest Remembers', 'The forest now waters and feeds itself. Even on days you rest, it keeps going. That is what strong habits do.'],
+    ['Keeper of the Woods', 'Animals no longer run when you walk in. They know you. You are the keeper of this forest now.'],
+    ['Evergreen', 'A whole forest grew from one seed in a gym bag. Fig still stands at its heart, in full bloom. This is your legend.'],
   ];
-  const _xpStoryUnlockLevel = i => i === 0 ? 1 : Math.min(XP_LEVEL_CAP, 1 + Math.ceil(_XP_PLANT_STAGES[i][0] * (XP_LEVEL_CAP - 1) - 1e-9));
+  const _xpChapterIdx = level => Math.max(0, Math.min(_XP_PLANT_STORY.length - 1, Math.floor((level - 1) / 5)));
+  const _xpStoryUnlockLevel = i => 1 + i * 5;
 
   /* Shown only while the current idle period has already cost XP (see XP DECAY in app.js) */
   function _xpDecayNote() {
@@ -850,19 +875,19 @@
       ${_xpDecayNote()}
       ${plantTypeChosen() ? '' : `<button class="xp-choose-tree" id="xp-choose-tree">🌳 Choose your tree ›</button>`}
       <div class="xp-divider" style="margin:12px 0 4px"></div>
-      <button class="xp-story-row" id="xp-story-row"><span class="xp-badges-ic">📖</span><span class="xp-badges-lbl">${_xpEsc(plantNameGet())}'s Story</span><span class="xp-badges-count">Chapter ${idx + 1} of ${_XP_PLANT_STORY.length}</span><span class="xp-badges-chev">›</span></button>
+      <button class="xp-story-row" id="xp-story-row"><span class="xp-badges-ic">📖</span><span class="xp-badges-lbl">${_xpEsc(plantNameGet())}'s Story</span><span class="xp-badges-count">Chapter ${_xpChapterIdx(info.level) + 1} of ${_XP_PLANT_STORY.length}</span><span class="xp-badges-chev">›</span></button>
     </div>`;
   }
 
   function _xpStoryHTML(info) {
-    const idx = _xpPlantStageIdx(_xpPlantGrowth(info));
+    const idx = _xpChapterIdx(info.level);
     const log = _xpPlantLogRead();
     const xd = getXPData();
     const effNow = Math.max(0, xd.totalXP - xd.xpPenalty);
     /* level an entry was made at: stored for new entries, estimated from the XP log for older ones */
     const entryLevel = e => {
-      if (e.lv) return e.lv;
-      if (typeof _levelForXP !== 'function') return null;
+      if (e.lv && e.p !== undefined) return e.lv;   /* new entries: level on the current scale */
+      if (typeof _levelForXP !== 'function') return e.lv || null;
       const after = xd.xpLog.reduce((t, x) => (x && new Date(x.date).getTime() > e.ts) ? t + (Number(x.amount) || 0) : t, 0);
       return _levelForXP(Math.max(0, effNow - after));
     };
@@ -870,25 +895,28 @@
     const row = e => `<div class="xp-journal-row xp-journal-nested"><span class="xp-journal-date">${fmt(e.ts)}</span><span class="xp-journal-text">${plantSnippetText(e)}</span></div>`;
     return _XP_PLANT_STORY.map((c, i) => {
       const open = i <= idx;
-      const from = _xpStoryUnlockLevel(i), to = i < _XP_PLANT_STORY.length - 1 ? _xpStoryUnlockLevel(i + 1) - 1 : XP_LEVEL_CAP;
+      const from = _xpStoryUnlockLevel(i), to = from + 4;
       let beats = '';
       if (open) {
         /* each journal entry sits under the level where it was written (inside the chapter it belongs to) */
         const byLevel = {};
         let maxLv = info.level;
-        log.filter(e => e.ch === i).forEach(e => {
-          const lv = Math.max(from, Math.min(to, entryLevel(e) || from));
+        log.forEach(e => {
+          const lv = entryLevel(e) || 1;
+          if (_xpChapterIdx(lv) !== i) return;   /* entries sit in the chapter of the level they were written at */
           (byLevel[lv] = byLevel[lv] || []).push(e);
           if (lv > maxLv) maxLv = lv;
         });
         for (let l = from; l <= Math.min(to, maxLv); l++) {
-          beats += `<div class="xp-level-row"><span class="xp-level-lv">Lv ${l}</span><span>${plantLevelBeat(l)}</span></div>` +
-            (byLevel[l] || []).map(row).join('');
+          /* level beats exist for the growing-up levels (1-40); later levels only list journal entries */
+          if (l <= _XP_PLANT_MATURE_LEVEL) beats += `<div class="xp-level-row"><span class="xp-level-lv">Lv ${l}</span><span>${plantLevelBeat(l)}</span></div>`;
+          else if (byLevel[l]) beats += `<div class="xp-level-row"><span class="xp-level-lv">Lv ${l}</span><span></span></div>`;
+          beats += (byLevel[l] || []).map(row).join('');
         }
         beats = `<div class="xp-divider" style="margin:12px 0 6px"></div><div class="xp-plant-chap">Levels ${from}\u2013${to}</div>${beats}`;
       }
       return `<div class="xp-card xp-story-ch${open ? '' : ' locked'}">
-        <div class="xp-plant-chap">Chapter ${i + 1} · ${_XP_PLANT_STAGES[i][1]}</div>
+        <div class="xp-plant-chap">Chapter ${i + 1} · ${open && _XP_RANKS[i] ? _XP_RANKS[i].label + ' ' + _XP_RANKS[i].emoji : '???'}</div>
         <div class="xp-story-title">${open ? c[0] : 'Locked'}</div>
         <div class="xp-story-text">${open ? _xpFig(c[1]) : `Reach Level ${_xpStoryUnlockLevel(i)} to unlock this chapter.`}</div>
         ${beats}

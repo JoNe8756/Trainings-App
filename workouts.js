@@ -1391,11 +1391,11 @@
     workouts.unshift(workout);
     persist();
 
-    /* mark journey session complete if this workout was started from one */
-    if (_activeJourneyRef) { _markJourneySessionComplete(_activeJourneyRef); _activeJourneyRef = null; }
-
     /* check journey sessions added mid-workout (strict: all planned sets/reps confirmed) */
     _checkJourneySessionsOnFinish();
+
+    /* a workout started from a journey session counts only if the same completion rule is met */
+    if (_activeJourneyRef) { _finishActiveJourneySession(); }
 
     /* XP: +20 for finishing, +15 per new PR, then weekly goal / streak bonuses */
     if (typeof addXP === 'function') {
@@ -1465,6 +1465,49 @@
       stat('🏋️', 'Exercises',   exCount) +
       stat('📋', 'Sets',         setCount) +
       stat('⚖️', 'Total Volume', volStr, true);
+
+    // === POST-WORKOUT JOURNEY RESULT ===
+    /* Says whether each journey session of this workout counted, and if not, exactly why */
+    (function () {
+      const rep = _pwJourneyReport; _pwJourneyReport = [];
+      let box = document.getElementById('pw-journey');
+      if (!box) {
+        box = document.createElement('div');
+        box.id = 'pw-journey';
+        box.style.cssText = 'width:100%;margin-top:10px;display:flex;flex-direction:column;gap:10px;';
+        const statsEl = document.getElementById('pw-stats');
+        statsEl.parentNode.insertBefore(box, statsEl.nextSibling);
+      }
+      box.innerHTML = '';
+      rep.forEach(r => {
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#1C1C1E;border-radius:12px;padding:14px 16px;border-left:3px solid ' + (r.ok ? '#30D158' : '#FF9F0A') + ';';
+        const title = document.createElement('div');
+        title.style.cssText = 'font-size:.9375rem;font-weight:600;color:' + (r.ok ? '#30D158' : '#FF9F0A') + ';';
+        title.textContent = r.ok ? 'Journey session counted' : 'Journey session not counted';
+        const sub = document.createElement('div');
+        sub.style.cssText = 'font-size:.8125rem;color:#8E8E93;margin-top:2px;';
+        sub.textContent = r.name + ' · Week ' + (r.wi + 1) + ' · Session ' + (r.si + 1);
+        card.append(title, sub);
+        if (!r.ok) {
+          r.issues.forEach(i => {
+            const line = document.createElement('div');
+            line.style.cssText = 'font-size:.8125rem;color:#EBEBF5;margin-top:6px;';
+            const parts = [];
+            if (i.sets < i.plannedSets) parts.push(i.sets + ' of ' + i.plannedSets + ' sets logged');
+            if (i.total < i.needed) parts.push(i.total + ' of at least ' + i.needed + ' reps');
+            line.textContent = i.name + ': ' + parts.join(', ');
+            card.append(line);
+          });
+          const rule = document.createElement('div');
+          rule.style.cssText = 'font-size:.75rem;color:#8E8E93;margin-top:8px;';
+          rule.textContent = 'A session counts when every planned set is logged with at least ' + Math.round(JOURNEY_COMPLETION_THRESHOLD * 100) + '% of the planned reps.';
+          card.append(rule);
+        }
+        box.append(card);
+      });
+      box.style.display = rep.length ? 'flex' : 'none';
+    })();
 
     // === POST-WORKOUT BADGES BLOCK ===
     const _pwBadges = _pwNewBadges; _pwNewBadges = [];
@@ -2315,12 +2358,16 @@
 
   // === JOURNEY SESSION INTEGRATION ===
   const JOURNEY_COMPLETION_THRESHOLD = 0.8;
+  /* Result of the journey sessions of the workout just finished, shown on the post-workout summary:
+     [{ name, wi, si, ok, issues: [{ name, sets, plannedSets, total, needed }] }] */
+  let _pwJourneyReport = [];
   function _checkJourneySessionsOnFinish() {
+    _pwJourneyReport = [];
     if (!_workoutJourneyAdds.length) return;
     const cards = Array.from(document.querySelectorAll('#exercise-list .exercise-card'));
-    let anyComplete = false, incompleteUnfinished = 0;
     _workoutJourneyAdds.forEach(rec => {
       let unfinished = 0;
+      const issues = [];
       rec.exercises.forEach(pe => {
         const matching = cards.filter(c => c.dataset.journeyKey === rec.key &&
           (c.querySelector('.exercise-head input')?.value.trim() === pe.name));
@@ -2330,8 +2377,9 @@
           if (reps > 0) { sets++; total += reps; }
         }));
         const needed = Math.ceil(pe.plannedSets * pe.plannedReps * JOURNEY_COMPLETION_THRESHOLD - 1e-9);
-        if (sets < pe.plannedSets || total < needed) unfinished++;
+        if (sets < pe.plannedSets || total < needed) { unfinished++; issues.push({ name: pe.name, sets, plannedSets: pe.plannedSets, total, needed }); }
       });
+      _pwJourneyReport.push({ name: rec.journeyName || 'Journey', wi: rec.wi, si: rec.si, ok: unfinished === 0, issues });
       if (unfinished === 0) {
         const j = _journeys.find(x => x.id === rec.journeyId);
         if (j) {
@@ -2344,19 +2392,12 @@
           j.completedDates = j.completedDates || {};
           j.completedDates[token] = new Date().toISOString();
           if (workouts[0] && workouts[0].duration > 0) { j.completedDurations = j.completedDurations || {}; j.completedDurations[token] = workouts[0].duration; }
-          anyComplete = true;
         }
-      } else {
-        incompleteUnfinished += unfinished;
       }
     });
     _persistJourneys();
     _workoutJourneyAdds = [];
-    if (incompleteUnfinished > 0) {
-      showToast('⚠️ Journey session incomplete — ' + incompleteUnfinished + ' exercise' + (incompleteUnfinished !== 1 ? 's' : '') + ' not finished');
-    } else if (anyComplete) {
-      showToast('✅ Journey session completed!');
-    }
+    /* the post-workout summary shows the result (see POST-WORKOUT JOURNEY RESULT), so no toast here */
   }
 
   function _beginJourneyWorkout(journeyId, wi, si, planName, normEx) {
@@ -2395,6 +2436,32 @@
     _exNavUpdate();
     updatePlanBanner();
     persistActiveWorkout();
+  }
+
+  /* The workout was started from a journey session (_activeJourneyRef): count it only when every planned
+     set is logged with at least JOURNEY_COMPLETION_THRESHOLD of the planned reps; otherwise add the
+     reasons to the post-workout report instead of awarding the session and its XP. */
+  function _finishActiveJourneySession() {
+    const ref = _activeJourneyRef; _activeJourneyRef = null;
+    if (!ref) return;
+    const key = ref.id + '-' + ref.w + '-' + ref.s;
+    const cards = Array.from(document.querySelectorAll('#exercise-list .exercise-card')).filter(c => c.dataset.journeyKey === key);
+    const issues = [];
+    cards.forEach(c => {
+      const name = c.querySelector('.exercise-head input')?.value.trim() || 'Exercise';
+      const plannedSets = Math.max(1, parseInt(c.dataset.plannedSets) || 1), plannedReps = parseFloat(c.dataset.plannedReps) || 0;
+      let sets = 0, total = 0;
+      c.querySelectorAll('.sets-body .set-row.set-done').forEach(row => {
+        const reps = parseFloat(row.dataset.confirmedReps) || 0;
+        if (reps > 0) { sets++; total += reps; }
+      });
+      const needed = Math.ceil(plannedSets * plannedReps * JOURNEY_COMPLETION_THRESHOLD - 1e-9);
+      if (sets < plannedSets || total < needed) issues.push({ name, sets, plannedSets, total, needed });
+    });
+    const j = _journeys.find(x => x.id === ref.id);
+    const ok = issues.length === 0 && cards.length > 0;
+    _pwJourneyReport.push({ name: j ? j.name : 'Journey', wi: ref.w, si: ref.s, ok, issues });
+    if (ok) _markJourneySessionComplete(ref);
   }
 
   function _markJourneySessionComplete(ref) {

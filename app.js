@@ -437,7 +437,7 @@
      localStorage key "xpData" is picked up automatically by the export/import
      in settings.js (DATA MANAGEMENT reads every key), so no change is needed there. */
 
-  const XP_LEVEL_CAP = 50;
+  const XP_LEVEL_CAP = 100;
 
   /* Single source of truth for every XP amount (also read by the XP detail screen). */
   const XP_RULES = { workout: 20, journeySession: 35, pr: 15, weeklyGoal: 50, streakPerWeek: 5, streakCap: 50 };
@@ -445,13 +445,14 @@
   const BADGE_XP = { bronze: 5, silver: 15, gold: 40 };
   const _XP_SOURCES = ['workout', 'journey_session', 'pr', 'weekly_goal', 'streak', 'badges'];
 
-  /* Cumulative total XP required to REACH each level (index = level, 1..50).
-     Level 1 = 0 XP, Level 2 = 100 XP. Each step costs 13% more than the previous,
-     rounded to the nearest 10. */
+  /* Cumulative total XP required to REACH each level (index = level, 1..100).
+     Level 1 = 0 XP, Level 2 = 150 XP. Each step costs 5% more than the previous,
+     rounded to the nearest 10 (was 100 XP and 13% with 50 levels). Sized so the
+     last rank (Evergreen Legend, level 96) starts at about 300,000 XP; level 100 needs about 365,000. */
   const _XP_THRESHOLDS = (function () {
     const thr = [0, 0];               /* thr[1] = 0 XP needed to be level 1 */
     for (let lvl = 2; lvl <= XP_LEVEL_CAP; lvl++) {
-      const inc = Math.round((100 * Math.pow(1.13, lvl - 2)) / 10) * 10;
+      const inc = Math.round((147 * Math.pow(1.05, lvl - 2)) / 10) * 10;
       thr[lvl] = thr[lvl - 1] + inc;
     }
     return thr;
@@ -509,7 +510,11 @@
      the level you are in, but never below the first level of your current rank.
      totalXP (lifetime, badges, XP breakdown) is NOT reduced; the loss is kept in xpData.xpPenalty
      and the level uses totalXP - xpPenalty. New trainings raise the level again from there. */
-  const _XP_RANK_STARTS = [1, 5, 10, 16, 22, 31, 38, 43, 50];   /* first level of each rank, same order as _XP_RANKS in xp.js */
+  /* 20 ranks of 5 levels each (1-5, 6-10, ... 96-100), named after the plant story: one rank per
+     story chapter (see _XP_PLANT_STORY in xp.js). Same order as _XP_RANKS in xp.js. */
+  const _XP_RANK_NAMES = ['Seed', 'Sprout', 'Seedling', 'Rooted', 'Branching', 'Budding', 'Blossom', 'Full Bloom', 'Seed Bearer', 'Gardener',
+    'Planter', 'Grove Keeper', 'Pollinator', 'Brookside', 'Dusk Watcher', 'Old Giant', 'Firefly', 'Forest Heart', 'Forest Keeper', 'Evergreen Legend'];
+  const _XP_RANK_STARTS = _XP_RANK_NAMES.map((_, i) => 1 + i * 5);   /* first level of each rank */
   const XP_DECAY_RATE = 0.10;
 
   function _xpEffective(d) { return Math.max(0, (d.totalXP || 0) - (d.xpPenalty || 0)); }
@@ -564,15 +569,7 @@
   }
 
   function _xpLevelLabel(level) {
-    if (level >= 50) return 'Legend';
-    if (level >= 43) return 'Master';
-    if (level >= 38) return 'Elite';
-    if (level >= 31) return 'Expert';
-    if (level >= 22) return 'Advanced';
-    if (level >= 16) return 'Skilled';
-    if (level >= 10) return 'Intermediate';
-    if (level >= 5)  return 'Novice';
-    return 'Beginner';
+    return _XP_RANK_NAMES[Math.max(0, Math.min(_XP_RANK_NAMES.length - 1, Math.floor((level - 1) / 5)))];
   }
 
   /* The single entry point for every XP award. Returns true if a level-up occurred. */

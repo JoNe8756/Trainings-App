@@ -10,7 +10,6 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 (none)
 
 ## C. NEXT FEATURES (in this order)
-33. Bug/UX: if a journey training is not counted/reached as completed, the post-workout summary should say why. (Wording unclear in note, confirm with Joel.)
 34. Bug: exercise progress charts over time: the left axis should stay fixed and not move when more data arrives; the chart should fit the screen width.
 9. Weekly challenge (bonus session for extra XP)
 10. Journey completion certificate (special screen when all sessions are done)
@@ -62,6 +61,8 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 - Resume banner floats clear above the bottom nav and scroll areas leave room so it never covers the last card (item 32, tested by Joel 15 Nov 2026)
 - During a workout the + button is hidden and the bottom nav widens into its place; the resume banner is the single way back (tested by Joel 15 Nov 2026)
 - Summary training calendar: month grid with training days in blue, month arrows, tap a day to open the training detail (several trainings per day are listed first) (15 Nov 2026)
+- Journey sessions started from a journey now count only when the completion rule is met (every planned set, at least 80% of planned reps); the post-workout summary shows a counted / not counted card with the exact reasons (item 33, tested by Joel 15 Nov 2026)
+- Plant story step 1: 100 levels on a 5% curve, 20 ranks of 5 levels named after the 20 story chapters, future ranks hidden until reached
 - Verified by Joel (15 Nov 2026): weekly goal XP check, bottom nav 6px shift, hold exercises showing seconds instead of reps, sync decision sheet inside the app container, Gemini 5xx retry and model fallback
 
 ## Reference
