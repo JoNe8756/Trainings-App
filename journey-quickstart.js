@@ -63,6 +63,7 @@ function openJourneySheet(journeyId, source) {
       ${s.isTest === true ? '<span style="font-size:.6875rem;font-weight:700;color:#FF9F0A;background:rgba(255,159,10,.15);padding:.15rem .5rem;border-radius:999px">Test session</span>' : ''}
       ${mins ? `<span style="font-size:.8125rem;color:#8E8E93">~${mins} min</span>` : ''}
     </div>
+    ${typeof _journeyFocusHTML === 'function' ? _journeyFocusHTML((j.weeks || [])[wi], s) : ''}
     <div class="sds-card" style="padding:.25rem .875rem">${exRows || '<div style="color:#8E8E93;padding:.5rem 0">No exercises</div>'}</div>
     ${otherActive ? '<div class="sds-note">Another workout is in progress. Resume or finish it before starting this session.</div>' : ''}
     <button class="sds-apply" id="jqs-primary" ${otherActive ? 'disabled' : ''}>${inProg ? 'Resume session' : 'Start session'}</button>

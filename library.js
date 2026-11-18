@@ -1612,6 +1612,19 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
 
   function _closeJourneySession() { document.getElementById('journey-session').style.display = 'none'; }
 
+  // === JOURNEY SESSION FOCUS ===
+  /* The goal of a training: the week's focus plus, for a test session, what the test is about.
+     Shown on the session screen and in the quick-start preview sheet. Returns '' when there is nothing to show. */
+  function _journeyFocusHTML(week, session) {
+    const parts = [];
+    const f = week && typeof week.focus === 'string' ? week.focus.trim() : '';
+    if (f) parts.push(`<div style="font-size:.9375rem;color:#fff;line-height:1.4">${_esc(f)}</div>`);
+    if (session && session.isTest === true) parts.push(`<div style="font-size:.8125rem;color:#FF9F0A;margin-top:${f ? 6 : 0}px;line-height:1.4">Test session: give your best and record your max.</div>`);
+    if (!parts.length) return '';
+    return `<div style="background:#1C1C1E;border-radius:12px;padding:12px 14px;margin:0 0 12px;border-left:3px solid #0A84FF">
+      <div style="font-size:.6875rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8E8E93;margin-bottom:4px">Focus of this training</div>${parts.join('')}</div>`;
+  }
+
   function _renderJourneySession() {
     const r = _journeySessionRef;
     const j = _journeys.find(x => x.id === (r && r.id));
@@ -1635,6 +1648,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     el.innerHTML = `
       <div style="font-size:13px;color:#8E8E93;margin-bottom:12px">Week ${w.week || (r.w+1)} · ${_esc(s.day || ('Session ' + (r.s+1)))}</div>
       ${isDone ? `<div style="font-size:13px;color:#34C759;margin-bottom:12px">✓ Completed${doneMs != null ? ' on ' + _fmtJDate(doneMs, true) : ''}</div>` : ''}
+      ${_journeyFocusHTML(w, s)}
       ${exHTML}
       <div class="journey-sticky">
         <button class="journey-btn-primary" style="flex:1" onclick="_startJourneySession(${j.id},${r.w},${r.s})">▶ ${isDone ? 'Repeat' : 'Start'} Session</button>
