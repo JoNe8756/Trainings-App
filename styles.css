@@ -5468,3 +5468,19 @@
     .sum-cal-item { display: flex; align-items: center; gap: 8px; width: 100%; background: #2C2C2E; border: none; border-radius: 10px; padding: 10px 12px; color: #fff; font: inherit; text-align: left; cursor: pointer; }
     .sum-cal-item-name { flex: 1; font-size: 15px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sum-cal-item-meta { font-size: 13px; color: #8E8E93; }
+
+    /* === REST CARD ABOVE THE RESUME BANNER === */
+    /* The resume banner (visible while a workout is minimised) floats 108px above the bottom. It now
+       keeps a fixed one-line height, and the floating rest card sits above it instead of covering it. */
+    #resume-banner { min-height: 44px; box-sizing: border-box; }
+    #resume-banner-label { font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    #resume-banner-timer { flex-shrink: 0; }
+    body.has-resume-banner #rest-card { bottom: calc(env(safe-area-inset-bottom, 0px) + 164px); }
+
+    /* === REST CARD MOVES SMOOTHLY === */
+    /* Switching between the workout screen and the minimised view changes where the rest card sits
+       (bottom offset); animate that move instead of jumping, and let the banner rise in. */
+    #rest-card { transition: opacity 220ms ease, transform 220ms ease, bottom 380ms cubic-bezier(.32,.72,0,1); }
+    #resume-banner.visible { animation: banner-rise 380ms cubic-bezier(.32,.72,0,1) both; }
+    @keyframes banner-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { #rest-card { transition: opacity 220ms ease, transform 220ms ease; } #resume-banner.visible { animation: none; } }
