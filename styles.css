@@ -5516,3 +5516,19 @@
     @media (prefers-reduced-motion: reduce) {
       #rest-card, #rest-card-countdown, .rest-card-lbl, .rest-card-skip, .rest-card-bar-wrap, .rest-adj-pill, .rest-card-hint { transition: none; }
     }
+
+
+    /* exercise type tag (reps or secs) in the Library exercise list */
+    .ex-type-tag { flex-shrink: 0; font-size: 11px; font-weight: 600; letter-spacing: .02em; color: #8E8E93; background: rgba(255,255,255,.07); border-radius: 999px; padding: 2px 8px; margin-right: 8px; }
+    .ex-type-tag.secs { color: #64D2FF; background: rgba(100,210,255,.14); }
+
+
+    /* exercise detail: tidy chips for category, type and difficulty */
+    .detail-meta { gap: 0.5rem; margin-top: 0.75rem; }
+    .detail-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8125rem; font-weight: 600; color: #EBEBF5; background: rgba(255,255,255,.08); border-radius: 999px; padding: 5px 12px; line-height: 1.2; }
+    .detail-chip.secs { color: #64D2FF; background: rgba(100,210,255,.14); }
+    .detail-chip.diff { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .detail-chip.diff.easy { color: #34C759; background: rgba(52,199,89,.16); }
+    .detail-chip.diff.mid  { color: #FF9F0A; background: rgba(255,159,10,.16); }
+    .detail-chip.diff.hard { color: #FF453A; background: rgba(255,69,58,.16); }
+    .detail-chip-edit { font-size: 0.75rem; opacity: .7; margin-left: 2px; }

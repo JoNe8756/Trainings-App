@@ -11,26 +11,25 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 
 ## C. NEXT FEATURES (in this order; prioritised 18 Nov 2026: bugs first, then what Joel feels in every workout, then quick wins, then engagement, then bigger features, last what is blocked)
 1. 40. Indicator when the set break (rest) is almost over. Same rest card, high daily value.
-2. 49. Show the type of exercise (reps or seconds) in the exercise overview. Small clarity fix.
-3. 42. Show how long since the last training. (Note said "last tick in training", confirm meaning with Joel.) Small, supports the thirsty-plant habit loop.
-4. 41. Tell me when a badge was earned (notification or visible hint). Makes existing rewards visible.
-5. 44. For each training of a journey, show its goal/focus. Makes journeys easier to follow.
-6. 45. Plant story: nature benefits, learn something about the plant in a storytelling format. Content on top of the finished story system.
-7. 38. Alternate (swap) exercises during journey trainings. Flexibility when equipment is missing.
-8. 16. Progress milestone messages (motivational text at key completion points)
-9. 18. Post-workout feedback prompt
-10. 11. Week preview (what is coming this week)
-11. 9. Weekly challenge (bonus session for extra XP)
-12. 10. Journey completion certificate (special screen when all sessions are done)
-13. 12. Rest day tips (recovery and mobility)
-14. 17. Training plan archive (deleted plans move to an archive, restorable or permanently deletable)
-15. 36. Journey option for location/equipment: gym vs park or less equipment. (Partly covered by the AI guide export; revisit.)
-16. 35. Journey exercises do not have to be only exercises I already did before. (Partly covered by the AI guide export; revisit.)
-17. 48b. Plant story step 2: baby plants around level 40 (about 17,000 XP, far away at level 8, so later).
-18. 48c. Plant story step 3: forest with its own flora and fauna, collection log of discoveries (new key, mapped in export). Biggest item, after 48b.
-19. 13. Mid-journey check-in (Gemini). Blocked while Gemini journey creation does not work.
-20. 14. Weekly adaptive reassessment (Gemini). Blocked, same reason.
-21. 15. Adaptive difficulty (goes with 13 and 14). Blocked, same reason.
+2. 42. Show how long since the last training. (Note said "last tick in training", confirm meaning with Joel.) Small, supports the thirsty-plant habit loop.
+3. 41. Tell me when a badge was earned (notification or visible hint). Makes existing rewards visible.
+4. 44. For each training of a journey, show its goal/focus. Makes journeys easier to follow.
+5. 45. Plant story: nature benefits, learn something about the plant in a storytelling format. Content on top of the finished story system.
+6. 38. Alternate (swap) exercises during journey trainings. Flexibility when equipment is missing.
+7. 16. Progress milestone messages (motivational text at key completion points)
+8. 18. Post-workout feedback prompt
+9. 11. Week preview (what is coming this week)
+10. 9. Weekly challenge (bonus session for extra XP)
+11. 10. Journey completion certificate (special screen when all sessions are done)
+12. 12. Rest day tips (recovery and mobility)
+13. 17. Training plan archive (deleted plans move to an archive, restorable or permanently deletable)
+14. 36. Journey option for location/equipment: gym vs park or less equipment. (Partly covered by the AI guide export; revisit.)
+15. 35. Journey exercises do not have to be only exercises I already did before. (Partly covered by the AI guide export; revisit.)
+16. 48b. Plant story step 2: baby plants around level 40 (about 17,000 XP, far away at level 8, so later).
+17. 48c. Plant story step 3: forest with its own flora and fauna, collection log of discoveries (new key, mapped in export). Biggest item, after 48b.
+18. 13. Mid-journey check-in (Gemini). Blocked while Gemini journey creation does not work.
+19. 14. Weekly adaptive reassessment (Gemini). Blocked, same reason.
+20. 15. Adaptive difficulty (goes with 13 and 14). Blocked, same reason.
 
 ## D. MAINTENANCE AND IDEAS
 19. Cache busting: add a version number to the script and style links in index.html so phones fetch fresh files after each push (the home screen app kept old files for a long time after the sync release).
@@ -71,6 +70,7 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 - Progress charts (item 34, tested by Joel 18 Nov 2026): fixed left axis, sticky Date and Intensity/Reps labels, first point off the axis edge, charts show all data on first open (no tap needed)
 - Rest timer card no longer overlaps the resume banner and glides smoothly between the workout view and the minimised view (item 46, tested by Joel 18 Nov 2026)
 - Bigger rest timer inside the workout (48px time, larger buttons) that shrinks back to the compact size above the resume banner, with a smooth move, shrink and grow between the two views (item 50, tested by Joel 18 Nov 2026)
+- Exercise type (reps or seconds) shown in the Library exercise list and as chips (category, type, difficulty) in the exercise detail (item 49, tested by Joel 18 Nov 2026)
 - Verified by Joel (15 Nov 2026): weekly goal XP check, bottom nav 6px shift, hold exercises showing seconds instead of reps, sync decision sheet inside the app container, Gemini 5xx retry and model fallback
 
 ## Reference

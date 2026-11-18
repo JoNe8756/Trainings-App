@@ -32,10 +32,9 @@
       <div class="detail-hero">
         <div class="detail-name">${name}</div>
         <div class="detail-meta">
-          <span class="detail-cat-tag">${cat || 'Exercise'}</span>
-          ${meta.tb ? '<span class="detail-cat-tag" style="color:var(--blue)">⏱ Hold</span>' : ''}
-          <span class="diff-badge" style="background:${diffColor};margin-left:.125rem;cursor:pointer" onclick="_openExDiffEditor(${qs(name)})">${meta.verified === false ? '~' : ''}${diff}/10</span>
-          <span onclick="_openExDiffEditor(${qs(name)})" style="color:#007AFF;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent">Edit</span>
+          <span class="detail-chip">${cat || 'Exercise'}</span>
+          <span class="detail-chip ${meta.tb ? 'secs' : ''}">${meta.tb ? 'Seconds' : 'Reps'}</span>
+          <span class="detail-chip diff ${diff <= 3 ? 'easy' : diff <= 6 ? 'mid' : 'hard'}" onclick="_openExDiffEditor(${qs(name)})" title="Edit difficulty">Difficulty ${meta.verified === false ? '~' : ''}${diff}/10</span>
         </div>
       </div>
       ${meta.verified === false ? `<div onclick="_openExDiffEditor(${qs(name)})" style="margin:0 var(--gutter) .875rem;background:rgba(255,149,0,.12);border-radius:10px;padding:.625rem .75rem;font-size:.8125rem;color:#FF9500;cursor:pointer;-webkit-tap-highlight-color:transparent">⚠️ Estimated difficulty — tap to adjust</div>` : ''}
@@ -432,6 +431,7 @@
           <div style="flex:1;min-width:0">
             <button class="ex-screen-item-btn" onclick="showExDetail(${qs(name)})">${name}</button>
           </div>
+          <span class="ex-type-tag${meta.tb ? ' secs' : ''}" title="${meta.tb ? 'Timed hold: you log seconds' : 'You log repetitions'}">${meta.tb ? 'secs' : 'reps'}</span>
           <button class="diff-badge" style="background:${bkgd}" title="${meta.verified === false ? 'Estimated difficulty — tap to adjust' : 'Edit difficulty'}" onclick="editExDiff(${qs(name)})">${diffLabel}</button>
           <button class="ex-item-del"
             onclick="delFromLib(${qs(cat)},${qs(name)})"
