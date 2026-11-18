@@ -5548,3 +5548,44 @@
     }
     #rest-card.rest-now { --rest-glow: 255,69,58; }
     @media (prefers-reduced-motion: reduce) { #rest-card.rest-soon, #rest-card.rest-now { animation: none; box-shadow: inset 0 0 0 1.5px rgba(var(--rest-glow, 255,159,10), .9); } }
+
+
+    /* nature notes in the plant story */
+    .xp-nature { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(48,209,88,.10); border-left: 3px solid #30D158; }
+    .xp-nature-lbl { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #30D158; margin-bottom: 4px; }
+    .xp-nature-text { font-size: 14px; color: #D1D1D6; line-height: 1.4; }
+
+
+    /* plant story: chapters open and close, only the current one starts open */
+    .xp-ch-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .xp-story-ch:not(.locked) .xp-ch-head { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .xp-ch-head-text { min-width: 0; }
+    .xp-ch-chev { font-size: 22px; color: #8E8E93; transition: transform .25s ease; flex-shrink: 0; }
+    .xp-story-ch.expanded .xp-ch-chev { transform: rotate(90deg); }
+    .xp-ch-body { display: none; margin-top: 4px; }
+    .xp-story-ch.expanded .xp-ch-body { display: block; }
+    .xp-story-ch .xp-story-title { margin: 4px 0 0; }
+    .xp-ch-body .xp-story-text { margin-top: 4px; }
+
+
+    /* plant story: journal entries of a level fold away */
+    .xp-lvl.has-entries .xp-level-row { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .xp-level-txt { flex: 1; min-width: 0; }
+    .xp-lvl-chev { color: #8E8E93; font-size: 18px; line-height: 1; padding-left: 6px; transition: transform .25s ease; flex-shrink: 0; align-self: center; }
+    .xp-lvl.expanded .xp-lvl-chev { transform: rotate(90deg); }
+    .xp-lvl-body { display: none; }
+    .xp-lvl.expanded .xp-lvl-body { display: block; }
+
+    /* nature note of a level (inside the folded level) */
+    .xp-lvl-note { margin: 2px 0 6px 54px; padding-left: 10px; border-left: 2px solid #30D158; font-size: 13px; line-height: 1.4; color: #A8D8B4; }
+
+
+    /* nature notes as tooltips */
+    .xp-note-btn { flex-shrink: 0; width: 30px; height: 30px; margin-left: 4px; padding: 0; background: none; border: none; color: #30D158; font-size: 19px; line-height: 1; cursor: pointer; -webkit-tap-highlight-color: transparent; align-self: center; }
+    .xp-story-tip { max-width: 300px; font-size: 14px; line-height: 1.4; color: #D1D1D6; z-index: 30; }
+    .xp-story-tip-lbl { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #30D158; margin-bottom: 4px; }
+
+    /* chapter header: title takes the free space, so the ⓘ and the arrow sit at the same place in every chapter */
+    .xp-ch-head-text { flex: 1; min-width: 0; }
+    .xp-ch-head { gap: 4px; }
+    .xp-ch-head .xp-note-btn { margin-left: 0; }

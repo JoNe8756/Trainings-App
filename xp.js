@@ -830,6 +830,186 @@
     return _xpFig(_XP_PLANT_BEATS[idx] || '');
   }
 
+  // === PLANT NATURE NOTES ===
+  /* Item 45: short, true facts told along the story. Chapters 1-8 (the plant growing up) carry a note
+     about the chosen tree type; chapters 9-20 (the forest) carry a note about forests and wildlife. */
+  const _XP_NATURE_NOTES = {
+    "fig": [
+      "A fig seed is smaller than a sesame seed, yet it can grow into a tree that lives for many decades.",
+      "In the wild, fig seedlings often sprout in cracks in walls and rocks, wherever a bird dropped a seed.",
+      "Fig leaves are large and lobed, and they give welcome shade. People have planted fig trees beside their homes for thousands of years.",
+      "Fig roots search deep for water. Some wild fig roots have been found more than 100 metres underground.",
+      "A fig tree spreads its branches very wide, which is why old fig trees make such good shade.",
+      "A fig is not a normal fruit. It is a hollow cluster of flowers: the tiny flowers bloom hidden inside.",
+      "Many fig species depend on one kind of tiny wasp to pollinate their hidden flowers. Tree and wasp have grown up together for millions of years.",
+      "Figs feed birds, bats, monkeys and insects. In tropical forests fig trees are called keystone species, because so many animals depend on them."
+    ],
+    "oak": [
+      "An acorn holds everything an oak needs to start: a tiny root, a shoot and a store of food.",
+      "Jays and squirrels bury acorns for the winter and forget some of them. That is how oak forests spread.",
+      "Oak leaves have rounded lobes. When they fall in autumn they rot slowly and feed the soil.",
+      "A young oak first grows one strong root straight down, and only then grows tall.",
+      "Oak branches grow wide and gnarled, and each one becomes a home for moss, lichens and birds' nests.",
+      "In spring oaks hang out long flowers called catkins that release clouds of pollen.",
+      "Oaks do not need bees. The wind carries their pollen from tree to tree.",
+      "An oak can host hundreds of species of insects, birds and mammals, and some oaks live for more than 500 years."
+    ],
+    "cherry": [
+      "Cherry seeds need a cold winter before they wake up. Gardeners copy winter in the fridge to make them sprout.",
+      "A young cherry tree grows fast, and it can start to flower after only a few years.",
+      "Cherry bark has horizontal stripes called lenticels. They are tiny breathing holes that let the trunk exchange air.",
+      "Cherry roots spread wide near the surface, which is why the tree likes loose, well-drained soil.",
+      "Cherry branches carry short side shoots called spurs, which produce the flowers year after year.",
+      "In early spring cherry trees cover themselves in blossom, an important meal for bees when little else is flowering.",
+      "Cherry blossom lasts only a few days, which is why many cultures celebrate it as a reminder to enjoy the moment.",
+      "Birds love ripe cherries and spread the seeds in their droppings, so new trees grow far from the old one."
+    ],
+    "pine": [
+      "Pine seeds sit inside cones. Many cones only open to release them when the weather is warm and dry.",
+      "A pine's roots team up with fungi in the soil. The fungi help the tree find water and nutrients.",
+      "Pine needles have a waxy coat that keeps water in, so pines can stay green in cold or dry places.",
+      "Pines send roots deep and wide, which helps them hold poor, sandy soil in place.",
+      "Pines grow their branches in rings around the trunk. Counting the rings gives a good idea of a young pine's age.",
+      "Pines carry male and female cones on the same tree. The small male cones release clouds of yellow pollen.",
+      "The wind carries pine pollen, and a cone can take two years to ripen after it has been pollinated.",
+      "Pines stay green all year, sheltering birds and small animals in winter. The oldest known bristlecone pines are about 4,800 years old."
+    ],
+    "maple": [
+      "Maple seeds have two wings and spin like helicopters as they fall, which carries them away from the parent tree.",
+      "A maple seedling sprouts with two narrow leaves first, and only later grows its typical lobed leaves.",
+      "Maple leaves are broad and catch lots of sunlight, which helps the tree grow fast.",
+      "In early spring maple roots pull up water and the sap rises. People tap sugar maples for it: about 40 litres of sap make one litre of syrup.",
+      "Maple branches grow in opposite pairs, which is an easy way to recognise a maple.",
+      "Maples flower in early spring, often before the leaves open, giving bees an early meal.",
+      "Maple flowers are small and grow in clusters, yellow-green or red. They are easy to miss but bees find them.",
+      "In autumn the green fades and shows the yellow and orange colours that were hidden all summer, while the tree makes new red ones."
+    ]
+  };
+  const _XP_FOREST_NOTES = [
+    "A tree makes thousands of seeds in its life, and only a few ever grow into trees. That is normal, and the forest needs it that way.",
+    "Young trees grow best with enough light and space. Crowded seedlings compete for the same sun and water.",
+    "Trees take in carbon dioxide and release oxygen while they grow.",
+    "Trees in a grove can share more than space. Their roots connect through fungi in the soil, which can pass water and nutrients between them.",
+    "Wildflowers feed bees and butterflies, and these insects pollinate many plants and feed birds.",
+    "Trees along a stream shade the water and keep it cool, which helps fish and frogs. Their roots also hold the bank together.",
+    "Many forest animals, such as deer and foxes, are most active at dusk and dawn. The edge of a forest is a rich place to live.",
+    "Old trees with hollow trunks and dead wood are homes for owls, bats and beetles. That is why old trees are worth protecting.",
+    "Fireflies need damp, undisturbed ground to grow up, so they are a sign of a healthy habitat.",
+    "A healthy forest recycles itself: fallen leaves and wood feed fungi and insects, which feed the soil, which feeds new trees.",
+    "Forests are home to most of the world's land animals and plants. Protecting a forest protects thousands of connected species.",
+    "Trees can store carbon for hundreds of years. One seed and years of care can become a lasting home for many other species."
+  ];
+
+  /* One short true fact per level (1-100), shown when a level is opened in the story. */
+  const _XP_LEVEL_NOTES = [
+    "Water is what wakes a seed up: it softens the shell and starts the tiny plant inside growing.",
+    "Before anything shows, a lot happens under the soil: the seed swells and a tiny root pushes out first.",
+    "Seedlings are pale at first. They turn green once they reach the light and make chlorophyll.",
+    "The first two leaves are called seed leaves. They come from the seed and feed the seedling until the true leaves grow.",
+    "Plants bend toward light: the shaded side of the stem grows faster, which turns the plant toward the window.",
+    "New leaves unfold from tight buds. They start out crumpled because they were folded to fit into a tiny space.",
+    "Leaves get greener as they build more chlorophyll, the pigment that captures sunlight to make food.",
+    "Side shoots grow from buds along the stem. Pinching the tip of a plant makes it send out more of them.",
+    "Stems stand up because their cells are full of water. When a plant runs low on water, it droops.",
+    "A bigger leaf catches more light, so it can make more food for the plant.",
+    "Leaves cast shade because they absorb most of the light that hits them. That is why it is cooler under a tree.",
+    "Many leaves have a waxy coat that makes them glossy and keeps water from escaping.",
+    "Branching gives a plant more leaves in the light, but each new branch also needs water from the roots.",
+    "Plants cope with cold by slowing their growth and by making sugars that work like a natural antifreeze.",
+    "A woody stem grows thicker through a thin layer of cells just under the bark, which adds new wood each year.",
+    "Roots and leaves grow in balance: the more leaves a plant has, the more root it needs to supply them with water.",
+    "When roots fill the whole pot, a plant slows down. That is why it is time for a bigger pot.",
+    "Buds at the tips are tiny packed shoots. Some will become leaves, others flowers.",
+    "Many buds stay dormant, waiting for the right light and season before they open.",
+    "A growing plant gets heavy: much of its weight is water, plus the wood and the soil held by its roots.",
+    "A plant drinks a lot more as it grows. A big tree can draw up hundreds of litres of water on a hot day.",
+    "Dense leaves are working hard: each leaf is a tiny food factory powered by sunlight.",
+    "Wood is made of tough fibres. It lets a plant stand tall and carry water a long way up.",
+    "A tree is simply a plant with a woody trunk that lasts from year to year.",
+    "Brown bark forms as the outer layer dries and toughens, protecting the living wood inside.",
+    "The leafy top of a tree is called the crown. It spreads its leaves out to catch as much light as possible.",
+    "A trunk gets wider a little each growing season, adding a new ring of wood.",
+    "A flower bud swells as the plant moves sugar into it, getting ready to open.",
+    "Trees stay upright by bending in the wind: flexible wood and wide roots keep them from toppling.",
+    "The colour you see first on a bud comes from the petals folded inside, already waiting.",
+    "The pattern of bark is different for each kind of tree, and experts can name a tree from its bark alone.",
+    "A plant grows toward open space and light, and its leaves arrange themselves to avoid shading each other.",
+    "Flower buds open when day length and warmth tell the plant it is the right season.",
+    "Flower scent is a signal: it guides bees, butterflies and moths to the nectar.",
+    "A fruit grows from the flower after pollination, and it protects the seeds inside.",
+    "Petals are colourful signposts that guide pollinators to the nectar.",
+    "Some flowers turn to follow the sun during the day, which warms them and attracts more pollinators.",
+    "As fruit ripens it gets softer, sweeter and more colourful, which tells animals it is ready to eat and carry the seeds away.",
+    "A healthy tree does a lot of quiet work: it makes oxygen, shade and food for many other living things.",
+    "Some trees live for hundreds or even thousands of years, because they keep growing new wood and new roots every year.",
+    "Parent plants often drop their seeds close by, so tiny seedlings appear all around them.",
+    "Most seedlings never become trees: they run out of light, water or space.",
+    "A seedling has only a few leaves, so it grows slowly until its roots have settled in.",
+    "A seedling growing in its parent's shade stretches toward the light.",
+    "A tree can make thousands of seeds in its life, and only a few of them ever become trees.",
+    "Many trees send up new shoots from their roots, making copies of themselves.",
+    "An aspen grove can be a single living organism, connected underground.",
+    "Young trees often grow in the shelter of older ones, which break wind and frost.",
+    "Gardeners re-pot young plants so each one has room to grow its roots.",
+    "Many plants can be grown from cuttings: a piece of stem can grow new roots.",
+    "The best time to plant a tree is when it is dormant, so it settles in before it starts growing.",
+    "Newly planted trees need steady water in their first years while the roots spread.",
+    "Mulch around a young tree keeps moisture in and protects the roots from temperature swings.",
+    "Roots usually spread as wide as the crown or wider, not only deep.",
+    "Trees can cool a street by several degrees, by giving shade and releasing water vapour.",
+    "In a group, trees often grow straighter and taller as they reach for the same light.",
+    "Studies have found that trees can share sugars through fungal networks in the soil.",
+    "Birds nest in trees and eat insects that would otherwise damage the leaves.",
+    "Squirrels and jays plant more trees than people notice, by burying seeds and forgetting some.",
+    "Trees are home to creatures from tiny insects to owls and woodpeckers.",
+    "Wildflowers grow without being planted, from seeds carried by wind, birds and animals.",
+    "A flower meadow can host many times more insects than a mown lawn.",
+    "Butterflies taste with their feet.",
+    "Hoverflies pollinate flowers, and their larvae often eat pests such as aphids.",
+    "Different flowers bloom at different times, giving pollinators food through the year.",
+    "Streams carry water, nutrients and seeds through a forest.",
+    "Trees along a bank shade the water, which keeps it cool for fish.",
+    "Frogs breathe partly through their skin, so they need clean, damp places.",
+    "Dragonfly larvae live underwater for months or even years before they fly.",
+    "Forests act like sponges: soil and roots soak up rain and release it slowly.",
+    "At dusk, deer, foxes and bats come out. Many forest animals are active in the twilight.",
+    "Foxes can hear small animals moving under grass and snow.",
+    "A bat can eat thousands of small insects in a single night.",
+    "Deer eat young shoots, and too many deer can keep a young forest from growing back.",
+    "Hedgehogs roam at night and eat beetles and slugs.",
+    "Owls fly almost silently thanks to soft, fringed feathers.",
+    "Old trees with hollows give shelter to bats, owls and many insects.",
+    "The biggest trees store the most carbon, so protecting old trees matters.",
+    "Some old trees are hollow inside and still alive, because only the outer layers carry water.",
+    "Lichens grow very slowly on old bark, and they show that the air is clean.",
+    "Fireflies make light with a chemical reaction that gives off almost no heat.",
+    "Each firefly species has its own flashing pattern, like a code.",
+    "Fireflies and glow-worms are beetles.",
+    "Fireflies need dark nights, and bright artificial lights can disturb their signals.",
+    "Firefly larvae live in damp ground and eat snails and slugs.",
+    "Fungi are nature's recyclers: they break wood and leaves down into nutrients.",
+    "A mushroom is only the fruit of a much bigger network of threads in the soil.",
+    "A fallen tree becomes a nursery for moss, fungi and young trees.",
+    "Bacteria, and plants such as clover, help bring nitrogen from the air into the soil.",
+    "Healthy soil stores water and carbon, and holds the forest in place.",
+    "Forests are home to most of the world's land animals and plants.",
+    "Many trees depend on particular animals to spread their seeds.",
+    "Predators like owls and foxes keep the number of mice and voles in balance.",
+    "Leaving some dead wood and wild corners helps wildlife in gardens too.",
+    "Volunteers who count birds, butterflies and fireflies help scientists protect nature.",
+    "Some trees stay green all year and shelter animals through winter.",
+    "Trees store carbon in their wood for as long as they live, and even afterwards as timber.",
+    "Many trees keep making seeds for decades, so a single tree can start a whole forest.",
+    "A forest takes many human lifetimes to grow, so what you plant now is for the future.",
+    "From one seed to a whole forest: small steady actions, repeated for years, add up."
+  ];
+  const _xpLevelNote = l => _XP_LEVEL_NOTES[Math.max(1, Math.min(_XP_LEVEL_NOTES.length, l)) - 1] || '';
+
+  function _xpNatureNote(chIdx) {
+    if (chIdx < 8) return ((_XP_NATURE_NOTES[plantTypeGet()] || _XP_NATURE_NOTES.fig)[chIdx]) || '';
+    return _XP_FOREST_NOTES[chIdx - 8] || '';
+  }
+
   // === PLANT STORY ===
   /* 20 chapters, one per rank (5 levels each). Chapters 1-8 follow the plant growing up
      (levels 1-40); chapters 9-20 tell the story of the baby plants and the forest. */
@@ -909,19 +1089,71 @@
         });
         for (let l = from; l <= Math.min(to, maxLv); l++) {
           /* level beats exist for the growing-up levels (1-40); later levels only list journal entries */
-          if (l <= _XP_PLANT_MATURE_LEVEL) beats += `<div class="xp-level-row"><span class="xp-level-lv">Lv ${l}</span><span>${plantLevelBeat(l)}</span></div>`;
-          else if (byLevel[l]) beats += `<div class="xp-level-row"><span class="xp-level-lv">Lv ${l}</span><span></span></div>`;
-          beats += (byLevel[l] || []).map(row).join('');
+          const ents = byLevel[l] || [];
+          const head = l <= _XP_PLANT_MATURE_LEVEL
+            ? `<span class="xp-level-lv">Lv ${l}</span><span class="xp-level-txt">${plantLevelBeat(l)}</span>`
+            : `<span class="xp-level-lv">Lv ${l}</span><span class="xp-level-txt">Level ${l}</span>`;
+          if (!head) continue;
+          /* each level folds away its journal entries (only the current level starts open); its nature note is a tooltip */
+          beats += `<div class="xp-lvl${ents.length ? ' has-entries' : ''}${l === info.level ? ' expanded' : ''}">
+            <div class="xp-level-row">${head}<button class="xp-note-btn" data-k="L${l}" aria-label="Nature note">ⓘ</button>${ents.length ? '<span class="xp-lvl-chev">›</span>' : ''}</div>
+            <div class="xp-lvl-body">${ents.map(row).join('')}</div>
+          </div>`;
         }
         beats = `<div class="xp-divider" style="margin:12px 0 6px"></div><div class="xp-plant-chap">Levels ${from}\u2013${to}</div>${beats}`;
       }
-      return `<div class="xp-card xp-story-ch${open ? '' : ' locked'}">
-        <div class="xp-plant-chap">Chapter ${i + 1} · ${open && _XP_RANKS[i] ? _XP_RANKS[i].label + ' ' + _XP_RANKS[i].emoji : '???'}</div>
-        <div class="xp-story-title">${open ? c[0] : 'Locked'}</div>
-        <div class="xp-story-text">${open ? _xpFig(c[1]) : `Reach Level ${_xpStoryUnlockLevel(i)} to unlock this chapter.`}</div>
-        ${beats}
+      /* only the current chapter starts expanded; tap a chapter to open or close it */
+      const expanded = open && i === idx;
+      return `<div class="xp-card xp-story-ch${open ? '' : ' locked'}${expanded ? ' expanded' : ''}">
+        <div class="xp-ch-head"${open ? ' role="button" tabindex="0"' : ''}>
+          <div class="xp-ch-head-text">
+            <div class="xp-plant-chap">Chapter ${i + 1} · ${open && _XP_RANKS[i] ? _XP_RANKS[i].label + ' ' + _XP_RANKS[i].emoji : '???'}</div>
+            <div class="xp-story-title">${open ? c[0] : 'Locked'}</div>
+          </div>
+          ${open && _xpNatureNote(i) ? `<button class="xp-note-btn" data-k="C${i}" aria-label="Nature note">ⓘ</button>` : ''}
+          ${open ? '<span class="xp-ch-chev">›</span>' : ''}
+        </div>
+        ${open ? '' : `<div class="xp-story-text">Reach Level ${_xpStoryUnlockLevel(i)} to unlock this chapter.</div>`}
+        ${open ? `<div class="xp-ch-body">
+          <div class="xp-story-text">${_xpFig(c[1])}</div>
+          ${beats}
+        </div>` : ''}
       </div>`;
     }).join('');
+  }
+
+  // === PLANT NOTE TOOLTIP ===
+  /* Nature notes open as a small bubble from the ⓘ next to a chapter or level, instead of taking space in the list. */
+  let _xpStoryTip = null;   /* { el, anchor, onDown } */
+  function _xpStoryTipClose() {
+    if (!_xpStoryTip) return;
+    document.removeEventListener('pointerdown', _xpStoryTip.onDown, true);
+    _xpStoryTip.el.remove();
+    _xpStoryTip = null;
+  }
+  function _xpStoryTipToggle(btn) {
+    const wasOpen = _xpStoryTip && _xpStoryTip.anchor === btn;
+    _xpStoryTipClose();
+    if (wasOpen) return;
+    const k = btn.dataset.k || '';
+    const text = k[0] === 'C' ? _xpNatureNote(Number(k.slice(1))) : _xpLevelNote(Number(k.slice(1)));
+    if (!text) return;
+    const panel = document.getElementById('plant-story');
+    const el = document.createElement('div');
+    el.className = 'xp-tip xp-story-tip';
+    el.innerHTML = '<div class="xp-tip-arrow"></div><div class="xp-story-tip-lbl">Nature note</div>' + text;
+    panel.appendChild(el);
+    const pr = panel.getBoundingClientRect(), br = btn.getBoundingClientRect();
+    const cx = br.left + br.width / 2 - pr.left, cy = br.bottom - pr.top;
+    const w = el.offsetWidth, margin = 12;
+    const left = Math.max(margin, Math.min(cx - w / 2, pr.width - margin - w));
+    el.style.left = left + 'px';
+    el.style.top = (cy + 8) + 'px';
+    el.style.setProperty('--xp-arrow-x', Math.max(18, Math.min(cx - left, w - 18)) + 'px');
+    requestAnimationFrame(() => el.classList.add('show'));
+    const onDown = e => { if (!el.contains(e.target) && !btn.contains(e.target)) _xpStoryTipClose(); };
+    document.addEventListener('pointerdown', onDown, true);
+    _xpStoryTip = { el, anchor: btn, onDown };
   }
 
   function openPlantStory() {
@@ -944,11 +1176,20 @@
     document.getElementById('plant-story-title').textContent = plantNameGet() + "'s Story";
     const body = document.getElementById('plant-story-body');
     body.innerHTML = _xpStoryHTML(getLevelInfo());
+    body.querySelectorAll('.xp-note-btn').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); _xpStoryTipToggle(b); }));
+    body.addEventListener('scroll', _xpStoryTipClose, { passive: true });
+    body.querySelectorAll('.xp-lvl.has-entries .xp-level-row').forEach(r => r.addEventListener('click', () => r.parentElement.classList.toggle('expanded')));
+    body.querySelectorAll('.xp-story-ch:not(.locked) .xp-ch-head').forEach(h => {
+      const toggle = () => h.closest('.xp-story-ch').classList.toggle('expanded');
+      h.addEventListener('click', toggle);
+      h.addEventListener('keydown', e => { if (e.key === 'Enter') toggle(); });
+    });
     body.style.padding = '8px var(--gutter) calc(env(safe-area-inset-bottom, 0px) + 2rem)';
     requestAnimationFrame(() => { panel.classList.add('open'); body.scrollTop = 0; });
   }
 
   function closePlantStory() {
+    _xpStoryTipClose();
     document.getElementById('plant-story')?.classList.remove('open');
   }
 
