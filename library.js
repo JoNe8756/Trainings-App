@@ -663,7 +663,7 @@
     });
     (session.exercises || []).forEach(e => {
       const sets = Math.max(1, parseInt(e.sets) || 1);
-      createExCard(e.name, false, sets, { journeyTag: j.name, journeyKey: key, plannedSets: sets, plannedReps: parseFloat(e.reps) || 0 });
+      createExCard(e.name, false, sets, { journeyTag: j.name, journeyKey: key, plannedSets: sets, plannedReps: parseFloat(e.reps) || 0, plannedName: e.name });
     });
     _closeJourneySessionPicker();
   }

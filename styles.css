@@ -5589,3 +5589,16 @@
     .xp-ch-head-text { flex: 1; min-width: 0; }
     .xp-ch-head { gap: 4px; }
     .xp-ch-head .xp-note-btn { margin-left: 0; }
+
+
+    /* journey exercise swap */
+    .ex-journey-tag { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .ex-swap-btn { background: rgba(10,132,255,.16); color: #0A84FF; border: none; border-radius: 999px; padding: 3px 12px; font: inherit; font-size: 12px; font-style: normal; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .ex-swap-note { font-size: 11px; color: #8E8E93; }
+    .exercise-head input[readonly] { pointer-events: none; }
+    .jswap-sub { font-size: .8125rem; color: #8E8E93; line-height: 1.4; margin: .375rem 0 .75rem; }
+    .jswap-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: .5rem; }
+    .jswap-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; background: #1C1C1E; border: none; border-radius: 12px; padding: 14px; color: #fff; font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .jswap-name { font-size: 1rem; font-weight: 600; }
+    .jswap-rel { font-size: .8125rem; color: #8E8E93; flex-shrink: 0; }
+    .jswap-empty { background: #1C1C1E; border-radius: 12px; padding: 14px; font-size: .875rem; color: #8E8E93; line-height: 1.4; }

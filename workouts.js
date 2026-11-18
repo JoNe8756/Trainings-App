@@ -422,11 +422,12 @@
       div.dataset.journeyKey   = opts.journeyKey;
       div.dataset.plannedSets  = String(opts.plannedSets || numSets || 1);
       div.dataset.plannedReps  = String(opts.plannedReps || 0);
+      div.dataset.plannedName  = opts.plannedName || name;   /* name in the journey plan; kept when the exercise is swapped */
     }
     div.innerHTML = `
       ${isKiller ? '<div class="ex-killer-tag">💀 Killer Set</div>' : ''}
       <div class="exercise-head">
-        <input type="text" placeholder="Exercise name" value="${name.replace(/"/g, '&quot;')}"
+        <input type="text" placeholder="Exercise name" value="${name.replace(/"/g, '&quot;')}"${opts.journeyKey ? ' readonly' : ''}
           oninput="updateExIntensity('${id}'); updateGhostHint('${id}')" />
         ${_exInfoBtnHTML(id)}
         <button class="btn-delete-ex" onclick="removeExercise('${id}')" title="Remove exercise">
@@ -436,7 +437,7 @@
         </button>
       </div>
       ${_exInfoBodyHTML(id)}
-      ${opts.journeyTag ? `<div class="ex-journey-tag">📍 ${_esc(opts.journeyTag)}</div>` : ''}
+      ${opts.journeyTag ? `<div class="ex-journey-tag"><span class="ex-journey-name">📍 ${_esc(opts.journeyTag)}</span>${opts.journeyKey ? '<button type="button" class="ex-swap-btn">Swap</button>' : ''}<span class="ex-swap-note"></span></div>` : ''}
       <div class="ex-rest-rec"></div>
       <div class="sets-table">
         <div class="sets-col-header">
@@ -452,6 +453,7 @@
     const _prevCardCount = _exGetCards().length;
     document.getElementById('exercise-list').appendChild(div);
     _initExInfo(div, id);
+    div.querySelector('.ex-swap-btn')?.addEventListener('click', () => openJourneySwap(id));
     const setsToAdd = Math.max(1, numSets);
     for (let i = 0; i < setsToAdd; i++) addSet(id);
     _syncAddSetBtn(id);
@@ -1627,7 +1629,7 @@
       });
       exercises.push({ name, tb, sets, ...(killer && { killer: true }),
         ...(card.dataset.journeyTag && { journeyTag: card.dataset.journeyTag }),
-        ...(card.dataset.journeyKey && { journeyKey: card.dataset.journeyKey, plannedSets: card.dataset.plannedSets, plannedReps: card.dataset.plannedReps }) });
+        ...(card.dataset.journeyKey && { journeyKey: card.dataset.journeyKey, plannedSets: card.dataset.plannedSets, plannedReps: card.dataset.plannedReps, plannedName: card.dataset.plannedName }) });
     });
     const killerCard = document.getElementById('workout-killer-card');
     const killerVisible = killerCard && killerCard.style.display !== 'none' && _killerRoutine.length > 0;
@@ -1685,6 +1687,7 @@
         div.dataset.journeyKey  = ex.journeyKey;
         div.dataset.plannedSets = String(ex.plannedSets || 1);
         div.dataset.plannedReps = String(ex.plannedReps || 0);
+        div.dataset.plannedName = ex.plannedName || ex.name || '';
       }
       /* restore plan set count so auto-add limit still applies after page refresh */
       if (activePlanData) {
@@ -1694,7 +1697,7 @@
       }
       div.innerHTML = `
         <div class="exercise-head">
-          <input type="text" placeholder="Exercise name" value="${(ex.name || '').replace(/"/g, '&quot;')}"
+          <input type="text" placeholder="Exercise name" value="${(ex.name || '').replace(/"/g, '&quot;')}"${ex.journeyKey ? ' readonly' : ''}
             oninput="updateExIntensity('${id}'); persistActiveWorkout();" />
           ${_exInfoBtnHTML(id)}
           <button class="btn-delete-ex" onclick="removeExercise('${id}')" title="Remove exercise">
@@ -1704,7 +1707,7 @@
           </button>
         </div>
         ${_exInfoBodyHTML(id)}
-        ${ex.journeyTag ? `<div class="ex-journey-tag">📍 ${_esc(ex.journeyTag)}</div>` : ''}
+        ${ex.journeyTag ? `<div class="ex-journey-tag"><span class="ex-journey-name">📍 ${_esc(ex.journeyTag)}</span>${ex.journeyKey ? '<button type="button" class="ex-swap-btn">Swap</button>' : ''}<span class="ex-swap-note"></span></div>` : ''}
         <div class="ex-rest-rec"></div>
         <div class="sets-table">
           <div class="sets-col-header">
@@ -1719,6 +1722,8 @@
         </div>`;
       document.getElementById('exercise-list').appendChild(div);
       _initExInfo(div, id);
+      div.querySelector('.ex-swap-btn')?.addEventListener('click', () => openJourneySwap(id));
+      _swapNoteRefresh(div);
 
       /* Restore sets */
       const body = div.querySelector('.sets-body');
@@ -2355,6 +2360,87 @@
     }
   }
 
+  // === JOURNEY EXERCISE SWAP ===
+  /* Item 38: swap a journey exercise for a similar one (e.g. equipment is missing). Allowed alternatives
+     stay close to the planned exercise: same category, same way of logging (reps or seconds) and a
+     difficulty within one level of the planned exercise, so it can never become much easier or something
+     completely different. Only before a set of that exercise is confirmed. The journey keeps counting
+     against the planned exercise (data-planned-name). */
+  const SWAP_DIFF_RANGE = 1;
+
+  function _swapNoteRefresh(card) {
+    const note = card && card.querySelector('.ex-swap-note');
+    if (!note) return;
+    const planned = card.dataset.plannedName || '';
+    const cur = card.querySelector('.exercise-head input')?.value.trim() || '';
+    note.textContent = planned && cur && cur !== planned ? ' · planned: ' + planned : '';
+  }
+
+  function _swapCandidates(card) {
+    const planned = card.dataset.plannedName || '';
+    const lib = getExLib();
+    const catOf = n => EX_CATS.find(c => (lib[c] || []).includes(n)) || null;
+    const cat = catOf(planned);
+    if (!cat) return [];
+    const base = getExMeta(planned), baseTb = !!base.tb;
+    const cur = card.querySelector('.exercise-head input')?.value.trim() || '';
+    const used = new Set(_exGetCards().filter(c => c !== card).map(c => c.querySelector('.exercise-head input')?.value.trim()));
+    return (lib[cat] || [])
+      .filter(n => n !== cur && !used.has(n))
+      .map(n => ({ name: n, meta: getExMeta(n) }))
+      .filter(x => !!x.meta.tb === baseTb && Math.abs(x.meta.diff - base.diff) <= SWAP_DIFF_RANGE)
+      .map(x => ({ name: x.name, diff: x.meta.diff, rel: x.meta.diff - base.diff, isPlanned: x.name === planned }))
+      .sort((a, b) => (b.isPlanned - a.isPlanned) || (Math.abs(a.rel) - Math.abs(b.rel)) || a.name.localeCompare(b.name));
+  }
+
+  function openJourneySwap(cardId) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    if (card.querySelectorAll('.sets-body .set-row.set-done').length) { showToast('Swap before you log a set of this exercise'); return; }
+    const planned = card.dataset.plannedName || '';
+    const list = _swapCandidates(card);
+    let el = document.getElementById('jswap-backdrop');
+    if (el) el.remove();
+    el = document.createElement('div');
+    el.id = 'jswap-backdrop';
+    el.className = 'sds-backdrop';
+    el.innerHTML = '<div class="sds-sheet"><div class="sds-title">Swap exercise</div><div class="jswap-sub"></div><div class="jswap-list"></div><button class="sds-later" id="jswap-close">Cancel</button></div>';
+    document.body.appendChild(el);
+    el.querySelector('.jswap-sub').textContent = 'Planned: ' + planned + '. Only similar exercises are offered: same category, same way of logging and within one difficulty level.';
+    const box = el.querySelector('.jswap-list');
+    if (!list.length) {
+      const d = document.createElement('div');
+      d.className = 'jswap-empty';
+      d.textContent = 'No similar exercise in your library. Add one to the same category with a similar difficulty first.';
+      box.appendChild(d);
+    }
+    list.forEach(x => {
+      const b = document.createElement('button');
+      b.className = 'jswap-item';
+      const n = document.createElement('span'); n.className = 'jswap-name'; n.textContent = x.name;
+      const t = document.createElement('span'); t.className = 'jswap-rel';
+      t.textContent = x.isPlanned ? 'Planned exercise' : (x.rel === 0 ? 'Same level' : (x.rel < 0 ? 'A bit easier' : 'A bit harder'));
+      b.append(n, t);
+      b.addEventListener('click', () => { _doJourneySwap(card, x.name); close(); });
+      box.appendChild(b);
+    });
+    const close = () => { el.classList.remove('open'); setTimeout(() => el.remove(), 320); };
+    el.addEventListener('click', e => { if (e.target === el) close(); });
+    el.querySelector('#jswap-close').addEventListener('click', close);
+    requestAnimationFrame(() => el.classList.add('open'));
+  }
+
+  function _doJourneySwap(card, name) {
+    const inp = card.querySelector('.exercise-head input');
+    if (!inp || inp.value.trim() === name) return;
+    inp.value = name;
+    inp.dispatchEvent(new Event('input', { bubbles: true }));   /* refreshes intensity, ghost hint and how-to */
+    _updateRestRec(card.id);
+    _swapNoteRefresh(card);
+    persistActiveWorkout();
+    showToast('Swapped to ' + name);
+  }
+
   // === JOURNEY SESSION INTEGRATION ===
   const JOURNEY_COMPLETION_THRESHOLD = 0.8;
   /* Result of the journey sessions of the workout just finished, shown on the post-workout summary:
@@ -2369,7 +2455,7 @@
       const issues = [];
       rec.exercises.forEach(pe => {
         const matching = cards.filter(c => c.dataset.journeyKey === rec.key &&
-          (c.querySelector('.exercise-head input')?.value.trim() === pe.name));
+          ((c.dataset.plannedName || c.querySelector('.exercise-head input')?.value.trim()) === pe.name));
         let sets = 0, total = 0;
         matching.forEach(c => c.querySelectorAll('.sets-body .set-row.set-done').forEach(row => {
           const reps = parseFloat(row.dataset.confirmedReps) || 0;
@@ -2438,7 +2524,8 @@
         journeyTag: _startJ.name,
         journeyKey: _activeJourneyRef.id + '-' + _activeJourneyRef.w + '-' + _activeJourneyRef.s,
         plannedSets: ex.sets,
-        plannedReps: parseFloat(planned && planned.reps) || 0
+        plannedReps: parseFloat(planned && planned.reps) || 0,
+        plannedName: ex.name
       } : {});
     });
     _exCurrentIdx = 0;
