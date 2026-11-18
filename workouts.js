@@ -1012,20 +1012,6 @@
     bd.style.display = 'none';
   }
 
-  function _restBeep() {
-    try {
-      const ac  = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ac.createOscillator();
-      const g   = ac.createGain();
-      osc.connect(g); g.connect(ac.destination);
-      osc.frequency.value = 880;
-      g.gain.setValueAtTime(0.35, ac.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.4);
-      osc.start(ac.currentTime);
-      osc.stop(ac.currentTime + 0.4);
-    } catch(e) {}
-  }
-
   function _fmtSecs(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
 
   // === GLOBAL REST CARD ===
@@ -1053,11 +1039,18 @@
     if (cd) cd.textContent = _fmtSecs(secs);
     const barEl = document.getElementById('rest-card-bar');
     if (barEl && _rest.totalSecs) barEl.style.width = (secs / _rest.totalSecs * 100) + '%';
+    /* === REST ALMOST OVER === */
+    /* last 10 s: amber glow, last 3 s: red glow (countdown mode only; the stopwatch has no end) */
+    const card = document.getElementById('rest-card');
+    if (card) {
+      card.classList.toggle('rest-soon', secs <= 10 && secs > 3);
+      card.classList.toggle('rest-now', secs <= 3);
+    }
   }
 
   function _restComplete() {
     if (!_rest) return;
-    _restBeep();
+    /* no beep: any sound from the app interrupts the user's music; the card's glow and the vibration signal the end */
     try { navigator.vibrate?.(300); } catch(e) {}
     _lastCompletedRest = { exId: _rest.exId, secs: _rest.totalSecs };
     clearInterval(_rest.interval);

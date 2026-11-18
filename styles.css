@@ -5532,3 +5532,19 @@
     .detail-chip.diff.mid  { color: #FF9F0A; background: rgba(255,159,10,.16); }
     .detail-chip.diff.hard { color: #FF453A; background: rgba(255,69,58,.16); }
     .detail-chip-edit { font-size: 0.75rem; opacity: .7; margin-left: 2px; }
+
+
+    /* === REST ALMOST OVER === */
+    /* Countdown rest card: amber glow and number in the last 10 seconds, red and faster in the last 3 */
+    #rest-card.rest-soon, #rest-card.rest-now { animation: rest-glow 1s ease-in-out infinite; transform-origin: center; }
+    #rest-card.rest-now { animation-duration: .5s; }
+    #rest-card.rest-soon #rest-card-countdown { color: #FF9F0A; }
+    #rest-card.rest-now  #rest-card-countdown { color: #FF453A; }
+    #rest-card.rest-soon #rest-card-bar { background: #FF9F0A; }
+    #rest-card.rest-now  #rest-card-bar { background: #FF453A; }
+    @keyframes rest-glow {
+      0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(var(--rest-glow, 255,159,10), 0), inset 0 0 0 1.5px rgba(var(--rest-glow, 255,159,10), .6); }
+      50%      { transform: scale(1.05); box-shadow: 0 0 26px 4px rgba(var(--rest-glow, 255,159,10), .6), inset 0 0 0 2px rgba(var(--rest-glow, 255,159,10), 1); }
+    }
+    #rest-card.rest-now { --rest-glow: 255,69,58; }
+    @media (prefers-reduced-motion: reduce) { #rest-card.rest-soon, #rest-card.rest-now { animation: none; box-shadow: inset 0 0 0 1.5px rgba(var(--rest-glow, 255,159,10), .9); } }
