@@ -597,6 +597,13 @@
     }
     el.innerHTML = html;
     _initJourneySwipe(el);
+    if (journeysArchive.length) {
+      const b = document.createElement('button');
+      b.className = 'btn-plan-archive';
+      b.textContent = 'Archive (' + journeysArchive.length + ')  ›';
+      b.addEventListener('click', openJourneysArchive);
+      el.appendChild(b);
+    }
   }
 
   function _startNextJourneySession(journeyId) {
@@ -739,11 +746,11 @@
   function _deleteJourney(id) {
     _wConfirm({
       title: 'Delete this journey?',
-      msg: 'All progress will be lost.',
+      msg: 'It moves to the archive with its progress. You can restore it there.',
       okLabel: 'Delete', okColor: 'red',
       onOk: () => {
         const item = document.querySelector(`[data-journey-id="${id}"]`);
-        _animateRemove(item, () => { _journeys = _journeys.filter(x => x.id !== id); _persistJourneys(); renderLibJourneys(); });
+        _animateRemove(item, () => { _archiveJourney(id); renderLibJourneys(); showToast('Journey moved to the archive'); });
       }
     });
   }
@@ -751,16 +758,173 @@
   function _deleteJourneyFromDetail(id) {
     _wConfirm({
       title: 'Delete this journey?',
-      msg: 'All progress will be lost.',
+      msg: 'It moves to the archive with its progress. You can restore it there.',
       okLabel: 'Delete', okColor: 'red',
       onOk: () => {
-        _journeys = _journeys.filter(x => x.id !== id);
-        _persistJourneys();
+        _archiveJourney(id);
         _closeJourneyDetail();
         showTab('exercises');
         showLibSeg('journeys');
+        showToast('Journey moved to the archive');
       }
     });
+  }
+
+  // === JOURNEY ARCHIVE ===
+  /* Deleted journeys move, with all their progress, to localStorage "journeysArchive" (export category
+     "journeys"). The Archive screen (row under the journey list) restores them or deletes them for good. */
+  let journeysArchive = (function () { try { const a = JSON.parse(localStorage.getItem('journeysArchive')); return Array.isArray(a) ? a : []; } catch (e) { return []; } })();
+  function persistJourneysArchive() { localStorage.setItem('journeysArchive', JSON.stringify(journeysArchive)); }
+
+  function _archiveJourney(id) {
+    const j = _journeys.find(x => x.id === id);
+    if (j) { journeysArchive.unshift(Object.assign({}, j, { archivedAt: new Date().toISOString() })); persistJourneysArchive(); }
+    _journeys = _journeys.filter(x => x.id !== id);
+    _persistJourneys();
+  }
+
+  function openJourneysArchive() {
+    let el = document.getElementById('journeys-archive');
+    if (el) el.remove();
+    el = document.createElement('div');
+    el.id = 'journeys-archive';
+    el.className = 'journey-overlay';
+    el.innerHTML = `
+      <div class="settings-nav" style="position:sticky;top:0;z-index:2;background:#000">
+        <button class="settings-back-btn" id="ja-back" aria-label="Back">
+          <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+        </button>
+        <div class="settings-nav-title">Journey archive</div>
+      </div>
+      <div class="journey-inner" id="ja-list"></div>`;
+    document.body.appendChild(el);
+    el.querySelector('#ja-back').addEventListener('click', () => { el.remove(); renderLibJourneys(); });
+    _renderJourneysArchiveList();
+  }
+
+  function _renderJourneysArchiveList() {
+    const host = document.getElementById('ja-list');
+    if (!host) return;
+    host.innerHTML = '';
+    if (!journeysArchive.length) {
+      const e = document.createElement('div');
+      e.style.cssText = 'text-align:center;color:#8E8E93;padding:3rem 1rem;font-size:15px;line-height:1.45';
+      e.textContent = 'The archive is empty. Journeys you delete are kept here, with their progress, until you delete them for good.';
+      host.appendChild(e);
+      return;
+    }
+    journeysArchive.forEach(j => {
+      const total = _journeyTotalSessions(j), done = (j.completedSessions || []).length;
+      const card = document.createElement('div');
+      card.style.cssText = 'background:#1C1C1E;border-radius:14px;padding:14px 16px;margin-bottom:10px';
+      const name = document.createElement('div');
+      name.style.cssText = 'font-size:17px;font-weight:700;color:#fff;overflow-wrap:anywhere';
+      name.textContent = j.name || 'Journey';
+      const goal = document.createElement('div');
+      goal.style.cssText = 'font-size:13px;color:#8E8E93;margin-top:4px;line-height:1.4;overflow-wrap:anywhere';
+      goal.textContent = j.goal || '';
+      const prog = document.createElement('div');
+      prog.style.cssText = 'font-size:13px;color:#EBEBF5;margin-top:6px';
+      prog.textContent = done + ' / ' + total + ' sessions completed';
+      const when = document.createElement('div');
+      when.style.cssText = 'font-size:12px;color:#8E8E93;margin-top:4px';
+      when.textContent = j.archivedAt ? 'Archived ' + new Date(j.archivedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:10px;margin-top:12px';
+      const restore = document.createElement('button');
+      restore.className = 'journey-btn-primary';
+      restore.style.cssText = 'flex:1;padding:13px 0;font-size:14px';
+      restore.textContent = 'Restore';
+      restore.addEventListener('click', () => _restoreArchivedJourney(j.id));
+      const del = document.createElement('button');
+      del.className = 'journey-chip';
+      del.style.cssText = 'flex:1;padding:13px 0;font-size:14px;color:#FF453A';
+      del.textContent = 'Delete forever';
+      del.addEventListener('click', () => _deleteArchivedJourney(j.id));
+      row.append(restore, del);
+      card.append(name, goal, prog, when, row);
+      host.appendChild(card);
+    });
+  }
+
+  function _restoreArchivedJourney(id) {
+    const i = journeysArchive.findIndex(j => j.id === id);
+    if (i < 0) return;
+    const j = Object.assign({}, journeysArchive[i]);
+    delete j.archivedAt;
+    if (_journeys.some(x => x.id === j.id)) j.id = Date.now();   /* never clash with an active journey */
+    _journeys.unshift(j);
+    _persistJourneys();
+    journeysArchive.splice(i, 1);
+    persistJourneysArchive();
+    showToast('Journey restored');
+    _renderJourneysArchiveList();
+  }
+
+  function _deleteArchivedJourney(id) {
+    const j = journeysArchive.find(x => x.id === id);
+    if (!j) return;
+    _wConfirm({
+      title: 'Delete for good?',
+      msg: `"${j.name || 'This journey'}" and its progress will be permanently deleted and cannot be restored.`,
+      okLabel: 'Delete', okColor: 'red',
+      onOk: () => {
+        journeysArchive = journeysArchive.filter(x => x.id !== id);
+        persistJourneysArchive();
+        _renderJourneysArchiveList();
+      }
+    });
+  }
+
+  // === JOURNEY FEASIBILITY ===
+  /* The AI judges whether the goal is reachable with the chosen weeks, days, duration and level
+     ("feasibility": { rating, message, suggestion }). Stored on the journey, shown after creation or import
+     and at the top of the journey detail. Returns null when the AI gave nothing usable. */
+  function _normFeasibility(f) {
+    if (!f || typeof f !== 'object') return null;
+    let rating = String(f.rating || '').toLowerCase().trim();
+    if (!['realistic', 'ambitious', 'unlikely'].includes(rating)) {
+      if (f.realistic === true) rating = 'realistic';
+      else if (f.realistic === false) rating = 'unlikely';
+      else return null;
+    }
+    const message = typeof f.message === 'string' ? f.message.trim().slice(0, 500) : '';
+    const suggestion = typeof f.suggestion === 'string' ? f.suggestion.trim().slice(0, 400) : '';
+    if (!message && rating === 'realistic') return { rating, message: '', suggestion: '' };
+    return { rating, message, suggestion };
+  }
+
+  const _FEAS_LABEL = { realistic: 'Realistic with your plan', ambitious: 'Ambitious', unlikely: 'Unlikely with these factors' };
+  const _FEAS_COLOR = { realistic: '#30D158', ambitious: '#FF9F0A', unlikely: '#FF453A' };
+
+  /* card used in the journey detail and in the import check */
+  function _feasibilityCardHTML(f) {
+    if (!f) return '';
+    const c = _FEAS_COLOR[f.rating];
+    return `<div style="margin-top:12px;background:#1C1C1E;border-radius:12px;padding:14px 16px;border-left:3px solid ${c}">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8E8E93">Coach's assessment</div>
+      <div style="font-size:15px;font-weight:700;color:${c};margin-top:2px">${_FEAS_LABEL[f.rating]}</div>
+      ${f.message ? `<div style="font-size:13px;color:#EBEBF5;margin-top:6px;line-height:1.45">${_esc(f.message)}</div>` : ''}
+      ${f.suggestion ? `<div style="font-size:13px;color:#8E8E93;margin-top:6px;line-height:1.45">${_esc(f.suggestion)}</div>` : ''}
+    </div>`;
+  }
+
+  /* shown right after a journey was created when the goal may not be reachable */
+  function _showFeasibilityNotice(journey) {
+    const f = journey && journey.feasibility;
+    if (!f || f.rating === 'realistic') return;
+    const old = document.getElementById('feas-notice'); if (old) old.remove();
+    const ov = document.createElement('div');
+    ov.id = 'feas-notice';
+    ov.style.cssText = 'position:fixed;inset:0;max-width:min(430px,100%);margin:0 auto;background:rgba(0,0,0,.6);z-index:100020;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
+    ov.innerHTML = `<div style="background:#1C1C1E;border-radius:20px;padding:22px;width:100%;max-width:380px;max-height:85vh;overflow-y:auto">
+      <div style="font-size:18px;font-weight:700;color:#fff">Heads up about your goal</div>
+      ${_feasibilityCardHTML(f).replace('margin-top:12px;background:#1C1C1E;', 'margin-top:12px;background:#2C2C2E;')}
+      <div style="font-size:13px;color:#8E8E93;margin-top:12px;line-height:1.4">Your journey was still created. You can keep it, or delete it and create a new one with different weeks, days or a smaller first goal.</div>
+      <button id="feas-ok" style="display:block;width:100%;margin-top:16px;background:#007AFF;color:#fff;border:none;border-radius:999px;padding:12px;font-size:16px;font-weight:600">OK</button>
+    </div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('#feas-ok').addEventListener('click', () => ov.remove());
   }
 
   // === JOURNEY CREATOR ===
@@ -1075,10 +1239,17 @@ COACHING INSTRUCTIONS:
 12. Include a TEST session to measure real progress on the goal. Place one test session in every 3rd week (weeks 3, 6, 9 ...) and one in the final week. A test session REPLACES one normal training day of that week, it is not an extra day. In a test session, the goal exercise comes first as 2-3 max-effort attempts (max reps, or longest hold in seconds), followed by only light supporting work, so the session stays short. Set the goal exercise target reps/seconds to the user's current personal record, and write in the notes: Test: give your best, record your max. (Test sessions are the exception to rule 11 only in that the goal exercise is performed as max-effort attempts.)
 13. Keep variety moderate. Use a core of about 5-6 exercises that repeat across most weeks, so progress can be measured. In addition, rotate 2-3 supporting exercises per week for variety. Across the whole journey, aim for roughly 10-14 different exercises in total, not a new set every week. Progress the core exercises through reps, sets or harder variations instead of replacing them. Each session should have about 5-7 exercises, fitting the session duration.
 
+14. Be honest about feasibility. Judge whether the goal can realistically be reached with the given timeframe, training days per week, session duration and current level, based on the user's actual performance data. Still build the best possible journey, but report your honest assessment in the "feasibility" field: "realistic" if it is achievable, "ambitious" if it is possible only with excellent consistency or some luck, "unlikely" if it cannot reasonably be reached under these factors. If it is not realistic, say plainly why and what would make it realistic (for example more weeks, more days or a smaller first goal).
+
 RESPONSE FORMAT:
 Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation text before or after. Use this exact structure:
 {
   "name": "Specific descriptive journey name",
+  "feasibility": {
+    "rating": "realistic | ambitious | unlikely (pick exactly one of these words)",
+    "message": "One to three plain sentences: can this goal be reached with these factors, and why or why not",
+    "suggestion": "If the rating is not realistic: what to change (weeks, days, duration or a smaller first goal). Empty text if realistic"
+  },
   "goal": "Detailed goal description",
   "goalExercise": "Exact name of the single exercise that most directly represents the user's goal, chosen from the user's exercise library where possible",
   "weeks": [
@@ -1301,6 +1472,8 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
               sessionDuration: _jDuration(),
               completedSessions: []
             };
+            const _feas = _normFeasibility(journey.feasibility);
+            if (_feas) saved.feasibility = _feas;
             if (modelIdx > 0) saved.generatedWith = model;
             _journeys.unshift(saved);
             _persistJourneys();
@@ -1309,6 +1482,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
             _journeySuccessFlash = true;
             _setJourneyHeaderSpinner(false);
             renderLibJourneys();
+            _showFeasibilityNotice(saved);
             clearTimeout(_journeyFlashTimer);
             _journeyFlashTimer = setTimeout(() => { _journeySuccessFlash = false; renderLibJourneys(); }, 3000);
             return;
@@ -1586,6 +1760,7 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
       <div class="journey-ai-badge" style="margin-top:4px">✨ AI Generated</div>
       ${j.generatedWith ? `<div style="font-size:11px;color:#8E8E93;margin-top:4px">Generated with ${_esc(j.generatedWith)}</div>` : ''}
       <div style="font-size:14px;color:#8E8E93;margin-top:4px">${_esc(j.goal)}</div>
+      ${_feasibilityCardHTML(j.feasibility)}
       <div style="margin-top:12px;background:#1C1C1E;border-radius:12px;padding:16px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <span style="font-size:13px;color:#8E8E93">${done} / ${total} sessions completed</span>
@@ -1830,6 +2005,13 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     </button>`;
     el.innerHTML = html;
     _initPlanSwipe(el);
+    if (plansArchive.length) {
+      const b = document.createElement('button');
+      b.className = 'btn-plan-archive';
+      b.textContent = 'Archive (' + plansArchive.length + ')  ›';
+      b.addEventListener('click', openPlansArchive);
+      el.appendChild(b);
+    }
   }
 
   function _planLastTrained(planName) {
@@ -2186,15 +2368,113 @@ Respond ONLY with a valid JSON object, no markdown, no backticks, no explanation
     const name = plan ? plan.name : 'this plan';
     _wConfirm({
       title: 'Delete Plan?',
-      msg: `"${name}" will be permanently deleted.`,
+      msg: `"${name}" will move to the archive. You can restore it there.`,
       okLabel: 'Delete', okColor: 'red',
       onOk: () => {
         const item = document.querySelector(`[data-plan-id="${id}"]`);
         _animateRemove(item, () => {
+          /* moves to the archive instead of disappearing (see PLAN ARCHIVE) */
+          if (plan) { plansArchive.unshift(Object.assign({}, plan, { archivedAt: new Date().toISOString() })); persistPlansArchive(); }
           plans = plans.filter(p => p.id !== id);
           persistPlans();
           renderLibPlans();
+          if (plan) showToast('Plan moved to the archive');
         });
+      }
+    });
+  }
+
+  // === PLAN ARCHIVE ===
+  /* Deleted plans move to localStorage "plansArchive" (export category "plans"). From the Archive screen
+     (row under the plan list) a plan can be restored or deleted for good. */
+  let plansArchive = (function () { try { const a = JSON.parse(localStorage.getItem('plansArchive')); return Array.isArray(a) ? a : []; } catch (e) { return []; } })();
+  function persistPlansArchive() { localStorage.setItem('plansArchive', JSON.stringify(plansArchive)); }
+
+  function openPlansArchive() {
+    let el = document.getElementById('plans-archive');
+    if (el) el.remove();
+    el = document.createElement('div');
+    el.id = 'plans-archive';
+    el.className = 'journey-overlay';
+    el.innerHTML = `
+      <div class="settings-nav" style="position:sticky;top:0;z-index:2;background:#000">
+        <button class="settings-back-btn" id="pa-back" aria-label="Back">
+          <svg width="11" height="18" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,1 1,7.5 8,14"/></svg>
+        </button>
+        <div class="settings-nav-title">Plan archive</div>
+      </div>
+      <div class="journey-inner" id="pa-list"></div>`;
+    document.body.appendChild(el);
+    el.querySelector('#pa-back').addEventListener('click', () => { el.remove(); renderLibPlans(); });
+    _renderPlansArchiveList();
+  }
+
+  function _renderPlansArchiveList() {
+    const host = document.getElementById('pa-list');
+    if (!host) return;
+    host.innerHTML = '';
+    if (!plansArchive.length) {
+      const e = document.createElement('div');
+      e.style.cssText = 'text-align:center;color:#8E8E93;padding:3rem 1rem;font-size:15px;line-height:1.45';
+      e.textContent = 'The archive is empty. Plans you delete are kept here until you delete them for good.';
+      host.appendChild(e);
+      return;
+    }
+    plansArchive.forEach(plan => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:#1C1C1E;border-radius:14px;padding:14px 16px;margin-bottom:10px';
+      const name = document.createElement('div');
+      name.style.cssText = 'font-size:17px;font-weight:700;color:#fff;overflow-wrap:anywhere';
+      name.textContent = plan.name || 'Plan';
+      const subs = document.createElement('div');
+      subs.style.cssText = 'font-size:13px;color:#8E8E93;margin-top:4px;line-height:1.4;overflow-wrap:anywhere';
+      subs.textContent = (plan.exercises || []).map(e => _normPlanEx(e).name).join(' · ') || 'No exercises';
+      const when = document.createElement('div');
+      when.style.cssText = 'font-size:12px;color:#8E8E93;margin-top:4px';
+      when.textContent = plan.archivedAt ? 'Archived ' + new Date(plan.archivedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:10px;margin-top:12px';
+      const restore = document.createElement('button');
+      restore.className = 'journey-btn-primary';
+      restore.style.cssText = 'flex:1;padding:13px 0;font-size:14px';
+      restore.textContent = 'Restore';
+      restore.addEventListener('click', () => _restoreArchivedPlan(plan.id));
+      const del = document.createElement('button');
+      del.className = 'journey-chip';
+      del.style.cssText = 'flex:1;padding:13px 0;font-size:14px;color:#FF453A';
+      del.textContent = 'Delete forever';
+      del.addEventListener('click', () => _deleteArchivedPlan(plan.id));
+      row.append(restore, del);
+      card.append(name, subs, when, row);
+      host.appendChild(card);
+    });
+  }
+
+  function _restoreArchivedPlan(id) {
+    const i = plansArchive.findIndex(p => p.id === id);
+    if (i < 0) return;
+    const plan = Object.assign({}, plansArchive[i]);
+    delete plan.archivedAt;
+    if (plans.some(p => p.id === plan.id)) plan.id = Date.now();   /* never clash with an active plan */
+    plans.push(plan);
+    persistPlans();
+    plansArchive.splice(i, 1);
+    persistPlansArchive();
+    showToast('Plan restored');
+    _renderPlansArchiveList();
+  }
+
+  function _deleteArchivedPlan(id) {
+    const plan = plansArchive.find(p => p.id === id);
+    if (!plan) return;
+    _wConfirm({
+      title: 'Delete for good?',
+      msg: `"${plan.name || 'This plan'}" will be permanently deleted and cannot be restored.`,
+      okLabel: 'Delete', okColor: 'red',
+      onOk: () => {
+        plansArchive = plansArchive.filter(p => p.id !== id);
+        persistPlansArchive();
+        _renderPlansArchiveList();
       }
     });
   }

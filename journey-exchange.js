@@ -73,7 +73,8 @@ ${jxFullLibraryText()}
 
 ## PART 3: Rules for the JSON (the app rejects it if these are broken)
 - Valid JSON only: double quotes, no comments, no trailing commas, no text inside the JSON besides the values.
-- Top level: "name" (string), "goal" (string), "goalExercise" (string), "weeks" (array of ${weeks} week objects).
+- Top level: "name" (string), "goal" (string), "goalExercise" (string), "feasibility" (object, see below) and "weeks" (array of ${weeks} week objects).
+- "feasibility" is your honest assessment of whether my goal can be reached with ${weeks} weeks, ${days} days per week, about ${duration} minutes per session and my current level and performance (see above). It has "rating" (exactly one of "realistic", "ambitious" or "unlikely"), "message" (one to three plain sentences: can it be reached and why or why not) and "suggestion" (if not realistic: what to change, such as more weeks, more days or a smaller first goal; otherwise an empty string). Still build the best possible journey even if the rating is not "realistic".
 - Each week: "week" (number, 1 to ${weeks} in order), "focus" (string) and "sessions" (array of exactly ${days} session objects).
 - Each session: "day" (string, a weekday name, different days within a week), "planName" (string), "duration" (number of minutes, about ${duration}), "isTest" (true or false) and "exercises" (array of 4 to 8 exercise objects).
 - Each exercise: "name" (string), "sets" (whole number 1 to 10), "reps" (ONE number, no ranges and no text; for exercises marked as timed hold in my list, reps means seconds), "rest" (number of seconds between sets) and "notes" (short coaching cue, at most 200 characters).
@@ -85,6 +86,7 @@ ${jxFullLibraryText()}
   "name": "8-week first muscle-up",
   "goal": "Do my first strict muscle-up",
   "goalExercise": "Muscle-ups",
+  "feasibility": { "rating": "ambitious", "message": "A first strict muscle-up in 8 weeks is possible but needs steady training; you currently do 5 pull-ups.", "suggestion": "Add a few more weeks or a 4th training day to make it comfortably realistic." },
   "weeks": [
     {
       "week": 1,
@@ -109,8 +111,9 @@ ${jxFullLibraryText()}
 1. Is it valid JSON that starts with { and ends with }?
 2. Are there exactly ${weeks} weeks with ${days} sessions each, and numbers (not text) for sets, reps, rest and duration?
 3. Does every normal session contain the goal exercise, and does each test session start with it?
-4. Does it start at my real level (see my performance above) and get harder every week?
-5. Are the exercise names exactly as in my lists?
+4. Did you honestly judge in "feasibility" whether the goal can be reached with these factors?
+5. Does it start at my real level (see my performance above) and get harder every week?
+6. Are the exercise names exactly as in my lists?
 
 My goal once more: ${i.goal}
 `;
@@ -260,6 +263,7 @@ function jxValidate(text) {
     name: typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim().slice(0, 80) : 'AI Journey',
     goal: typeof raw.goal === 'string' && raw.goal.trim() ? raw.goal.trim() : ((_journeyInputs.goal || '').trim() || 'Imported journey'),
     goalExercise: typeof raw.goalExercise === 'string' ? raw.goalExercise.trim() : '',
+    feasibility: typeof _normFeasibility === 'function' ? _normFeasibility(raw.feasibility) : null,
     weeks
   };
   return { ok: errors.length === 0, errors, warnings, journey, stats: { weeks: weeks.length, sessions: sessionCount, exercises: distinct.size } };
@@ -316,6 +320,8 @@ function jxOpenImport() {
     card.append(t, g, s);
     res.warnings.forEach(w => card.append(line('⚠ ' + w, '#FF9F0A')));
     out.append(card);
+    if (res.journey.feasibility) { const fb = document.createElement('div'); fb.innerHTML = _feasibilityCardHTML(res.journey.feasibility); out.append(fb); }
+    else out.append(line('The AI gave no assessment of whether the goal is reachable with these factors.', '#8E8E93'));
     const add = document.createElement('button');
     add.className = 'journey-btn-primary'; add.style.marginTop = '14px'; add.textContent = 'Add journey';
     add.addEventListener('click', () => jxSaveImported(res.journey, el));
@@ -337,6 +343,7 @@ function jxSaveImported(parsed, overlayEl) {
     completedSessions: [],
     importedFrom: 'ai-guide'
   };
+  if (parsed.feasibility) saved.feasibility = parsed.feasibility;
   if (!saved.goalExercise) delete saved.goalExercise;
   _journeys.unshift(saved);
   _persistJourneys();
@@ -344,4 +351,5 @@ function jxSaveImported(parsed, overlayEl) {
   _closeJourneyCreator();
   if (typeof renderLibJourneys === 'function') renderLibJourneys();
   showToast('Journey added ✓');
+  if (typeof _showFeasibilityNotice === 'function') _showFeasibilityNotice(saved);
 }

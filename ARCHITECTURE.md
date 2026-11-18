@@ -74,6 +74,11 @@ Holds the Supabase client, auth helpers, and two-way sync: it tracks dirty categ
 
 ## Key Data Structures (localStorage)
 
+- `plansArchive` — plans deleted from the Plans list (with `archivedAt`); restored to `plans` or deleted for good from the Plan archive screen. Export category "Training plans".
+- `journeysArchive` — journeys deleted from the Journeys list with all their progress (with `archivedAt`); same restore / delete-for-good flow. Export category "Journeys & progress".
+- Journeys (`trainingJourneys`) may carry `feasibility: { rating: realistic|ambitious|unlikely, message, suggestion }` (the AI's honest assessment of the goal) and `importedFrom: 'ai-guide'`.
+- `plantLog`, `plantName`, `plantType` — plant journal, chosen plant name and tree type (export category "XP & badges").
+
 - `workouts` — array of all workout sessions
 - `plans` — array of training plans
 - `exLib` / `customExMeta` — exercise library and custom exercise metadata

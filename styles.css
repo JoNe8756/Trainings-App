@@ -1767,7 +1767,7 @@
       transition: opacity .22s, transform .22s;
       pointer-events: none;
       white-space: nowrap;
-      z-index: 999;
+      z-index: 100030;   /* above overlays (99999), sheets and confirm (100010) so toasts shown inside them stay visible */
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -5602,3 +5602,7 @@
     .jswap-name { font-size: 1rem; font-weight: 600; }
     .jswap-rel { font-size: .8125rem; color: #8E8E93; flex-shrink: 0; }
     .jswap-empty { background: #1C1C1E; border-radius: 12px; padding: 14px; font-size: .875rem; color: #8E8E93; line-height: 1.4; }
+
+
+    /* plan archive row under the plan list */
+    .btn-plan-archive { display: block; width: 100%; margin-top: 10px; background: none; border: none; color: #8E8E93; font: inherit; font-size: 15px; font-weight: 600; padding: 12px; cursor: pointer; -webkit-tap-highlight-color: transparent; }

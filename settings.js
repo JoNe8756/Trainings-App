@@ -200,9 +200,9 @@
      unmapped keys default to "settings" so they are never lost. */
   const EXPORT_CATEGORIES = [
     { id: 'history',  label: 'Training history',    keys: ['workouts', 'killerSetHistory', 'warmupStrengthTimes'], prefixes: ['restPerf:'] },
-    { id: 'plans',    label: 'Training plans',      keys: ['plans'], prefixes: [] },
+    { id: 'plans',    label: 'Training plans',      keys: ['plans', 'plansArchive'], prefixes: [] },
     { id: 'library',  label: 'Exercise library',    keys: ['exLib', 'customExMeta'], prefixes: [] },
-    { id: 'journeys', label: 'Journeys & progress', keys: ['trainingJourneys'], prefixes: [] },
+    { id: 'journeys', label: 'Journeys & progress', keys: ['trainingJourneys', 'journeysArchive'], prefixes: [] },
     { id: 'xp',       label: 'XP & badges',         keys: ['xpData', 'badgeData', 'plantLog', 'plantName', 'plantType'], prefixes: [] },
     { id: 'settings', label: 'Settings & goals',    keys: ['freqGoal', 'volumeGoal', 'exerciseGoal', 'userBW', 'userHeight', 'warmupGeneralRoutine', 'warmupStrengthRoutine',
       'warmupGeneralEnabled', 'warmupStrengthEnabled', 'startWithWarmup', 'killerSetRoutine', 'restTimerEnabled', 'breakTimerMode', 'ghostMode',

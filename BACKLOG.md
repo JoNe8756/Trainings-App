@@ -4,26 +4,25 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 
 ## A. VERIFY FIRST (built or written, result not confirmed)
 30. Music while the app speaks: two audio-mode attempts (ambient, transient) stopped the music on iPhone and it did not come back. Third attempt (ambient set once for the whole warm-up, no per-cue audio changes) pushed 15 Nov 2026, Joel tests it in the next training. If it fails, fallback: a 'Spoken cues' on/off switch in Settings (workouts.js, _warmupSpeak). Item 47 (music does not start again after the app speaks) is the same problem.
+17. Plan archive and journey archive: deleting a plan or a journey moves it to an archive (row at the bottom of the Plans and Journeys lists) where it can be restored or deleted for good. New keys plansArchive and journeysArchive, mapped in EXPORT_CATEGORIES (library.js, settings.js). Built and pushed 18 Nov 2026. Joel to test.
+51. Coach's assessment: the AI (Gemini generation and the export guide / import) says whether the goal is reachable with the chosen weeks, days, duration and level; shown as a card in the journey and as a heads-up after creation. Stored in journey.feasibility (library.js, journey-exchange.js). Built and pushed 18 Nov 2026. Joel to test.
 6. Mac copy on localhost:8000 is old. When syncing it, log in with the private account and choose "Cloud" for all categories (the phone chose "This device"). Tell Joel first before doing this.
 
 ## B. DECISIONS PENDING
 (none)
 
 ## C. NEXT FEATURES (in this order; prioritised 18 Nov 2026: bugs first, then what Joel feels in every workout, then quick wins, then engagement, then bigger features, last what is blocked)
-1. 16. Progress milestone messages (motivational text at key completion points)
-2. 18. Post-workout feedback prompt
-3. 11. Week preview (what is coming this week)
-4. 9. Weekly challenge (bonus session for extra XP)
-5. 10. Journey completion certificate (special screen when all sessions are done)
-6. 12. Rest day tips (recovery and mobility)
-7. 17. Training plan archive (deleted plans move to an archive, restorable or permanently deletable)
-8. 36. Journey option for location/equipment: gym vs park or less equipment. (Partly covered by the AI guide export; revisit.)
-9. 35. Journey exercises do not have to be only exercises I already did before. (Partly covered by the AI guide export; revisit.)
-10. 48b. Plant story step 2: baby plants around level 40 (about 17,000 XP, far away at level 8, so later).
-11. 48c. Plant story step 3: forest with its own flora and fauna, collection log of discoveries (new key, mapped in export). Biggest item, after 48b.
-12. 13. Mid-journey check-in (Gemini). Blocked while Gemini journey creation does not work.
-13. 14. Weekly adaptive reassessment (Gemini). Blocked, same reason.
-14. 15. Adaptive difficulty (goes with 13 and 14). Blocked, same reason.
+1. 11. Week preview (what is coming this week)
+2. 9. Weekly challenge (bonus session for extra XP)
+3. 10. Journey completion certificate (special screen when all sessions are done)
+4. 12. Rest day tips (recovery and mobility)
+5. 36. Journey option for location/equipment: gym vs park or less equipment. (Partly covered by the AI guide export; revisit.)
+6. 35. Journey exercises do not have to be only exercises I already did before. (Partly covered by the AI guide export; revisit.)
+7. 48b. Plant story step 2: baby plants around level 40 (about 17,000 XP, far away at level 8, so later).
+8. 48c. Plant story step 3: forest with its own flora and fauna, collection log of discoveries (new key, mapped in export). Biggest item, after 48b.
+9. 13. Mid-journey check-in (Gemini). Blocked while Gemini journey creation does not work.
+10. 14. Weekly adaptive reassessment (Gemini). Blocked, same reason.
+11. 15. Adaptive difficulty (goes with 13 and 14). Blocked, same reason.
 
 ## D. MAINTENANCE AND IDEAS
 19. Cache busting: add a version number to the script and style links in index.html so phones fetch fresh files after each push (the home screen app kept old files for a long time after the sync release).
@@ -69,6 +68,7 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 - Journey trainings show their focus (week focus, plus a test-session line) in the quick-start preview sheet and on the session screen (item 44, tested by Joel 18 Nov 2026)
 - Plant nature notes (item 45, tested by Joel 18 Nov 2026): tooltip per chapter (tree-specific for chapters 1-8, forest for 9-20) and per level (100 notes, matched to the story lines); story chapters and levels fold open and closed, only the current one starts open
 - Swap an exercise in a journey training (item 38, 18 Nov 2026): only similar alternatives (same category, same reps/seconds type, within one difficulty level), only before a set is logged, journey keeps counting against the planned exercise; the exercise name on journey cards is read-only
+- Descoped by Joel, do not re-suggest: milestone messages (16), post-workout feedback prompt (18), time since last training (42), badge-earned hint (41, already covered by the post-workout summary)
 - Verified by Joel (15 Nov 2026): weekly goal XP check, bottom nav 6px shift, hold exercises showing seconds instead of reps, sync decision sheet inside the app container, Gemini 5xx retry and model fallback
 
 ## Reference

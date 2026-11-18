@@ -52,6 +52,18 @@ See ARCHITECTURE.md for full detail. Summary:
    words (I am a product owner, not a developer).
 10. Testing: test manually in browser after changes. tests.html is the
     only automated check, for calculation logic.
+11. UI review: after every change that touches the interface, run the
+    ui-reviewer agent (.claude/agents/ui-reviewer.md) before asking me to test.
+    It checks look, intuitiveness and unwanted overlaps and fixes real problems.
+    Tell me in plain words what was not good and what it changed.
+12. Data and calculation changes: run the data-tester agent (.claude/agents/data-tester.md)
+    after any change to calculations, stored data or keys, export/import/sync.
+13. Before I push: run the release-checker agent (.claude/agents/release-checker.md)
+    and tell me GO or STOP with the reason. It never pushes; I still say when.
+14. Nothing may break: a hook (.claude/hooks/verify-after-edit.py) checks syntax and
+    .claude/checks/run-checks.js after every edit, also edits made by agents. Agents
+    back up a file before changing it, re-run the checks after each edit and revert
+    when unsure. If a check fails, fix or revert before continuing and tell me.
 Backlog and status: see BACKLOG.md. Do not start any backlog item unless I name it. Move items between sections only when I confirm that I tested them.
 
 ## Design Language
