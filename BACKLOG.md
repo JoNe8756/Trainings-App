@@ -10,25 +10,23 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 (none)
 
 ## C. NEXT FEATURES (in this order; prioritised 18 Nov 2026: bugs first, then what Joel feels in every workout, then quick wins, then engagement, then bigger features, last what is blocked)
-1. 42. Show how long since the last training. (Note said "last tick in training", confirm meaning with Joel.) Small, supports the thirsty-plant habit loop.
-2. 41. Tell me when a badge was earned (notification or visible hint). Makes existing rewards visible.
-3. 44. For each training of a journey, show its goal/focus. Makes journeys easier to follow.
-4. 45. Plant story: nature benefits, learn something about the plant in a storytelling format. Content on top of the finished story system.
-5. 38. Alternate (swap) exercises during journey trainings. Flexibility when equipment is missing.
-6. 16. Progress milestone messages (motivational text at key completion points)
-7. 18. Post-workout feedback prompt
-8. 11. Week preview (what is coming this week)
-9. 9. Weekly challenge (bonus session for extra XP)
-10. 10. Journey completion certificate (special screen when all sessions are done)
-11. 12. Rest day tips (recovery and mobility)
-12. 17. Training plan archive (deleted plans move to an archive, restorable or permanently deletable)
-13. 36. Journey option for location/equipment: gym vs park or less equipment. (Partly covered by the AI guide export; revisit.)
-14. 35. Journey exercises do not have to be only exercises I already did before. (Partly covered by the AI guide export; revisit.)
-15. 48b. Plant story step 2: baby plants around level 40 (about 17,000 XP, far away at level 8, so later).
-16. 48c. Plant story step 3: forest with its own flora and fauna, collection log of discoveries (new key, mapped in export). Biggest item, after 48b.
-17. 13. Mid-journey check-in (Gemini). Blocked while Gemini journey creation does not work.
-18. 14. Weekly adaptive reassessment (Gemini). Blocked, same reason.
-19. 15. Adaptive difficulty (goes with 13 and 14). Blocked, same reason.
+1. 44. For each training of a journey, show its goal/focus. Makes journeys easier to follow.
+2. 45. Plant story: nature benefits, learn something about the plant in a storytelling format. Content on top of the finished story system.
+3. 38. Alternate (swap) exercises during journey trainings. Flexibility when equipment is missing.
+4. 16. Progress milestone messages (motivational text at key completion points)
+5. 18. Post-workout feedback prompt
+6. 11. Week preview (what is coming this week)
+7. 9. Weekly challenge (bonus session for extra XP)
+8. 10. Journey completion certificate (special screen when all sessions are done)
+9. 12. Rest day tips (recovery and mobility)
+10. 17. Training plan archive (deleted plans move to an archive, restorable or permanently deletable)
+11. 36. Journey option for location/equipment: gym vs park or less equipment. (Partly covered by the AI guide export; revisit.)
+12. 35. Journey exercises do not have to be only exercises I already did before. (Partly covered by the AI guide export; revisit.)
+13. 48b. Plant story step 2: baby plants around level 40 (about 17,000 XP, far away at level 8, so later).
+14. 48c. Plant story step 3: forest with its own flora and fauna, collection log of discoveries (new key, mapped in export). Biggest item, after 48b.
+15. 13. Mid-journey check-in (Gemini). Blocked while Gemini journey creation does not work.
+16. 14. Weekly adaptive reassessment (Gemini). Blocked, same reason.
+17. 15. Adaptive difficulty (goes with 13 and 14). Blocked, same reason.
 
 ## D. MAINTENANCE AND IDEAS
 19. Cache busting: add a version number to the script and style links in index.html so phones fetch fresh files after each push (the home screen app kept old files for a long time after the sync release).
