@@ -5484,3 +5484,35 @@
     #resume-banner.visible { animation: banner-rise 380ms cubic-bezier(.32,.72,0,1) both; }
     @keyframes banner-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
     @media (prefers-reduced-motion: reduce) { #rest-card { transition: opacity 220ms ease, transform 220ms ease; } #resume-banner.visible { animation: none; } }
+
+    /* === BIGGER REST TIMER (readable from far away) === */
+    #rest-card { padding: 0.875rem 1.125rem 0.75rem; }
+    #rest-card-countdown { font-size: 3rem; line-height: 1.05; letter-spacing: .5px; }
+    .rest-card-lbl { font-size: 1rem; }
+    .rest-card-skip { font-size: 1.125rem; font-weight: 600; color: #0A84FF; padding: 0.5rem 0 0.5rem 0.75rem; }
+    .rest-card-bar-wrap { height: 5px; border-radius: 3px; margin: 0.625rem 0 0.625rem; }
+    #rest-card-bar { border-radius: 3px; }
+    .rest-adj-pill { font-size: 1rem; padding: 0.5rem 1.375rem; }
+    .rest-card-hint { font-size: 0.875rem; }
+    /* minimised workout (banner visible): same compact size as before */
+    body.has-resume-banner #rest-card { padding: 0.75rem 1rem 0.625rem; bottom: calc(env(safe-area-inset-bottom, 0px) + 164px); }
+    body.has-resume-banner #rest-card-countdown { font-size: 1.625rem; line-height: 1.2; }
+    body.has-resume-banner .rest-card-lbl { font-size: 0.8125rem; }
+    body.has-resume-banner .rest-card-skip { font-size: 0.875rem; font-weight: 500; color: var(--tertiary); padding: 0.25rem 0; }
+    body.has-resume-banner .rest-card-bar-wrap { height: 3px; margin: 0.5rem 0; }
+    body.has-resume-banner .rest-adj-pill { font-size: 0.8125rem; padding: 0.3rem 1rem; }
+    body.has-resume-banner .rest-card-hint { font-size: 0.75rem; }
+
+    /* === REST CARD: MOVE, SHRINK AND GROW SMOOTHLY === */
+    /* Every size property of the card and its parts animates with the same curve as the move, so going
+       between the workout view (big) and the minimised view (compact) looks like one fluid motion. */
+    #rest-card { transition: opacity 220ms ease, transform 220ms ease, bottom 380ms cubic-bezier(.32,.72,0,1), padding 380ms cubic-bezier(.32,.72,0,1); }
+    #rest-card-countdown { transition: font-size 380ms cubic-bezier(.32,.72,0,1), line-height 380ms cubic-bezier(.32,.72,0,1); }
+    .rest-card-lbl { transition: font-size 380ms cubic-bezier(.32,.72,0,1); }
+    .rest-card-skip { transition: font-size 380ms cubic-bezier(.32,.72,0,1), padding 380ms cubic-bezier(.32,.72,0,1), color 380ms ease; }
+    .rest-card-bar-wrap { transition: height 380ms cubic-bezier(.32,.72,0,1), margin 380ms cubic-bezier(.32,.72,0,1); }
+    .rest-adj-pill { transition: font-size 380ms cubic-bezier(.32,.72,0,1), padding 380ms cubic-bezier(.32,.72,0,1); }
+    .rest-card-hint { transition: font-size 380ms cubic-bezier(.32,.72,0,1); }
+    @media (prefers-reduced-motion: reduce) {
+      #rest-card, #rest-card-countdown, .rest-card-lbl, .rest-card-skip, .rest-card-bar-wrap, .rest-adj-pill, .rest-card-hint { transition: none; }
+    }
