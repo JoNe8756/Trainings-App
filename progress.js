@@ -61,58 +61,76 @@
     return { canvasW, xOf };
   }
 
+  /* One left margin for every chart in every view, so all y-axes sit at the same x position */
+  const CHART_PAD_LEFT = 36;
+
   // === FIXED CHART Y-AXIS ===
   /* The y-axis labels are drawn inside the wide, scrollable chart canvas, so scrolling to the newest
-     data pushed them out of view. This puts a copy of the left strip (labels + unit) on top, sticky
-     at the left edge, with the card's background so the plot scrolls underneath it. */
+     data pushed them out of view. This adds a fixed layer over the chart: a copy of the left strip
+     (labels + unit) with the card's background so the plot scrolls underneath it, plus the top-right
+     label and the x-axis title. It uses CSS position:sticky (handled by the browser's scroller, so
+     there is no lag or jumping). The canvas is moved into a wrapper as wide as the whole chart so
+     the sticky layer can stay in place along the full scroll range. Call it BEFORE setting scrollLeft. */
   function _stickYAxis(wrap, padLeft, mainCanvas) {
     if (!wrap || !padLeft) return;
     const main = mainCanvas || wrap.querySelector('canvas.chart-canvas');
     if (!main) return;
-    const old = wrap.querySelector('canvas.chart-yaxis');
-    if (old) old.remove();
+    let inner = main.parentElement;
+    if (!inner.classList.contains('chart-inner')) {
+      inner = document.createElement('div');
+      inner.className = 'chart-inner';
+      main.parentElement.insertBefore(inner, main);
+      inner.appendChild(main);
+    }
+    inner.style.cssText = 'position:relative;width:' + (parseFloat(main.style.width) || main.width) + 'px;';
+    const oldLayer = inner.querySelector('.chart-fixed');
+    if (oldLayer) oldLayer.remove();
+    const csW = getComputedStyle(wrap);
+    const padL = parseFloat(csW.paddingLeft) || 0;     /* the container's own left padding */
     let bg = 'transparent';
     for (let el = wrap; el; el = el.parentElement) {
       const c = getComputedStyle(el).backgroundColor;
       if (c && c !== 'transparent' && !/rgba\(\s*\d+,\s*\d+,\s*\d+,\s*0\s*\)/.test(c)) { bg = c; break; }
     }
-    const dprAx = main.width / (parseFloat(main.style.width) || main.width);
+    const dpr = main.width / (parseFloat(main.style.width) || main.width);
+    const h = parseFloat(main.style.height) || (main.height / dpr);
+    const vw = wrap.clientWidth;
+
+    const layer = document.createElement('div');
+    layer.className = 'chart-fixed';
+    layer.style.cssText = 'position:sticky;left:' + (-padL) + 'px;width:' + vw + 'px;height:0;z-index:3;pointer-events:none;';
+
+    /* axis strip: also covers the container's left padding, so nothing scrolls into view at the edge */
     const strip = document.createElement('canvas');
-    strip.className = 'chart-yaxis';
-    strip.width = Math.round(padLeft * dprAx);
+    const stripCss = padL + padLeft;
+    strip.width = Math.round(stripCss * dpr);
     strip.height = main.height;
-    const h = parseFloat(main.style.height) || (main.height / dprAx);
-    strip.style.cssText = 'position:sticky;left:0;display:block;z-index:2;pointer-events:none;width:' + padLeft + 'px;height:' + h + 'px;margin-bottom:-' + h + 'px;';
+    strip.style.cssText = 'position:absolute;left:0;top:0;width:' + stripCss + 'px;height:' + h + 'px;';
     const sctx = strip.getContext('2d');
     if (bg !== 'transparent') { sctx.fillStyle = bg; sctx.fillRect(0, 0, strip.width, strip.height); }
-    sctx.drawImage(main, 0, 0, strip.width, main.height, 0, 0, strip.width, strip.height);
-    wrap.insertBefore(strip, main);
-    /* optional label (e.g. "⚡ Intensity") that stays at the top-right of the visible window */
-    const oldLg = wrap.querySelector('.chart-legend');
-    if (oldLg) oldLg.remove();
-    if (main.dataset.legend || main.dataset.xlabel) {
-      const lg = document.createElement('div');
-      lg.className = 'chart-legend';
-      const vw = wrap.clientWidth;
-      lg.style.cssText = 'position:sticky;left:0;width:' + vw + 'px;height:0;z-index:3;pointer-events:none;';
-      const mk = (txt, css, color) => {
-        const sp = document.createElement('span');
-        sp.textContent = txt;
-        sp.style.cssText = 'position:absolute;font:500 9px -apple-system,sans-serif;white-space:nowrap;color:' + color + ';' + css;
-        lg.appendChild(sp);
-      };
-      const padR = Number(main.dataset.legendRight) || 20;
-      if (main.dataset.legend) mk(main.dataset.legend, 'right:' + padR + 'px;top:' + (main.dataset.legendTop || 0) + 'px;', main.dataset.legendColor || '#8E8E93');
-      /* x-axis title: centred under the visible part of the plot, not under the whole scrolled canvas */
-      if (main.dataset.xlabel) mk(main.dataset.xlabel, 'left:' + (padLeft + (vw - padLeft - padR) / 2) + 'px;top:' + (h - 4) + 'px;transform:translate(-50%,-100%);', main.dataset.xlabelColor || '#8E8E93');
-      wrap.insertBefore(lg, main);
+    sctx.drawImage(main, 0, 0, Math.round(padLeft * dpr), main.height, Math.round(padL * dpr), 0, Math.round(padLeft * dpr), main.height);
+    layer.appendChild(strip);
+
+    /* optional labels that stay in view: top-right ("Intensity", "Reps") and the x-axis title */
+    const padR = Number(main.dataset.legendRight) || 20;
+    const mk = (txt, css, color) => {
+      const sp = document.createElement('span');
+      sp.textContent = txt;
+      sp.style.cssText = 'position:absolute;font:500 9px -apple-system,sans-serif;white-space:nowrap;color:' + color + ';' + css;
+      layer.appendChild(sp);
+    };
+    if (main.dataset.legend) mk(main.dataset.legend, 'right:' + (padL + padR) + 'px;top:' + (main.dataset.legendTop || 0) + 'px;', main.dataset.legendColor || '#8E8E93');
+    if (main.dataset.xlabel) {
+      const x1 = padL + padLeft, x2 = vw - padL - padR;
+      mk(main.dataset.xlabel, 'left:' + ((x1 + x2) / 2) + 'px;top:' + (h - 4) + 'px;transform:translate(-50%,-100%);', main.dataset.xlabelColor || '#8E8E93');
     }
+    inner.insertBefore(layer, main);
   }
 
   function _scrollChartRight(wrap, padLeft) {
     if (!wrap) return;
+    _stickYAxis(wrap, padLeft);        /* restructure first, then scroll to the newest data */
     wrap.scrollLeft = wrap.scrollWidth;
-    _stickYAxis(wrap, padLeft);
   }
 
   function _bucketModeFor(rangeKey) {
@@ -622,7 +640,7 @@
     const containerW = wrap.clientWidth;
     const H    = Math.min(220, Math.max(140, Math.round(containerW * 0.48)));
 
-    const PAD  = { top: 28, right: 20, bottom: 50, left: 44 };
+    const PAD  = { top: 28, right: 20, bottom: 50, left: CHART_PAD_LEFT };
     const _rangeKey = _getProgressRange();
     const _rawBest  = sessions.map(s => Math.max(0, ...s.sets.map(st => parseFloat(st.reps) || 0)));
     const _agg   = _aggregateChart(sessions.map(s => s.date), _rawBest, _rangeKey);
@@ -702,7 +720,7 @@
     canvas.dataset.xlabel = 'Date'; canvas.dataset.xlabelColor = labelColor;   /* sticky label, see _stickYAxis */
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.translate(9, PAD.top + cH / 2);
+    ctx.translate(8, PAD.top + cH / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.fillText(isTimeBased(name) ? 'Seconds' : 'Reps', 0, 0);
     ctx.restore();
@@ -798,7 +816,7 @@
     const H     = Math.min(220, Math.max(140, Math.round(containerW * 0.48)));
     const color = '#FFD700';
 
-    const PAD    = { top: 28, right: 20, bottom: 50, left: 44 };
+    const PAD    = { top: 28, right: 20, bottom: 50, left: CHART_PAD_LEFT };
     const _rangeKey = _getProgressRange();
     const _agg   = _aggregateChart(sessions.map(s => s.date), _rawTotals, _rangeKey);
     const totals = _agg.values;
@@ -873,7 +891,7 @@
     canvas.dataset.xlabel = 'Date'; canvas.dataset.xlabelColor = labelColor;   /* sticky label, see _stickYAxis */
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.translate(9, PAD.top + cH / 2);
+    ctx.translate(8, PAD.top + cH / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.fillText('Intensity', 0, 0);
     ctx.restore();
@@ -1110,7 +1128,7 @@
     const orange = '#FF9500';
     const gold   = '#FFD700';
 
-    const PAD   = { top: 28, right: 20, bottom: 50, left: 44 };
+    const PAD   = { top: 28, right: 20, bottom: 50, left: CHART_PAD_LEFT };
     const _rangeKey = _getProgressRange();
     const _agg   = _aggregateChart(sessions.map(s => s.date), sessions.map(s => s.secs), _rangeKey);
     const secs   = _agg.values;
@@ -1270,7 +1288,7 @@
     const H      = Math.min(180, Math.max(120, Math.round(containerW * 0.38)));
     const orange = '#FF9500';
 
-    const PAD     = { top: 14, right: 20, bottom: 50, left: 44 };
+    const PAD     = { top: 14, right: 20, bottom: 50, left: CHART_PAD_LEFT };
     const _rangeKey = _getProgressRange();
     const _agg   = _aggregateChart(sessions.map(s => s.date), sessions.map(s => s.secs), _rangeKey);
     const secs   = _agg.values;
@@ -1430,7 +1448,7 @@
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    const PAD = { top: 14, right: 20, bottom: 38, left: 36 };
+    const PAD = { top: 14, right: 20, bottom: 38, left: CHART_PAD_LEFT };
     const cW  = W - PAD.left - PAD.right;
     const cH  = H - PAD.top  - PAD.bottom;
 
@@ -1470,7 +1488,7 @@
     ctx.font         = '400 10px -apple-system, sans-serif';
     ctx.textAlign    = 'right';
     ctx.textBaseline = 'middle';
-    yTicks.forEach(t => ctx.fillText(t, PAD.left - 7, yOf(t)));
+    yTicks.forEach(t => ctx.fillText(t, PAD.left - 6, yOf(t)));
     ctx.restore();
 
     /* x-axis labels */
@@ -1584,7 +1602,7 @@
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    const PAD = { top: 14, right: 20, bottom: 38, left: 44 };
+    const PAD = { top: 14, right: 20, bottom: 38, left: CHART_PAD_LEFT };
     const cW  = W - PAD.left - PAD.right;
     const cH  = H - PAD.top  - PAD.bottom;
 
@@ -1621,7 +1639,7 @@
     ctx.font         = '400 10px -apple-system, sans-serif';
     ctx.textAlign    = 'right';
     ctx.textBaseline = 'middle';
-    yTicks.forEach(t => ctx.fillText(fmtInt(t), PAD.left - 7, yOf(t)));
+    yTicks.forEach(t => ctx.fillText(fmtInt(t), PAD.left - 6, yOf(t)));
     ctx.restore();
 
     /* x-axis labels */
@@ -1735,7 +1753,7 @@
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    const PAD   = { top: 10, right: 20, bottom: 34, left: 44 };
+    const PAD   = { top: 10, right: 20, bottom: 34, left: CHART_PAD_LEFT };
     const cW    = W - PAD.left - PAD.right;
     const cH    = H - PAD.top  - PAD.bottom;
     const color = dark ? '#0A84FF' : '#007AFF';

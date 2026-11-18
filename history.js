@@ -444,11 +444,11 @@ window.renderExerciseTrendModal = function() {
     '<div style="font-size:13px;color:#8E8E93;">Performance Over Time</div>' +
     segHTML +
     '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#8E8E93;margin:20px 0 8px;">'+(isTimeBased(name)?'SECONDS':'REPS')+'</div>' +
-    '<div style="background:#1C1C1E;border-radius:12px;padding:16px;margin-bottom:12px;">' +
+    '<div style="background:#1C1C1E;border-radius:12px;padding:16px 0;margin-bottom:12px;">' +
     '<canvas id="trendRepsCanvas" style="display:block;width:100%;height:180px;"></canvas>' +
     '</div>' +
     '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#8E8E93;margin:20px 0 8px;">INTENSITY ⚡</div>' +
-    '<div style="background:#1C1C1E;border-radius:12px;padding:16px;margin-bottom:12px;">' +
+    '<div style="background:#1C1C1E;border-radius:12px;padding:16px 0;margin-bottom:12px;">' +
     '<canvas id="trendIntensityCanvas" style="display:block;width:100%;height:180px;"></canvas>' +
     '</div>' +
     '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#8E8E93;margin:20px 0 10px;">LAST 3 SESSIONS</div>' +
@@ -471,6 +471,7 @@ function _drawTrendChart(canvas, sessions, valFn, height, rangeKey, unitSuffix) 
   if (!canvas) return;
   var dpr = window.devicePixelRatio || 1;
   var parent = canvas.parentElement;
+  if (parent && parent.classList.contains('chart-inner')) parent = parent.parentElement;   /* redraw: the canvas already sits in the fixed-axis wrapper */
   /* visible content width of the scroll container (minus its own padding) */
   var _cs = parent ? getComputedStyle(parent) : null;
   var _padX = _cs ? ((parseFloat(_cs.paddingLeft) || 0) + (parseFloat(_cs.paddingRight) || 0)) : 0;
@@ -482,7 +483,7 @@ function _drawTrendChart(canvas, sessions, valFn, height, rangeKey, unitSuffix) 
   var vals = agg.values, times = agg.times, labels = agg.labels;
   var n = vals.length;
 
-  var PAD = {top:14, right:18, bottom:26, left:40};
+  var PAD = {top:14, right:20, bottom:26, left:(typeof CHART_PAD_LEFT === 'number' ? CHART_PAD_LEFT : 36)};
   var scale = _chartXScale(times, _horizonDaysFor(rangeKey || '1M', times), PAD, containerW);
   var W = scale.canvasW;
   if (parent) parent.classList.add('chart-scroll');
@@ -513,7 +514,7 @@ function _drawTrendChart(canvas, sessions, valFn, height, rangeKey, unitSuffix) 
     ctx.moveTo(PAD.left,gy); ctx.lineTo(PAD.left+cW,gy); ctx.stroke();
     ctx.fillStyle='#8E8E93'; ctx.font='11px system-ui,-apple-system,sans-serif';
     ctx.textAlign='right'; ctx.textBaseline='middle';
-    ctx.fillText(Math.round(maxV-(g/3)*rng), PAD.left-8, gy);
+    ctx.fillText(Math.round(maxV-(g/3)*rng), PAD.left-6, gy);
   }
 
   /* trend line (dashed grey) */
@@ -559,5 +560,5 @@ function _drawTrendChart(canvas, sessions, valFn, height, rangeKey, unitSuffix) 
   for (var di=0; di<n; di++) _dots.push({ x: xOf(di), y: yOf(vals[di]), label: labels[di], value: String(Math.round(vals[di])) + (unitSuffix || '') });
   _attachDotTooltip(canvas, _dots);
 
-  if (parent) { parent.scrollLeft = parent.scrollWidth; if (typeof _stickYAxis === 'function') _stickYAxis(parent, PAD.left, canvas); }
+  if (parent) { if (typeof _stickYAxis === 'function') _stickYAxis(parent, PAD.left, canvas); parent.scrollLeft = parent.scrollWidth; }
 }
