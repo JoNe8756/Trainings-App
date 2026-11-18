@@ -53,14 +53,67 @@
     const totalDays = Math.max(1, (maxT - minT) / 86400000);
     const plotVis  = Math.max(1, containerW - PAD.left - PAD.right);
     const pxPerDay = plotVis / Math.max(1, horizonDays);
-    const canvasW  = Math.max(containerW, Math.ceil(PAD.left + PAD.right + totalDays * pxPerDay));
+    const INSET    = 12;   /* keeps the first point off the y-axis edge */
+    const canvasW  = Math.max(containerW, Math.ceil(PAD.left + PAD.right + INSET + totalDays * pxPerDay));
     const plotW    = canvasW - PAD.left - PAD.right;
     const span     = (maxT - minT) || 1;
-    const xOf = i => n === 1 ? PAD.left + plotVis / 2 : PAD.left + ((times[i] - minT) / span) * plotW;
+    const xOf = i => n === 1 ? PAD.left + plotVis / 2 : PAD.left + INSET + ((times[i] - minT) / span) * (plotW - INSET);
     return { canvasW, xOf };
   }
 
-  function _scrollChartRight(wrap) { if (wrap) wrap.scrollLeft = wrap.scrollWidth; }
+  // === FIXED CHART Y-AXIS ===
+  /* The y-axis labels are drawn inside the wide, scrollable chart canvas, so scrolling to the newest
+     data pushed them out of view. This puts a copy of the left strip (labels + unit) on top, sticky
+     at the left edge, with the card's background so the plot scrolls underneath it. */
+  function _stickYAxis(wrap, padLeft, mainCanvas) {
+    if (!wrap || !padLeft) return;
+    const main = mainCanvas || wrap.querySelector('canvas.chart-canvas');
+    if (!main) return;
+    const old = wrap.querySelector('canvas.chart-yaxis');
+    if (old) old.remove();
+    let bg = 'transparent';
+    for (let el = wrap; el; el = el.parentElement) {
+      const c = getComputedStyle(el).backgroundColor;
+      if (c && c !== 'transparent' && !/rgba\(\s*\d+,\s*\d+,\s*\d+,\s*0\s*\)/.test(c)) { bg = c; break; }
+    }
+    const dprAx = main.width / (parseFloat(main.style.width) || main.width);
+    const strip = document.createElement('canvas');
+    strip.className = 'chart-yaxis';
+    strip.width = Math.round(padLeft * dprAx);
+    strip.height = main.height;
+    const h = parseFloat(main.style.height) || (main.height / dprAx);
+    strip.style.cssText = 'position:sticky;left:0;display:block;z-index:2;pointer-events:none;width:' + padLeft + 'px;height:' + h + 'px;margin-bottom:-' + h + 'px;';
+    const sctx = strip.getContext('2d');
+    if (bg !== 'transparent') { sctx.fillStyle = bg; sctx.fillRect(0, 0, strip.width, strip.height); }
+    sctx.drawImage(main, 0, 0, strip.width, main.height, 0, 0, strip.width, strip.height);
+    wrap.insertBefore(strip, main);
+    /* optional label (e.g. "⚡ Intensity") that stays at the top-right of the visible window */
+    const oldLg = wrap.querySelector('.chart-legend');
+    if (oldLg) oldLg.remove();
+    if (main.dataset.legend || main.dataset.xlabel) {
+      const lg = document.createElement('div');
+      lg.className = 'chart-legend';
+      const vw = wrap.clientWidth;
+      lg.style.cssText = 'position:sticky;left:0;width:' + vw + 'px;height:0;z-index:3;pointer-events:none;';
+      const mk = (txt, css, color) => {
+        const sp = document.createElement('span');
+        sp.textContent = txt;
+        sp.style.cssText = 'position:absolute;font:500 9px -apple-system,sans-serif;white-space:nowrap;color:' + color + ';' + css;
+        lg.appendChild(sp);
+      };
+      const padR = Number(main.dataset.legendRight) || 20;
+      if (main.dataset.legend) mk(main.dataset.legend, 'right:' + padR + 'px;top:' + (main.dataset.legendTop || 0) + 'px;', main.dataset.legendColor || '#8E8E93');
+      /* x-axis title: centred under the visible part of the plot, not under the whole scrolled canvas */
+      if (main.dataset.xlabel) mk(main.dataset.xlabel, 'left:' + (padLeft + (vw - padLeft - padR) / 2) + 'px;top:' + (h - 4) + 'px;transform:translate(-50%,-100%);', main.dataset.xlabelColor || '#8E8E93');
+      wrap.insertBefore(lg, main);
+    }
+  }
+
+  function _scrollChartRight(wrap, padLeft) {
+    if (!wrap) return;
+    wrap.scrollLeft = wrap.scrollWidth;
+    _stickYAxis(wrap, padLeft);
+  }
 
   function _bucketModeFor(rangeKey) {
     if (rangeKey === '1M' || rangeKey === '30') return 'none';
@@ -483,7 +536,7 @@
         requestAnimationFrame(() => {
           const rk = _getProgressRange();
           pending.forEach(({ name, sessions, maxSets }) => {
-            _drawChartForMode(name, _filterSessions(sessions, rk), maxSets, _progressMode);
+            _drawChartForMode(name, sessions, maxSets, _progressMode);   /* all sessions, same as _redrawCharts: the range only sets the visible window */
           });
           _progCatPending.delete(cat);
         });
@@ -545,7 +598,7 @@
       setTimeout(() => {
         const rk = _getProgressRange();
         pending.forEach(({ name, sessions, maxSets }) => {
-          _drawChartForMode(name, _filterSessions(sessions, rk), maxSets, _progressMode);
+          _drawChartForMode(name, sessions, maxSets, _progressMode);   /* all sessions, same as _redrawCharts: the range only sets the visible window */
         });
       }, 230);
     }
@@ -646,7 +699,7 @@
     ctx.font         = '400 9px -apple-system, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText('Date', PAD.left + cW / 2, H - 4);
+    canvas.dataset.xlabel = 'Date'; canvas.dataset.xlabelColor = labelColor;   /* sticky label, see _stickYAxis */
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.translate(9, PAD.top + cH / 2);
@@ -719,17 +772,14 @@
       ctx.fill();
     }
 
-    /* mode indicator */
-    ctx.save();
-    ctx.font         = '500 9px -apple-system, sans-serif';
-    ctx.fillStyle    = labelColor;
-    ctx.textAlign    = 'right';
-    ctx.textBaseline = 'top';
-    ctx.fillText(isTimeBased(name) ? 'Seconds' : 'Reps', PAD.left + cW, PAD.top - 14);
-    ctx.restore();
+    /* mode indicator: sticky label drawn by _stickYAxis so it stays in view */
+    canvas.dataset.legend = isTimeBased(name) ? 'Seconds' : 'Reps';
+    canvas.dataset.legendTop = String(PAD.top - 14);
+    canvas.dataset.legendRight = String(PAD.right);
+    canvas.dataset.legendColor = labelColor;
 
     _attachDotTooltip(canvas, bestReps.map((v, i) => ({ x: xOf(i), y: yOf(v), label: _agg.labels[i], value: String(Math.round(v)) + (isTimeBased(name) ? 's' : '') })));
-    _scrollChartRight(wrap);
+    _scrollChartRight(wrap, PAD.left);
   }
 
   function drawSessionTotalChart(name, sessions) {
@@ -820,7 +870,7 @@
     ctx.font         = '400 9px -apple-system, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText('Date', PAD.left + cW / 2, H - 4);
+    canvas.dataset.xlabel = 'Date'; canvas.dataset.xlabelColor = labelColor;   /* sticky label, see _stickYAxis */
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.translate(9, PAD.top + cH / 2);
@@ -893,17 +943,14 @@
       ctx.fill();
     }
 
-    /* mode indicator — top-right, muted */
-    ctx.save();
-    ctx.font         = '500 9px -apple-system, sans-serif';
-    ctx.fillStyle    = labelColor;
-    ctx.textAlign    = 'right';
-    ctx.textBaseline = 'top';
-    ctx.fillText('⚡ Intensity', PAD.left + cW, PAD.top - 14);
-    ctx.restore();
+    /* mode indicator — top-right, muted; drawn as a sticky label by _stickYAxis so it stays in view */
+    canvas.dataset.legend = '⚡ Intensity';
+    canvas.dataset.legendTop = String(PAD.top - 14);
+    canvas.dataset.legendRight = String(PAD.right);
+    canvas.dataset.legendColor = labelColor;
 
     _attachDotTooltip(canvas, totals.map((v, i) => ({ x: xOf(i), y: yOf(v), label: _agg.labels[i], value: String(Math.round(v)) })));
-    _scrollChartRight(wrap);
+    _scrollChartRight(wrap, PAD.left);
   }
 
   function _getWarmupSessions(rangeKey) {
@@ -1130,7 +1177,7 @@
     ctx.font         = '400 9px -apple-system, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText('Date', PAD.left + cW / 2, H - 4);
+    canvas.dataset.xlabel = 'Date'; canvas.dataset.xlabelColor = labelColor;   /* sticky label, see _stickYAxis */
     ctx.restore();
 
     const pts = secs.map((v, i) => ({ x: xOf(i), y: yOf(v) }));
@@ -1209,7 +1256,7 @@
     }
 
     _attachDotTooltip(canvas, secs.map((v, i) => ({ x: xOf(i), y: yOf(v), label: _agg.labels[i], value: fmtT(v) })));
-    _scrollChartRight(wrap);
+    _scrollChartRight(wrap, PAD.left);
   }
 
   function _drawWarmupAvgChart(sessions) {
@@ -1298,7 +1345,7 @@
     ctx.font         = '400 9px -apple-system, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText('Date', PAD.left + cW / 2, H - 4);
+    canvas.dataset.xlabel = 'Date'; canvas.dataset.xlabelColor = labelColor;   /* sticky label, see _stickYAxis */
     ctx.restore();
 
     const pts    = secs.map((v, i) => ({ x: xOf(i), y: yOf(v) }));
@@ -1360,7 +1407,7 @@
     ctx.restore();
 
     _attachDotTooltip(canvas, secs.map((v, i) => ({ x: xOf(i), y: yOf(v), label: _agg.labels[i], value: fmtT(v) })));
-    _scrollChartRight(wrap);
+    _scrollChartRight(wrap, PAD.left);
   }
 
   function drawChart(name, sessions, maxSets) {

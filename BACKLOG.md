@@ -3,31 +3,36 @@
 Rules for this file: Claude Code does not start items on its own. Items move between sections only when Joel confirms he tested them. One task per request, bug fixes and features never mixed.
 
 ## A. VERIFY FIRST (built or written, result not confirmed)
-30. Music while the app speaks: two audio-mode attempts (ambient, transient) stopped the music on iPhone and it did not come back. Third attempt (ambient set once for the whole warm-up, no per-cue audio changes) pushed 15 Nov 2026, Joel tests it in the next training. If it fails, fallback: a 'Spoken cues' on/off switch in Settings (workouts.js, _warmupSpeak).
+30. Music while the app speaks: two audio-mode attempts (ambient, transient) stopped the music on iPhone and it did not come back. Third attempt (ambient set once for the whole warm-up, no per-cue audio changes) pushed 15 Nov 2026, Joel tests it in the next training. If it fails, fallback: a 'Spoken cues' on/off switch in Settings (workouts.js, _warmupSpeak). Item 47 (music does not start again after the app speaks) is the same problem.
 6. Mac copy on localhost:8000 is old. When syncing it, log in with the private account and choose "Cloud" for all categories (the phone chose "This device"). Tell Joel first before doing this.
 
 ## B. DECISIONS PENDING
 (none)
 
-## C. NEXT FEATURES (in this order)
-34. Bug: exercise progress charts over time: the left axis should stay fixed and not move when more data arrives; the chart should fit the screen width.
-9. Weekly challenge (bonus session for extra XP)
-10. Journey completion certificate (special screen when all sessions are done)
-11. Week preview (what is coming this week)
-12. Rest day tips (recovery and mobility)
-13. Mid-journey check-in (Gemini reassesses at the halfway point)
-14. Weekly adaptive reassessment (after each completed week, Gemini updates the remaining weeks from actual vs planned performance)
-15. Adaptive difficulty (goes with 13 and 14)
-16. Progress milestone messages (motivational text at key completion points)
-17. Training plan archive (deleted plans move to an archive, restorable or permanently deletable)
-18. Post-workout feedback prompt
-44. For each training of a journey, show its goal/focus.
-41. Tell me when a badge was earned (notification or visible hint).
-40. Indicator when the set break (rest) is almost over.
-42. Show how long since the last training. (Note said "last tick in training", confirm meaning with Joel.)
-35. Journey exercises do not have to be only exercises I already did before.
-38. Alternate (swap) exercises during journey trainings.
-36. Journey option for location/equipment: gym vs park or less equipment.
+## C. NEXT FEATURES (in this order; prioritised 18 Nov 2026: bugs first, then what Joel feels in every workout, then quick wins, then engagement, then bigger features, last what is blocked)
+1. 46. Bug: rest timer card overlaps the "Workout in progress - tap to resume" banner on the Summary tab (screenshot). Visible in every minimised workout.
+2. 50. Rest timer a bit bigger, easier to read from far away. Do together with 46 (same card).
+3. 40. Indicator when the set break (rest) is almost over. Same rest card, high daily value.
+4. 49. Show the type of exercise (reps or seconds) in the exercise overview. Small clarity fix.
+5. 42. Show how long since the last training. (Note said "last tick in training", confirm meaning with Joel.) Small, supports the thirsty-plant habit loop.
+6. 41. Tell me when a badge was earned (notification or visible hint). Makes existing rewards visible.
+7. 44. For each training of a journey, show its goal/focus. Makes journeys easier to follow.
+8. 45. Plant story: nature benefits, learn something about the plant in a storytelling format. Content on top of the finished story system.
+9. 38. Alternate (swap) exercises during journey trainings. Flexibility when equipment is missing.
+10. 16. Progress milestone messages (motivational text at key completion points)
+11. 18. Post-workout feedback prompt
+12. 11. Week preview (what is coming this week)
+13. 9. Weekly challenge (bonus session for extra XP)
+14. 10. Journey completion certificate (special screen when all sessions are done)
+15. 12. Rest day tips (recovery and mobility)
+16. 17. Training plan archive (deleted plans move to an archive, restorable or permanently deletable)
+17. 36. Journey option for location/equipment: gym vs park or less equipment. (Partly covered by the AI guide export; revisit.)
+18. 35. Journey exercises do not have to be only exercises I already did before. (Partly covered by the AI guide export; revisit.)
+19. 48b. Plant story step 2: baby plants around level 40 (about 17,000 XP, far away at level 8, so later).
+20. 48c. Plant story step 3: forest with its own flora and fauna, collection log of discoveries (new key, mapped in export). Biggest item, after 48b.
+21. 13. Mid-journey check-in (Gemini). Blocked while Gemini journey creation does not work.
+22. 14. Weekly adaptive reassessment (Gemini). Blocked, same reason.
+23. 15. Adaptive difficulty (goes with 13 and 14). Blocked, same reason.
 
 ## D. MAINTENANCE AND IDEAS
 19. Cache busting: add a version number to the script and style links in index.html so phones fetch fresh files after each push (the home screen app kept old files for a long time after the sync release).
@@ -65,6 +70,7 @@ Rules for this file: Claude Code does not start items on its own. Items move bet
 - Plant story step 1: 100 levels on a 5% curve, 20 ranks of 5 levels named after the 20 story chapters, future ranks hidden until reached
 - Journey creation without Gemini: export a guide for another AI from the Journey creator, import the AI's JSON and save it as a normal journey (journey-exchange.js, tested by Joel 15 Nov 2026)
 - Warm-up now runs when a journey session is started from the + button with the warm-up switched on (tested by Joel 15 Nov 2026)
+- Progress charts (item 34, tested by Joel 18 Nov 2026): fixed left axis, sticky Date and Intensity/Reps labels, first point off the axis edge, charts show all data on first open (no tap needed)
 - Verified by Joel (15 Nov 2026): weekly goal XP check, bottom nav 6px shift, hold exercises showing seconds instead of reps, sync decision sheet inside the app container, Gemini 5xx retry and model fallback
 
 ## Reference

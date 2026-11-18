@@ -559,5 +559,5 @@ function _drawTrendChart(canvas, sessions, valFn, height, rangeKey, unitSuffix) 
   for (var di=0; di<n; di++) _dots.push({ x: xOf(di), y: yOf(vals[di]), label: labels[di], value: String(Math.round(vals[di])) + (unitSuffix || '') });
   _attachDotTooltip(canvas, _dots);
 
-  if (parent) parent.scrollLeft = parent.scrollWidth;
+  if (parent) { parent.scrollLeft = parent.scrollWidth; if (typeof _stickYAxis === 'function') _stickYAxis(parent, PAD.left, canvas); }
 }
